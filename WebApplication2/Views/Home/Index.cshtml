@@ -1,0 +1,63 @@
+﻿@{
+    ViewData["Title"] = "Шляпа";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="~/css/style_for_main_page.css" rel="stylesheet"/>
+
+    <title>Учебная платформа</title>
+</head>
+<body>
+
+    <div class="header">
+        <div class="burger" onclick="toggleSidebar()">☰</div>
+        <div class="user-section">
+            <img src="https://i.pravatar.cc/35?img=1" alt="avatar" id="headerAvatar" class="user-avatar" onclick="chooseAvatar()">
+            <div class="auth-buttons">
+                <button>Войти</button>
+                <button>Регистрация</button>
+            </div>
+        </div>
+    </div>
+
+ 
+    <div class="sidebar" id="sidebar">
+        <div class="avatar">
+            <img src="https://i.pravatar.cc/40?img=1" alt="avatar" id="sidebarAvatar">
+            <span>Иван Иванов</span>
+        </div>
+        <nav>
+            <ul>
+                <li>Главная</li>
+                <li>Мои курсы</li>
+                <li>Тесты</li>
+                <li>Задания</li>
+                <li>Форум</li>
+                <li>Настройки</li>
+            </ul>
+        </nav>
+    </div>
+
+    <div class="main-content" id="mainContent">
+        <h1>Рекомендованные курсы</h1>
+        <div class="recommendations">
+            <div class="card">Курс по C#</div>
+            <div class="card">Курс по ASP.NET Core</div>
+            <div class="card">Курс по JavaScript</div>
+            <div class="card">Курс по HTML и CSS</div>
+        </div>
+    </div>
+
+    <div class="footer">
+        &copy; 2026 Учебная платформа
+    </div>
+
+    <input type="file" id="avatarInput" accept="image/*" style="display:none">
+    <script src="~/js/script_for_main_page.js"></script>
+
+</body>
+</html>
