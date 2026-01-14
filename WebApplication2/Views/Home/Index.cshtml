@@ -1,5 +1,5 @@
 ﻿@{
-    ViewData["Title"] = "Шляпа";
+    ViewData["Title"] = "MyClassroom";
 }
 
 <!DOCTYPE html>
@@ -16,7 +16,7 @@
     <div class="header">
         <div class="burger" onclick="toggleSidebar()">☰</div>
         <div class="user-section">
-            <img src="https://i.pravatar.cc/35?img=1" alt="avatar" id="headerAvatar" class="user-avatar" onclick="chooseAvatar()">
+            <img src="~/images/default_avatar.jpg" alt="avatar" id="headerAvatar" class="user-avatar" onclick="chooseAvatar()">
             <div class="auth-buttons">
                 <button>Войти</button>
                 <button>Регистрация</button> 
@@ -27,7 +27,7 @@
  
     <div class="sidebar" id="sidebar">
         <div class="avatar">
-            <img src="https://i.pravatar.cc/40?img=1" alt="avatar" id="sidebarAvatar">
+            <img src="~/images/default_avatar.jpg" alt="avatar" id="sidebarAvatar">
             <span>Иван Иванов</span>
         </div>
         <nav>

@@ -6,4 +6,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Folder Include="Views\Registration\" />
+    <Folder Include="Views\Authorization\" />
+  </ItemGroup>
+
 </Project>

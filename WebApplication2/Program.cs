@@ -24,7 +24,12 @@ app.UseEndpoints(endpoints =>
 {
     endpoints.MapControllerRoute(
         name: "default",
-        pattern: "{controller=Home}/{action=Index}/{id?}");
+        pattern: "{controller=Home}/{action=Index}/{id?}"
+    );
+    endpoints.MapControllerRoute(
+        name: "registration",
+        pattern: "{controller=Register}/{action=Index}/{id?}"
+    );
 });
 
 app.Run();
