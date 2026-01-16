@@ -56,6 +56,10 @@ body {
             background: #fff;
             color: #3c4043;
         }
+        .header .auth-buttons button a {
+            text-decoration: none;
+            color: white;
+        }
 
     /* Аватар */
     .header .user-avatar {
