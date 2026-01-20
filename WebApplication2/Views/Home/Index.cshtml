@@ -1,6 +1,7 @@
 ﻿@{
     ViewData["Title"] = "MyClassroom";
 }
+@model IEnumerable<CourseCardModel> 
 
 <!DOCTYPE html>
 <html lang="en">
@@ -8,6 +9,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="~/css/style_for_main_page.css" rel="stylesheet"/>
+    <link href="~/css/course_card.css" rel="stylesheet"/>
 
     <title>Учебная платформа</title>
 </head>
@@ -19,7 +21,7 @@
             <img src="~/images/default_avatar.jpg" alt="avatar" id="headerAvatar" class="user-avatar" onclick="chooseAvatar()">
             <div class="auth-buttons">
                 <button>Войти</button>
-                <button> <a href="@Url.Action("Index", "Register")">Зарегистрироваться</a> </button>
+                <button onclick="location.href='@Url.Action("Index", "Register")'">Зарегистрироваться</button>
             </div>
         </div>
     </div>
@@ -45,10 +47,10 @@
     <div class="main-content" id="mainContent">
         <h1>Рекомендованные курсы</h1>
         <div class="recommendations">
-            <div class="card">Курс по C#</div>
-            <div class="card">Курс по ASP.NET Core</div>
-            <div class="card">Курс по JavaScript</div>
-            <div class="card">Курс по HTML и CSS</div>
+            @foreach (var course in Model)
+            {
+                @await Html.PartialAsync("_CourseCard", course)
+            }
         </div>
     </div>
 

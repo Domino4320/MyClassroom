@@ -1,2 +1,43 @@
-﻿@page
-<p>Страница регистрации</p>
+﻿@{
+    ViewData["Title"] = "MyClassroom";
+}
+<html>
+    <head>
+        <link href="~/css/register.css" rel="stylesheet" />
+    </head>
+    <body>
+    <div class="register-page">
+        <div class="register-card">
+            <h2 class="register-title">Создать аккаунт</h2>
+            <p class="register-subtitle">Введите свои данные, чтобы зарегистрироваться</p>
+
+            <form id="registerForm" method="post" asp-controller="Register" asp-action="Create">
+                <div class="form-group">
+                    <label for="fullName">Имя пользователя</label>
+                    <input type="text" id="username" name="Username" placeholder="Иван Иванов">
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Логин</label>
+                    <input id="login" name="Login" placeholder="IvanIvanov">
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Пароль</label>
+                    <input type="password" id="password" name="Password" placeholder="Введите пароль">
+                </div>
+
+                <div class="form-group">
+                    <label for="confirmPassword">Повторите пароль</label>
+                    <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Повторите пароль">
+                </div>
+
+                <button type="submit" class="btn-register">Зарегистрироваться</button>
+            </form>
+
+            <p class="register-login">Уже есть аккаунт? <a href="/Account/Login">Войти</a></p>
+        </div>
+    </div>
+    <script src="~/js/register.js"></script>
+    </body>
+</html>

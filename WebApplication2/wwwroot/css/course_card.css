@@ -1,0 +1,154 @@
+﻿/* ========== COURSE CARD ========== */
+.course-card {
+    position: relative;
+    background: var(--surface-card);
+    border-radius: 22px;
+    padding: 1.6rem;
+    border: 1px solid var(--border-glass);
+    box-shadow: var(--shadow-soft);
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.45s ease, box-shadow 0.45s ease;
+}
+
+    /* glow background */
+    .course-card::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: radial-gradient( circle at top right, rgba(79,195,247,0.28), transparent 60% );
+        opacity: 0;
+        transition: opacity 0.4s;
+    }
+
+    .course-card:hover::before {
+        opacity: 1;
+    }
+
+    .course-card:hover {
+        transform: translateY(-12px) scale(1.03);
+        box-shadow: var(--shadow-strong);
+    }
+
+/* ========== HEADER ========== */
+.course-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.teacher-avatar {
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    border: 2px solid var(--accent-main);
+    box-shadow: 0 0 12px rgba(79,195,247,0.6);
+}
+
+.course-title-block {
+    display: flex;
+    flex-direction: column;
+}
+
+.course-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--text-strong);
+}
+
+.course-teacher {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+/* ========== INFO ========== */
+.course-info {
+    margin-top: 1.4rem;
+    display: flex;
+    justify-content: space-between;
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.info-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.info-value {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text-strong);
+}
+
+    .info-value.accent {
+        color: var(--accent-strong);
+    }
+
+/* ========== THREE DOTS ========== */
+.course-menu-btn {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.4rem;
+    cursor: pointer;
+    transition: color 0.3s, transform 0.3s;
+    z-index: 3;
+}
+
+    .course-menu-btn:hover {
+        color: var(--accent-main);
+        transform: scale(1.15);
+    }
+
+/* ========== DROPDOWN ========== */
+.course-menu {
+    position: absolute;
+    top: 48px;
+    right: 14px;
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(12px);
+    border-radius: 14px;
+    border: 1px solid var(--border-glass);
+    box-shadow: var(--shadow-soft);
+    display: flex;
+    flex-direction: column;
+    min-width: 160px;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+    z-index: 5;
+}
+
+/* show menu */
+.course-card.menu-open .course-menu {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+}
+
+.course-menu button {
+    background: transparent;
+    border: none;
+    padding: 0.7rem 1rem;
+    text-align: left;
+    font-size: 0.9rem;
+    cursor: pointer;
+    color: var(--text-main);
+    transition: background 0.25s;
+}
+
+    .course-menu button:hover {
+        background: rgba(79,195,247,0.12);
+    }
+
+    .course-menu button.danger {
+        color: #e53935;
+    }

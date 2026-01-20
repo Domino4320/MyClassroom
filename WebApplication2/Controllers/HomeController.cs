@@ -15,7 +15,19 @@ namespace WebApplication2.Controllers
 
         public IActionResult Index()
         {
-            return View();
+            var courses = new List<CourseCardModel>
+        {
+            new CourseCardModel
+            {
+                CourseName = "Введение в Frontend",
+                CourseTeacherName = "Алексей Петров",
+                CourseTeacherAvatar = "https://i.pravatar.cc/100?img=5",
+                CourseStudentsAmount = 18
+            }
+        };
+
+            // ?? ОБЯЗАТЕЛЬНО передаём Model
+            return View(courses);
         }
 
         public IActionResult Privacy()

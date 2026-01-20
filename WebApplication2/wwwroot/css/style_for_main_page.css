@@ -1,39 +1,72 @@
-﻿* {
+﻿/* ========== COLOR SYSTEM ========== */
+:root {
+    /* Backgrounds */
+    --bg-page: linear-gradient(135deg, #e8f2ff, #f9fcff);
+    --bg-dark: #071426;
+    --bg-dark-soft: #0b1f3a;
+    /* Surfaces */
+    --surface-glass: rgba(255, 255, 255, 0.88);
+    --surface-card: rgba(255, 255, 255, 0.95);
+    --surface-dark: #0e2a4d;
+    /* Accent */
+    --accent-main: #4fc3f7;
+    --accent-strong: #29b6f6;
+    --accent-soft: #b3e5fc;
+    /* Text */
+    --text-main: #0b1b2b;
+    --text-strong: #07121f;
+    --text-muted: #5f7d95;
+    --text-light: #ffffff;
+    /* Borders & Effects */
+    --border-soft: rgba(79, 195, 247, 0.35);
+    --border-glass: rgba(255,255,255,0.45);
+    --shadow-soft: 0 12px 30px rgba(7, 42, 90, 0.15);
+    --shadow-strong: 0 30px 70px rgba(7, 42, 90, 0.35);
+    --glow-accent: 0 0 25px rgba(79,195,247,0.6);
+}
+
+/* ========== RESET ========== */
+* {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Segoe UI', system-ui, sans-serif;
 }
 
 body {
+    min-height: 100vh;
+    background: var(--bg-page);
+    color: var(--text-main);
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
-    background: #f4f5f7;
 }
 
-/* ========== Верхняя панель ========== */
+/* ========== HEADER ========== */
 .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: #3c4043;
-    color: #fff;
-    padding: 0.5rem 1rem;
     position: fixed;
     top: 0;
     width: 100%;
     z-index: 1000;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1.5rem;
+    background: linear-gradient( 90deg, #06172d, #0b2f5f );
+    border-bottom: 1px solid var(--border-soft);
+    box-shadow: var(--shadow-soft);
+    backdrop-filter: blur(14px);
 }
 
     .header .burger {
-        font-size: 1.5rem;
+        font-size: 1.8rem;
+        color: var(--accent-soft);
         cursor: pointer;
-        transition: transform 0.3s;
+        transition: transform 0.4s ease, color 0.3s ease;
     }
 
         .header .burger:hover {
-            transform: rotate(90deg);
+            color: var(--accent-main);
+            transform: rotate(180deg) scale(1.15);
         }
 
     .header .user-section {
@@ -42,48 +75,50 @@ body {
         gap: 1rem;
     }
 
+    /* Buttons */
     .header .auth-buttons button {
         background: transparent;
-        border: 1px solid #fff;
-        color: #fff;
-        padding: 0.3rem 0.6rem;
-        border-radius: 4px;
+        border: 1px solid var(--accent-main);
+        color: var(--text-light);
+        padding: 0.4rem 1rem;
+        border-radius: 999px;
+        font-weight: 500;
         cursor: pointer;
-        transition: 0.3s;
+        transition: all 0.3s ease;
     }
 
         .header .auth-buttons button:hover {
-            background: #fff;
-            color: #3c4043;
-        }
-        .header .auth-buttons button a {
-            text-decoration: none;
-            color: white;
+            background: var(--accent-main);
+            color: var(--bg-dark);
+            box-shadow: var(--glow-accent);
         }
 
-    /* Аватар */
+    /* Avatar */
     .header .user-avatar {
-        width: 35px;
-        height: 35px;
+        width: 42px;
+        height: 42px;
         border-radius: 50%;
-        object-fit: cover;
-        border: 2px solid #fff;
-        cursor: pointer;
+        border: 2px solid var(--accent-main);
+        transition: all 0.4s ease;
     }
 
-/* ========== Боковое меню ========== */
+        .header .user-avatar:hover {
+            transform: scale(1.15);
+            box-shadow: var(--glow-accent);
+        }
+
+/* ========== SIDEBAR ========== */
 .sidebar {
     position: fixed;
     top: 0;
-    left: -250px;
-    width: 250px;
+    left: -280px;
+    width: 280px;
     height: 100%;
-    background: #202124;
-    color: #fff;
-    padding-top: 60px;
-    transition: left 0.3s ease;
-    overflow-y: auto;
     z-index: 999;
+    background: linear-gradient( 180deg, #06172d, #0a2447 );
+    padding-top: 80px;
+    transition: left 0.45s ease;
+    border-right: 1px solid var(--border-soft);
 }
 
     .sidebar.open {
@@ -95,73 +130,120 @@ body {
     }
 
         .sidebar nav ul li {
-            padding: 1rem;
+            padding: 1.1rem 1.5rem;
+            color: #cfe9ff;
+            font-weight: 500;
             cursor: pointer;
-            transition: 0.3s;
+            position: relative;
+            transition: all 0.3s ease;
         }
 
-            .sidebar nav ul li:hover {
-                background: #3c4043;
-                transform: translateX(10px);
+            .sidebar nav ul li::after {
+                content: '';
+                position: absolute;
+                left: 1.2rem;
+                bottom: 0.4rem;
+                width: 0;
+                height: 2px;
+                background: var(--accent-main);
+                transition: width 0.3s;
             }
 
+            .sidebar nav ul li:hover {
+                color: var(--accent-main);
+                background: rgba(79,195,247,0.08);
+            }
+
+                .sidebar nav ul li:hover::after {
+                    width: 40%;
+                }
+
+    /* Sidebar avatar */
     .sidebar .avatar {
         display: flex;
         align-items: center;
-        gap: 0.5rem;
-        padding: 1rem;
-        border-bottom: 1px solid #3c4043;
+        gap: 0.9rem;
+        padding: 1.4rem;
+        border-bottom: 1px solid var(--border-soft);
+        color: #ffffff;
     }
 
         .sidebar .avatar img {
-            width: 40px;
-            height: 40px;
+            width: 46px;
+            height: 46px;
             border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid #fff;
+            border: 2px solid var(--accent-main);
         }
 
-        .sidebar .avatar span {
-            font-weight: bold;
-        }
-
-/* ========== Основная часть ========== */
+/* ========== MAIN CONTENT ========== */
 .main-content {
-    margin-top: 60px;
-    padding: 1rem;
-    margin-left: 0;
-    transition: margin-left 0.3s;
+    margin-top: 80px;
+    padding: 1.8rem;
+    transition: margin-left 0.45s ease;
 }
 
     .main-content.shift {
-        margin-left: 250px;
+        margin-left: 280px;
     }
 
-/* Рекомендации */
+    .main-content h1 {
+        font-size: 1.8rem;
+        color: var(--text-strong);
+        margin-bottom: 1.4rem;
+    }
+
+/* ========== CARDS ========== */
 .recommendations {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+    gap: 1.6rem;
 }
 
 .card {
-    background: #fff;
-    padding: 1rem;
-    border-radius: 8px;
-    box-shadow: 0 3px 8px rgba(0,0,0,0.1);
-    transition: transform 0.3s, box-shadow 0.3s;
+    background: var(--surface-card);
+    border-radius: 20px;
+    padding: 1.5rem;
+    border: 1px solid var(--border-glass);
+    box-shadow: var(--shadow-soft);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.45s ease;
 }
 
-    .card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+    .card::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: radial-gradient( circle at top right, rgba(79,195,247,0.25), transparent 60% );
+        opacity: 0;
+        transition: opacity 0.4s;
     }
 
-/* Футер */
+    .card:hover::before {
+        opacity: 1;
+    }
+
+    .card:hover {
+        transform: translateY(-14px) scale(1.04);
+        box-shadow: var(--shadow-strong);
+    }
+
+    .card h3 {
+        color: var(--text-strong);
+        margin-bottom: 0.6rem;
+    }
+
+    .card p {
+        color: var(--text-muted);
+        line-height: 1.6;
+    }
+
+/* ========== FOOTER ========== */
 .footer {
-    background: #3c4043;
-    color: #fff;
-    text-align: center;
-    padding: 1rem;
     margin-top: auto;
+    padding: 1.2rem;
+    text-align: center;
+    color: #e3f2ff;
+    background: linear-gradient(90deg, #06172d, #0b2f5f);
+    border-top: 1px solid var(--border-soft);
 }
