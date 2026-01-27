@@ -2,6 +2,7 @@
     ViewData["Title"] = "MyClassroom - Главная страница";
     var username = Context.Session.GetString("Username");
     var avatar = Context.Session.GetString("Avatar");
+    var login = Context.Session.GetString("Login");
 }
 @model IEnumerable<CourseCardModel> 
 
@@ -24,7 +25,6 @@
             @if (!string.IsNullOrEmpty(username))
             {
                 <img src="@(string.IsNullOrEmpty(avatar) ? Url.Content("~/images/default_avatar.jpg") : avatar)" alt="avatar" id="headerAvatar" class="user-avatar" onclick="chooseAvatar()">
-
                 <div class="auth-buttons">
                     <form method="post" asp-controller="Authorization" asp-action="Logout">
                         <button type="submit">Выйти из аккаунта</button>

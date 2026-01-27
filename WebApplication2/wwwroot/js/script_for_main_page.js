@@ -12,13 +12,20 @@ function chooseAvatar() {
 
 document.getElementById('avatarInput').addEventListener('change', function (e) {
     const file = e.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function (ev) {
-            document.getElementById('headerAvatar').src = ev.target.result;
-            document.getElementById('sidebarAvatar').src = ev.target.result;
-        }
-        reader.readAsDataURL(file);
-    }
+    if (!file) return;
+    const formData = new FormData();
+    formData.append("Avatar", file);
+    fetch("/Home/UploadAvatar", {
+        method: "POST",
+        body: formData
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.avatar) {
+                document.getElementById("headerAvatar").src = data.avatar;
+                document.getElementById("sidebarAvatar").src = data.avatar;
+            }
+        })
+        .catch(err => console.error(err));
 }); 
 
