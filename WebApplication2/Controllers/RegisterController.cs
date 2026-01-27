@@ -20,10 +20,20 @@ namespace WebApplication2.Controllers
         [HttpPost]
         public IActionResult Create(UserModel user)
         {
+            bool userExists = _db.Users.Any(u => u.Login == user.Login);
+
+            if (userExists)
+            {
+                ModelState.AddModelError(nameof(user.Login), "Пользователь с таким логином уже существует");
+                return View("Index",user); // возвращаем ТУ ЖЕ форму с моделью
+            }
+
             _db.Users.Add(user);
             _db.SaveChanges();
+
             return RedirectToAction("Index", "Home");
         }
+
     }
 
 }
