@@ -1,5 +1,6 @@
-﻿@{
-    ViewData["Title"] = "MyClassroom";
+﻿@model UserModel
+@{
+    ViewData["Title"] = "MyClassroom - Регистрация";
 }
 <html>
     <head>
@@ -13,18 +14,20 @@
 
             <form id="registerForm" method="post" asp-controller="Register" asp-action="Create">
                 <div class="form-group">
-                    <label for="fullName">Имя пользователя</label>
-                    <input type="text" id="username" name="Username" placeholder="Иван Иванов">
+                    <label asp-for="Username">Имя пользователя</label>
+                    <input asp-for="Username" class ="form-control" placeholder="Иван Иванов">
                 </div>
 
                 <div class="form-group">
-                    <label for="email">Логин</label>
-                    <input id="login" name="Login" placeholder="IvanIvanov">
+                    <label asp-for="Login">Логин</label>
+                    <input asp-for="Login" class="form-control" placeholder="Ivan_Ivanov"/>
+                    <span asp-validation-for="Login" class="error-message"></span>
                 </div>
 
+
                 <div class="form-group">
-                    <label for="password">Пароль</label>
-                    <input type="password" id="password" name="Password" placeholder="Введите пароль">
+                    <label asp-for="Password">Пароль</label>
+                    <input asp-for="Password" class="form-control" placeholder="Введите пароль">
                 </div>
 
                 <div class="form-group">
@@ -35,7 +38,7 @@
                 <button type="submit" class="btn-register">Зарегистрироваться</button>
             </form>
 
-            <p class="register-login">Уже есть аккаунт? <a href="/Account/Login">Войти</a></p>
+            <p class="register-login">Уже есть аккаунт? <a href="@Url.Action("Index", "Authorization")">Войти</a></p>
         </div>
     </div>
     <script src="~/js/register.js"></script>

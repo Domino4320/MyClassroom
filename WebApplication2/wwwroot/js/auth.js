@@ -1,9 +1,8 @@
 ﻿const form = document.getElementById('registerForm');
 
-// === При загрузке страницы проверяем ошибки от сервера ===
+// Проверка ошибок от сервера при загрузке
 window.addEventListener('DOMContentLoaded', () => {
     const fields = document.querySelectorAll('.form-group input');
-
     let hasServerError = false;
 
     fields.forEach(field => {
@@ -12,7 +11,7 @@ window.addEventListener('DOMContentLoaded', () => {
             field.classList.add('input-error');
             hasServerError = true;
 
-            // Если это серверная ошибка (field-error), превращаем её в .error-message для единообразия
+            // Преобразуем field-error в error-message
             if (error.classList.contains('field-error')) {
                 error.classList.remove('field-error');
                 error.classList.add('error-message');
@@ -27,56 +26,29 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// === Обработка сабмита формы на клиенте ===
+// Клиентская проверка формы перед отправкой
 form.addEventListener('submit', function (e) {
     e.preventDefault();
 
-    const login = document.getElementById("Login");
-    const password = document.getElementById('Password');
-    const username = document.getElementById("Username");
-    const confirm = document.getElementById('confirmPassword');
-
-    // Сброс старых ошибок
-    resetErrors([login, password, confirm, username]);
+    const inputs = form.querySelectorAll('input');
+    resetErrors(inputs);
 
     let hasError = false;
 
-    // === Проверки ===
-    if (username.value.length < 8) {
-        showError(username, 'Длина имени пользователя должна быть не менее 8 символов');
-        hasError = true;
-    }
-
-    if (login.value.length < 8) {
-        showError(login, 'Длина логина должна быть не менее 8 символов');
-        hasError = true;
-    }
-
-    if (password.value.length < 8) {
-        showError(password, 'Длина пароля должна быть не менее 8 символов');
-        hasError = true;
-    }
-
-    if (password.value !== confirm.value) {
-        showError(confirm, 'Пароли не совпадают!');
-        showError(password, 'Пароли не совпадают!');
-        hasError = true;
-    }
-
-    if (login.value.includes(" ")) {
-        showError(login, "Логин содержит пробелы");
-        hasError = true;
-    }
-
-    if (password.value.includes(" ")) {
-        showError(password, "Пароль содержит пробелы");
-        hasError = true;
-    }
-
-    if (username.value.includes(" ")) {
-        showError(username, "Имя пользователя содержит пробелы");
-        hasError = true;
-    }
+    inputs.forEach(field => {
+        if (field.value.trim() === "") {
+            showError(field, 'Поле не должно быть пустым');
+            hasError = true;
+        }
+        if (field.value.includes(" ")) {
+            showError(field, 'Поле не должно содержать пробелы');
+            hasError = true;
+        }
+        if (field.value.length < 8) {
+            showError(field, "Длина содержимого поля не может быть менее 8 символов");
+            hasError = true;
+        }
+    });
 
     if (hasError) {
         const card = document.querySelector('.register-card');
@@ -85,14 +57,12 @@ form.addEventListener('submit', function (e) {
         return;
     }
 
-    // Если ошибок нет — отправляем форму
     form.submit();
 });
 
-// === Функции ===
+// Функции работы с ошибками
 function showError(field, message) {
     field.classList.add('input-error');
-
     let error = field.parentNode.querySelector('.error-message');
     if (!error) {
         error = document.createElement('div');
@@ -110,7 +80,7 @@ function resetErrors(fields) {
     });
 }
 
-// === CSS для тряски и ошибок ===
+// CSS для тряски и подсветки ошибок
 const style = document.createElement('style');
 style.innerHTML = `
 @keyframes shake {

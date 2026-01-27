@@ -1,0 +1,39 @@
+﻿@model UserModel
+@{
+    ViewData["Title"] = "MyClassroom - Авторизация";
+}
+<html>
+    <head>
+        <link href="~/css/register.css" rel="stylesheet" />
+    </head>
+    <body>
+    <div class="register-page">
+        <div class="register-card">
+            <h2 class="register-title">Войти в аккаунт</h2>
+            <p class="register-subtitle">Введите свои данные, чтобы войти</p>
+
+            <form id="registerForm" method="post" asp-controller="Authorization" asp-action="Login">
+
+                <div class="form-group">
+                    <label asp-for="Login">Логин</label>
+                    <input asp-for="Login" class="form-control" placeholder="Введите ваш логин"/>
+                    <span asp-validation-for="Login" class="field-error"></span>
+                </div>
+
+
+                <div class="form-group">
+                    <label asp-for="Password">Пароль</label>
+                    <input asp-for="Password" class="form-control" placeholder="Введите ваш пароль" type="password">
+                    <span asp-validation-for="Password" class="field-error"></span>
+                </div>
+
+
+                <button type="submit" class="btn-register">Войти</button>
+            </form>
+
+            <p class="register-login">Еще нет аккаунта? <a href="@Url.Action("Index", "Register")">Зарегистрироваться</a></p>
+        </div>
+    </div>
+    <script src="~/js/auth.js"></script>
+    </body>
+</html>

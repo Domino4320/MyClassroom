@@ -1,7 +1,10 @@
 ﻿@{
-    ViewData["Title"] = "MyClassroom";
+    ViewData["Title"] = "MyClassroom - Главная страница";
+    var username = Context.Session.GetString("Username");
+    var avatar = Context.Session.GetString("Avatar");
 }
 @model IEnumerable<CourseCardModel> 
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -18,19 +21,31 @@
     <div class="header">
         <div class="burger" onclick="toggleSidebar()">☰</div>
         <div class="user-section">
-            <img src="~/images/default_avatar.jpg" alt="avatar" id="headerAvatar" class="user-avatar" onclick="chooseAvatar()">
-            <div class="auth-buttons">
-                <button>Войти</button>
-                <button onclick="location.href='@Url.Action("Index", "Register")'">Зарегистрироваться</button>
-            </div>
-        </div>
+            @if (!string.IsNullOrEmpty(username))
+            {
+                <img src="@(string.IsNullOrEmpty(avatar) ? Url.Content("~/images/default_avatar.jpg") : avatar)" alt="avatar" id="headerAvatar" class="user-avatar" onclick="chooseAvatar()">
+
+                <div class="auth-buttons">
+                    <form method="post" asp-controller="Authorization" asp-action="Logout">
+                        <button type="submit">Выйти из аккаунта</button>
+                   </form>
+                </div>
+            }
+            else{
+                <img src="~/images/default_avatar.jpg" alt="avatar" id="headerAvatar" class="user-avatar">
+                <div class="auth-buttons">
+                    <button onclick="location.href='@Url.Action("Index", "Authorization")'">Войти</button>
+                    <button onclick="location.href='@Url.Action("Index", "Register")'">Зарегистрироваться</button>
+                </div>
+            }
+                </div>
     </div>
 
  
     <div class="sidebar" id="sidebar">
         <div class="avatar">
-            <img src="~/images/default_avatar.jpg" alt="avatar" id="sidebarAvatar">
-            <span>Иван Золо</span>
+                <img src="@(string.IsNullOrEmpty(avatar) ? Url.Content("~/images/default_avatar.jpg") : avatar)" alt="avatar" id="sidebarAvatar">
+                <span>@(string.IsNullOrEmpty(username) ? "Гость" : username) </span>
         </div>
         <nav>
             <ul>

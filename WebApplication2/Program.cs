@@ -7,6 +7,15 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<ApplicationDBContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromHours(1);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
+
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
@@ -28,6 +37,8 @@ app.UseRouting();
 
 app.UseAuthorization();
 
+app.UseSession();
+
 app.UseEndpoints(endpoints =>
 {
     endpoints.MapControllerRoute(
@@ -38,8 +49,10 @@ app.UseEndpoints(endpoints =>
         name: "registration",
         pattern: "{controller=Register}/{action=Index}/{id?}"
     );
+    endpoints.MapControllerRoute(
+        name: "authorization",
+        pattern: "{controller=Authorization}/{action=Index}/{id?}"
+    );
 });
-
-
 
 app.Run();
