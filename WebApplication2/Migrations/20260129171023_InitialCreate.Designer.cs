@@ -10,7 +10,7 @@ using WebApplication2.Data;
 namespace WebApplication2.Migrations
 {
     [DbContext(typeof(ApplicationDBContext))]
-    [Migration("20260120170451_InitialCreate")]
+    [Migration("20260129171023_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />

@@ -25,9 +25,9 @@ namespace WebApplication2.Controllers
             if (userExists)
             {
                 ModelState.AddModelError(nameof(user.Login), "Пользователь с таким логином уже существует");
-                return View("Index",user); // возвращаем ТУ ЖЕ форму с моделью
+                return View("Index",user); 
             }
-
+            user.Role = "Student";
             _db.Users.Add(user);
             _db.SaveChanges();
 

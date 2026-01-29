@@ -12,5 +12,7 @@ namespace WebApplication2.Models
 
         public string? Avatar { get; set; }
 
+        [Required]
+        public string? Role { get; set; }
     }
 }
