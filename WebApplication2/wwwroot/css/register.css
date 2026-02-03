@@ -1,30 +1,4 @@
-﻿/* === PAGE LAYOUT === */
-:root {
-    /* Backgrounds */
-    --bg-page: linear-gradient(135deg, #e8f2ff, #f9fcff);
-    --bg-dark: #071426;
-    --bg-dark-soft: #0b1f3a;
-    /* Surfaces */
-    --surface-glass: rgba(255, 255, 255, 0.88);
-    --surface-card: rgba(255, 255, 255, 0.95);
-    --surface-dark: #0e2a4d;
-    /* Accent */
-    --accent-main: #4fc3f7;
-    --accent-strong: #29b6f6;
-    --accent-soft: #b3e5fc;
-    /* Text */
-    --text-main: #0b1b2b;
-    --text-strong: #07121f;
-    --text-muted: #5f7d95;
-    --text-light: #ffffff;
-    /* Borders & Effects */
-    --border-soft: rgba(79, 195, 247, 0.35);
-    --border-glass: rgba(255,255,255,0.45);
-    --shadow-soft: 0 12px 30px rgba(7, 42, 90, 0.15);
-    --shadow-strong: 0 30px 70px rgba(7, 42, 90, 0.35);
-    --glow-accent: 0 0 25px rgba(79,195,247,0.6);
-}
-.register-page {
+﻿.register-page {
     min-height: 100vh;
     display: flex;
     justify-content: center;
