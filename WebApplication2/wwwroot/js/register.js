@@ -28,6 +28,7 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 // === Обработка сабмита формы на клиенте ===
+// === Обработка сабмита формы на клиенте ===
 form.addEventListener('submit', function (e) {
     e.preventDefault();
 
@@ -41,7 +42,10 @@ form.addEventListener('submit', function (e) {
 
     let hasError = false;
 
-    // === Проверки ===
+    // Регулярное выражение для поиска кириллицы
+    const cyrillicPattern = /[а-яё]/i;
+
+    // === Проверки на длину ===
     if (username.value.length < 8) {
         showError(username, 'Длина имени пользователя должна быть не менее 8 символов');
         hasError = true;
@@ -57,12 +61,25 @@ form.addEventListener('submit', function (e) {
         hasError = true;
     }
 
+    // === Проверка на кириллицу (только для логина и пароля) ===
+    if (cyrillicPattern.test(login.value)) {
+        showError(login, 'Логин может содержать только латинские символы');
+        hasError = true;
+    }
+
+    if (cyrillicPattern.test(password.value)) {
+        showError(password, 'Пароль не может содержать кириллицу');
+        hasError = true;
+    }
+
+    // === Проверка на совпадение паролей ===
     if (password.value !== confirm.value) {
         showError(confirm, 'Пароли не совпадают!');
         showError(password, 'Пароли не совпадают!');
         hasError = true;
     }
 
+    // === Проверка на пробелы ===
     if (login.value.includes(" ")) {
         showError(login, "Логин содержит пробелы");
         hasError = true;
