@@ -17,7 +17,8 @@ namespace WebApplication2.Migrations
                     Login = table.Column<string>(type: "TEXT", nullable: false),
                     Username = table.Column<string>(type: "TEXT", nullable: false),
                     Password = table.Column<string>(type: "TEXT", nullable: false),
-                    Avatar = table.Column<string>(type: "TEXT", nullable: true)
+                    Avatar = table.Column<string>(type: "TEXT", nullable: true),
+                    Role = table.Column<string>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {

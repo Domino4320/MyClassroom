@@ -125,6 +125,7 @@ body {
         left: 0;
     }
 
+
     /* Сбрасываем стандартный стиль ссылок внутри sidebar */
     .sidebar nav ul li a {
         display: block; /* чтобы ссылка занимала всю площадь li */
@@ -140,7 +141,6 @@ body {
     .sidebar nav ul li:hover a {
         color: var(--accent-main);
     }
-
 
     .sidebar nav ul {
         list-style: none;
@@ -208,53 +208,6 @@ body {
         color: var(--text-strong);
         margin-bottom: 1.4rem;
     }
-
-/* ========== CARDS ========== */
-.recommendations {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
-    gap: 1.6rem;
-}
-
-.card {
-    background: var(--surface-card);
-    border-radius: 20px;
-    padding: 1.5rem;
-    border: 1px solid var(--border-glass);
-    box-shadow: var(--shadow-soft);
-    position: relative;
-    overflow: hidden;
-    transition: all 0.45s ease;
-}
-
-    .card::before {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background: radial-gradient( circle at top right, rgba(79,195,247,0.25), transparent 60% );
-        opacity: 0;
-        transition: opacity 0.4s;
-    }
-
-    .card:hover::before {
-        opacity: 1;
-    }
-
-    .card:hover {
-        transform: translateY(-14px) scale(1.04);
-        box-shadow: var(--shadow-strong);
-    }
-
-    .card h3 {
-        color: var(--text-strong);
-        margin-bottom: 0.6rem;
-    }
-
-    .card p {
-        color: var(--text-muted);
-        line-height: 1.6;
-    }
-
 /* ========== FOOTER ========== */
 .footer {
     margin-top: auto;

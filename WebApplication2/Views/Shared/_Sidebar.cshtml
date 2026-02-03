@@ -1,0 +1,22 @@
+﻿@{
+    var username = Context.Session.GetString("Username");
+    var avatar = Context.Session.GetString("Avatar");
+    var login = Context.Session.GetString("Login");
+}
+
+<div class="sidebar" id="sidebar">
+    <div class="avatar">
+        <img src="@(string.IsNullOrEmpty(avatar) ? Url.Content("~/images/default_avatar.jpg") : avatar)" alt="avatar" id="sidebarAvatar">
+        <span>@(string.IsNullOrEmpty(username) ? "Гость" : username) </span>
+    </div>
+    <nav>
+        <ul>
+            <li><a href="@Url.Action("Index", "Home")">Главная</a></li>
+            <li><a href="@Url.Action("Index", "Courses")">Библиотека курсов</a></li>
+            <li>Тесты</li>
+            <li>Задания</li>
+            <li>Форум</li>
+            <li><a href="@Url.Action("Index", "BecomeTeacher")">Стать преподавателем</a></li>
+        </ul>
+    </nav>
+</div>

@@ -1,0 +1,100 @@
+﻿@{
+    ViewData["Title"] = "MyClassroom - Стать учителем";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="~/css/style_for_main_page.css" rel="stylesheet" />
+    <link href="~/css/teacher_form.css" rel="stylesheet" />
+</head>
+<body>
+
+    @await Html.PartialAsync("_Header")
+    @await Html.PartialAsync("_Sidebar")
+
+    <main class="main-content" id="mainContent">
+        <div class="teacher-registration-container">
+            <div class="form-glass-card">
+                <div class="form-header">
+                    <h1>Присоединяйтесь к команде</h1>
+                    <p>Поделитесь своими знаниями с тысячами студентов по всему миру</p>
+                </div>
+
+                <form action="@Url.Action("SubmitApplication", "BecomeTeacher")" method="post" class="teacher-form">
+                    <div class="form-grid">
+                        <div class="input-group">
+                            <label>Ваша специализация</label>
+                            <select name="SpecializationCategory" id="specializationSelect" required>
+                                <option value="" disabled selected>Выберите направление...</option>
+                                <option value="Frontend">Frontend разработка (HTML/CSS/JS)</option>
+                                <option value="Backend_CSharp">Backend разработка (.NET/C#)</option>
+                                <option value="Backend_Java">Backend разработка (Java/Spring)</option>
+                                <option value="Python">Python и Data Science</option>
+                                <option value="Mobile_iOS">Мобильная разработка (iOS/Swift)</option>
+                                <option value="Mobile_Android">Мобильная разработка (Android/Kotlin)</option>
+                                <option value="Design_UI">UI/UX Дизайн</option>
+                                <option value="Design_3D">3D Моделирование и анимация</option>
+                                <option value="DevOps">DevOps и облачные технологии</option>
+                                <option value="Cybersecurity">Кибербезопасность</option>
+                                <option value="GameDev">Разработка игр (Unity/Unreal)</option>
+                                <option value="QA">Тестирование ПО (QA)</option>
+                                <option value="Marketing">Цифровой маркетинг</option>
+                                <option value="ProjectManagement">Управление проектами</option>
+                                <option value="ForeignLanguages">Иностранные языки</option>
+                                <option value="Math">Высшая математика</option>
+                                <option value="Physics">Физика и электроника</option>
+                                <option value="Finance">Финансы и инвестиции</option>
+                                <option value="SoftSkills">Личная эффективность (Soft Skills)</option>
+                                <option value="Photography">Искусство фотографии</option>
+                                <option value="Other">Иное (указать свой вариант)</option>
+                            </select>
+                        </div>
+
+                        <div class="input-group" id="otherSpecializationGroup" style="display: none;">
+                            <label>Укажите вашу специализацию</label>
+                            <input type="text" name="CustomSpecialization" id="customSpecialization" placeholder="Например: Астрофизика">
+                        </div>
+
+                        <div class="input-group">
+                            <label>Опыт преподавания (лет)</label>
+                            <input type="number" name="Experience" min="0" placeholder="5" required>
+                        </div>
+
+                        <div class="input-group full-width">
+                            <label>Ссылка на портфолио или резюме</label>
+                            <input type="url" name="PortfolioUrl" placeholder="https://linkedin.com/in/yourprofile">
+                        </div>
+
+                        <div class="input-group full-width">
+                            <label>Расскажите о себе и ваших курсах</label>
+                            <textarea name="About" rows="4" placeholder="Краткое описание вашего профессионального пути..."></textarea>
+                        </div>
+                    </div>
+
+                    <div class="input-group full-width">
+                        <label>Дополнительная информация</label>
+                        <textarea name="ExtraInfo" rows="4" placeholder="Дополнительные сведения о вас..."></textarea>
+                    </div>
+
+                    <div class="form-footer">
+                        @* <label class="checkbox-container">
+                            <input type="checkbox" required>
+                            <span class="checkmark"></span>
+                            Я согласен с правилами платформы
+                        </label> *@
+
+                        <button type="submit" class="submit-btn">Отправить заявку</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    @await Html.PartialAsync("_Footer")
+    <script src="~/js/script_for_main_page.js"></script>
+    <script src="~/js/teacher_form.js"></script>
+</body>
+</html>

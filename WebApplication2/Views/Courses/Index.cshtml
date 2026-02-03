@@ -1,0 +1,28 @@
+﻿@{
+    ViewData["Title"] = "MyClassroom - Курсы";
+}
+@model IEnumerable<CourseCardModel>
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="~/css/style_for_main_page.css" rel="stylesheet" />
+    <link href="~/css/courses.css" rel="stylesheet" />
+
+    <title>Учебная платформа</title>
+</head>
+<body>
+
+    @await Html.PartialAsync("_Header")
+
+
+    @await Html.PartialAsync("_Sidebar")
+
+
+    @await Html.PartialAsync("_Footer")
+    <script src="~/js/script_for_main_page.js"></script>
+</body>
+</html>

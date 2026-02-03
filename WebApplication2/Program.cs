@@ -53,6 +53,10 @@ app.UseEndpoints(endpoints =>
         name: "authorization",
         pattern: "{controller=Authorization}/{action=Index}/{id?}"
     );
+    endpoints.MapControllerRoute(
+        name: "courses",
+        pattern: "{controller=Courses}/{action=Index}/{id?}"
+    );
 });
 
 app.Run();

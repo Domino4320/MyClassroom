@@ -1,8 +1,5 @@
 ﻿@{
     ViewData["Title"] = "MyClassroom - Главная страница";
-    var username = Context.Session.GetString("Username");
-    var avatar = Context.Session.GetString("Avatar");
-    var login = Context.Session.GetString("Login");
 }
 @model IEnumerable<CourseCardModel> 
 
@@ -19,45 +16,10 @@
 </head>
 <body>
 
-    <div class="header">
-        <div class="burger" onclick="toggleSidebar()">☰</div>
-        <div class="user-section">
-            @if (!string.IsNullOrEmpty(username))
-            {
-                <img src="@(string.IsNullOrEmpty(avatar) ? Url.Content("~/images/default_avatar.jpg") : avatar)" alt="avatar" id="headerAvatar" class="user-avatar" onclick="chooseAvatar()">
-                <div class="auth-buttons">
-                    <form method="post" asp-controller="Authorization" asp-action="Logout">
-                        <button type="submit">Выйти из аккаунта</button>
-                   </form>
-                </div>
-            }
-            else{
-                <img src="~/images/default_avatar.jpg" alt="avatar" id="headerAvatar" class="user-avatar">
-                <div class="auth-buttons">
-                    <button onclick="location.href='@Url.Action("Index", "Authorization")'">Войти</button>
-                    <button onclick="location.href='@Url.Action("Index", "Register")'">Зарегистрироваться</button>
-                </div>
-            }
-                </div>
-    </div>
+    @await Html.PartialAsync("_Header")
 
- 
-    <div class="sidebar" id="sidebar">
-        <div class="avatar">
-                <img src="@(string.IsNullOrEmpty(avatar) ? Url.Content("~/images/default_avatar.jpg") : avatar)" alt="avatar" id="sidebarAvatar">
-                <span>@(string.IsNullOrEmpty(username) ? "Гость" : username) </span>
-        </div>
-        <nav>
-            <ul>
-                <li>Главная</li>
-                <li>Мои курсы</li>
-                <li>Тесты</li>
-                <li>Задания</li>
-                <li>Форум</li>
-                <li>Настройки</li>
-            </ul>
-        </nav>
-    </div>
+
+    @await Html.PartialAsync("_Sidebar")
 
     <div class="main-content" id="mainContent">
         <h1>Рекомендованные курсы</h1>
@@ -69,11 +31,7 @@
         </div>
     </div>
 
-    <div class="footer">
-        &copy; 2026 Учебная платформа
-    </div>
-
-    <input type="file" id="avatarInput" accept="image/*" style="display:none">
+    @await Html.PartialAsync("_Footer")
     <script src="~/js/script_for_main_page.js"></script>
 
 </body>
