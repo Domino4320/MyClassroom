@@ -1,5 +1,6 @@
 ﻿@{
     ViewData["Title"] = "MyClassroom - Стать учителем";
+    var login = Context.Session.GetString("Login");
 }
 
 <!DOCTYPE html>
@@ -14,8 +15,8 @@
 
     @await Html.PartialAsync("_Header")
     @await Html.PartialAsync("_Sidebar")
-
     <main class="main-content" id="mainContent">
+        @if(login!=null){
         <div class="teacher-registration-container">
             <div class="form-glass-card">
                 <div class="form-header">
@@ -91,6 +92,10 @@
                 </form>
             </div>
         </div>
+        }
+        else{
+            @await Html.PartialAsync("_NotAuthorized");
+        }
     </main>
 
     @await Html.PartialAsync("_Footer")

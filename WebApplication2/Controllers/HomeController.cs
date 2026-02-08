@@ -24,15 +24,15 @@ namespace WebApplication2.Controllers
         {
             new CourseCardModel
             {
-                CourseName = "Введение в Frontend",
-                CourseTeacherName = "Алексей Петров",
+                CourseName = "пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ Frontend",
+                CourseTeacherName = "пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ",
                 CourseTeacherAvatar = "https://i.pravatar.cc/100?img=5",
                 CourseStudentsAmount = 18
             },
             new CourseCardModel
             {
-                CourseName = "Введение в Backend",
-                CourseTeacherName = "Иван Федоров",
+                CourseName = "пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ Backend",
+                CourseTeacherName = "пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ",
                 CourseTeacherAvatar = "https://i.pravatar.cc/100?img=6",
                 CourseStudentsAmount = 90
             }
@@ -53,16 +53,16 @@ namespace WebApplication2.Controllers
         }
 
         [HttpPost]
-        // Task - потому что асинхронный подход
+        // Task - пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
         public async Task<IActionResult> UploadAvatar(IFormFile Avatar)
         {
             if (Avatar == null || Avatar.Length == 0)
             {
-                return Json(new { error = "Файл не выбран" });
+                return Json(new { error = "пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ" });
             }
             var login = HttpContext.Session.GetString("Login");
             if (login == null || login == "") {
-                return Json(new { error = "Пользователь не найден" });
+                return Json(new { error = "пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ" });
             }
             var filename = $"{Guid.NewGuid()}{Path.GetExtension(Avatar.FileName)}";
             var directory = Path.Combine(_wwwroot.WebRootPath, "avatars");
@@ -81,9 +81,9 @@ namespace WebApplication2.Controllers
             }
             else
             {
-                return Json(new { error = "Пользователь не найден" });
+                return Json(new { error = "пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ" });
             }
             return Json(new { avatar = "/avatars/" + filename });
         }
-    }
+    } 
 }
