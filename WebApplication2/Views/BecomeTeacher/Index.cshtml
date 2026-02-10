@@ -158,7 +158,12 @@
 
                     <div class="input-group">
                         <label>Опыт преподавания (лет)</label>
-                        <input type="number" name="Experience" min="0" placeholder="5" required>
+                            <input type="number"
+                                   name="Experience"
+                                   min="0"
+                                   placeholder="5"
+                                   required
+                                   onkeydown="return event.keyCode !== 189 && event.keyCode !== 109;">
                     </div>
 
                         <div class="input-group full-width">

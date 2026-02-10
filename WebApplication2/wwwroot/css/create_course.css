@@ -1,0 +1,185 @@
+﻿:root {
+    --bg-light-blue: #f0f7ff; /* Тот самый светло-голубой фон */
+    --accent-blue: #3b82f6;
+    --text-dark: #1e293b;
+    --border-color: #d1e5ff;
+}
+
+/* Центрирование на весь экран */
+.page-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: var(--bg-light-blue); /* Фон страницы */
+    font-family: 'Inter', sans-serif;
+    padding: 20px;
+}
+
+/* Белая карточка */
+.course-registration-card {
+    width: 100%;
+    max-width: 580px;
+    background: #ffffff;
+    border-radius: 24px;
+    padding: 40px;
+    box-shadow: 0 15px 35px rgba(59, 130, 246, 0.08); /* Легкая синеватая тень */
+}
+
+/* Шапка регистрации */
+.header-content {
+    text-align: center;
+    margin-bottom: 35px;
+}
+
+.icon-circle {
+    width: 50px;
+    height: 50px;
+    background: var(--accent-blue);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 15px;
+    font-size: 20px;
+}
+
+.header-content h1 {
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--text-dark);
+    margin: 0;
+}
+
+.header-content p {
+    color: #64748b;
+    font-size: 14px;
+    margin-top: 5px;
+}
+
+/* Стили полей */
+.field-block {
+    margin-bottom: 20px;
+}
+
+    .field-block label {
+        display: block;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--text-dark);
+        margin-bottom: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+.input-with-icon {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+    .input-with-icon i {
+        position: absolute;
+        left: 15px;
+        color: #94a3b8;
+    }
+
+
+input, textarea, select {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1.5px solid var(--border-color);
+    border-radius: 12px;
+    font-size: 15px;
+    background: #ffffff;
+    transition: 0.2s ease;
+}
+
+    input:focus, textarea:focus, select:focus {
+        outline: none;
+        border-color: var(--accent-blue);
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+    }
+
+.dual-fields {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+/* Зона загрузки */
+.upload-box {
+    border: 2px dashed var(--border-color);
+    background: #f8fbff;
+    padding: 25px;
+    border-radius: 15px;
+    text-align: center;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+    .upload-box:hover {
+        background: #eff6ff;
+        border-color: var(--accent-blue);
+    }
+
+    .upload-box i {
+        font-size: 24px;
+        color: var(--accent-blue);
+        margin-bottom: 8px;
+    }
+
+/* Кнопки */
+.form-actions-row {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    margin-top: 30px;
+}
+
+.btn-submit-course {
+    background: var(--text-dark); /* Черная кнопка на синем фоне выглядит премиально */
+    color: white;
+    padding: 12px 25px;
+    border-radius: 10px;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+    .btn-submit-course:hover {
+        background: #000;
+        transform: translateY(-1px);
+    }
+
+.btn-ghost {
+    background: none;
+    border: none;
+    color: #64748b;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* Анимация */
+.animate-in {
+    animation: fadeInUp 0.5s ease;
+}
+
+.required_icon {
+    color: red;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+

@@ -31,6 +31,7 @@
   <ItemGroup>
     <_ContentIncludedByDefault Remove="Views\BecomeTeacher\Index.cshtml" />
     <_ContentIncludedByDefault Remove="Views\Courses\Index.cshtml" />
+    <_ContentIncludedByDefault Remove="Views\CreateCourse\Index.cshtml" />
     <_ContentIncludedByDefault Remove="Views\Shared\_Footer.cshtml" />
     <_ContentIncludedByDefault Remove="Views\Shared\_Sidebar.cshtml" />
   </ItemGroup>
@@ -45,6 +46,10 @@
 
   <ItemGroup>
     <UpToDateCheckInput Remove="Views\BecomeTeacher\Index.cshtml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <UpToDateCheckInput Remove="Views\CreateCourse\Index.cshtml" />
   </ItemGroup>
 
 </Project>

@@ -14,8 +14,7 @@
         <ul>
             <li><a href="@Url.Action("Index", "Home")">Главная</a></li>
             <li><a href="@Url.Action("Index", "Courses")">Библиотека курсов</a></li>
-            <li>Тесты</li>
-            <li>Задания</li>
+            <li>Активные курсы</li>
             <li>Форум</li>
             @if (role != "Teacher")
             {
@@ -24,6 +23,9 @@
             }
             else
             {
+                <li>
+                    <a href="">Мои курсы</a>
+                </li>
                 <li>
                     <a href="@Url.Action("GetProfileInfo", "TeacherAccount")">Личный кабинет преподавателя</a>
                 </li>

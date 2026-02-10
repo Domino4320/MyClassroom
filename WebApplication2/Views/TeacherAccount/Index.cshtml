@@ -25,9 +25,6 @@
         <aside class="side-panel">
             <div class="avatar-wrapper">
                 <img src="@(Model.User.Avatar ?? Url.Content("~/images/default_avatar.jpg"))" alt="Avatar" class="profile-img" id="mainAvatar">
-                <div class="edit-overlay" onclick="chooseAvatar()">
-                    <i class="fa-solid fa-camera"></i>
-                </div>
             </div>
 
             <h1 class="teacher-name">@Model.User.Username</h1>
@@ -47,6 +44,9 @@
                 <a href="@Model.TeacherInfo.PortfolioUrl" id="portfolioUrl" class="btn btn-primary">
                     <i class="fa-solid fa-briefcase"></i>Портфолио
                 </a>
+                    <a href="@Url.Action("Index", "CreateCourse")" class="btn btn-accent-outline">
+                        <i class="fa-solid fa-plus-circle"></i> Создать курс
+                    </a>
                 <i class="fa-solid fa-pen edit-icon" onclick="editField('PortfolioUrl')"></i>
             </div>
         </aside>
