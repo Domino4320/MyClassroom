@@ -12,6 +12,7 @@ body {
     color: var(--text-main);
     display: flex;
     flex-direction: column;
+    margin: 0;
 }
 
 /* ========== HEADER ========== */

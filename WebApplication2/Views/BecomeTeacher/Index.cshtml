@@ -1,105 +1,191 @@
 ﻿@{
+
     ViewData["Title"] = "MyClassroom - Стать учителем";
     var login = Context.Session.GetString("Login");
-}
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="~/css/style_for_main_page.css" rel="stylesheet" />
-    <link href="~/css/teacher_form.css" rel="stylesheet" />
-</head>
-<body>
+}
+<link rel="stylesheet" href="~/css/teacher_form.css" />
+<link rel="stylesheet" href="~/css/style_for_main_page.css" />
+<script src="~/js/script_for_main_page.js"></script>
+
+
 
     @await Html.PartialAsync("_Header")
+
+
     @await Html.PartialAsync("_Sidebar")
-    <main class="main-content" id="mainContent">
-        @if(login!=null){
-        <div class="teacher-registration-container">
-            <div class="form-glass-card">
-                <div class="form-header">
-                    <h1>Присоединяйтесь к команде</h1>
-                    <p>Поделитесь своими знаниями с тысячами студентов по всему миру</p>
-                </div>
 
-                <form action="@Url.Action("SubmitApplication", "BecomeTeacher")" method="post" class="teacher-form">
-                    <div class="form-grid">
-                        <div class="input-group">
-                            <label>Ваша специализация</label>
-                            <select name="SpecializationCategory" id="specializationSelect" required>
-                                <option value="" disabled selected>Выберите направление...</option>
-                                <option value="Frontend">Frontend разработка (HTML/CSS/JS)</option>
-                                <option value="Backend_CSharp">Backend разработка (.NET/C#)</option>
-                                <option value="Backend_Java">Backend разработка (Java/Spring)</option>
-                                <option value="Python">Python и Data Science</option>
-                                <option value="Mobile_iOS">Мобильная разработка (iOS/Swift)</option>
-                                <option value="Mobile_Android">Мобильная разработка (Android/Kotlin)</option>
-                                <option value="Design_UI">UI/UX Дизайн</option>
-                                <option value="Design_3D">3D Моделирование и анимация</option>
-                                <option value="DevOps">DevOps и облачные технологии</option>
+
+<main class="main-content" id="mainContent">
+    @if(login != null){
+    <div class="teacher-registration-container">
+        <div class="form-glass-card">
+            <div class="form-header">
+                <h1>Присоединяйтесь к команде</h1>
+                <p>Поделитесь своими знаниями с тысячами студентов по всему миру</p>
+            </div>
+
+            <form action="@Url.Action("SubmitApplication", "BecomeTeacher")" method="post" class="teacher-form" novalidate>
+                @Html.AntiForgeryToken() @* ДОБАВЬ ЭТУ СТРОКУ СЮДА *@
+                <div class="form-grid">
+                    <div class="input-group">
+                        <label>Ваша специализация</label>
+                        <select name="SpecializationCategory" id="specializationSelect" required>
+                            <option value="" disabled selected>Выберите направление...</option>
+                            
+                            <optgroup label="💻 IT и Разработка">
+                                <option value="Frontend">Frontend (React/Vue/Angular)</option>
+                                <option value="Backend_NET">Backend (.NET/C#)</option>
+                                <option value="Backend_Java">Backend (Java/Spring)</option>
+                                <option value="Python_Dev">Python разработка</option>
+                                <option value="NodeJS">Node.js / JavaScript Backend</option>
+                                <option value="Mobile_iOS">iOS разработка (Swift)</option>
+                                <option value="Mobile_Android">Android разработка (Kotlin)</option>
+                                <option value="DataScience">Data Science и Machine Learning</option>
                                 <option value="Cybersecurity">Кибербезопасность</option>
-                                <option value="GameDev">Разработка игр (Unity/Unreal)</option>
-                                <option value="QA">Тестирование ПО (QA)</option>
-                                <option value="Marketing">Цифровой маркетинг</option>
-                                <option value="ProjectManagement">Управление проектами</option>
-                                <option value="ForeignLanguages">Иностранные языки</option>
-                                <option value="Math">Высшая математика</option>
-                                <option value="Physics">Физика и электроника</option>
-                                <option value="Finance">Финансы и инвестиции</option>
-                                <option value="SoftSkills">Личная эффективность (Soft Skills)</option>
-                                <option value="Photography">Искусство фотографии</option>
-                                <option value="Other">Иное (указать свой вариант)</option>
-                            </select>
-                        </div>
+                                <option value="DevOps">DevOps и SRE</option>
+                                <option value="QA_Auto">Автоматизация тестирования</option>
+                                <option value="QA_Manual">Ручное тестирование</option>
+                                <option value="GameDev_Unity">GameDev (Unity)</option>
+                                <option value="GameDev_Unreal">GameDev (Unreal Engine)</option>
+                                <option value="Blockchain">Блокчейн и Смарт-контракты</option>
+                            </optgroup>
 
-                        <div class="input-group" id="otherSpecializationGroup" style="display: none;">
-                            <label>Укажите вашу специализацию</label>
-                            <input type="text" name="CustomSpecialization" id="customSpecialization" placeholder="Например: Астрофизика">
-                        </div>
+                            <optgroup label="🎨 Дизайн и Творчество">
+                                <option value="UIUX_Design">UI/UX Дизайн</option>
+                                <option value="GraphicDesign">Графический дизайн</option>
+                                <option value="WebDesign">Веб-дизайн</option>
+                                <option value="MotionDesign">Motion Design (After Effects)</option>
+                                <option value="3D_Modeling">3D Моделирование (Blender/Maya)</option>
+                                <option value="Illustration">Цифровая иллюстрация</option>
+                                <option value="InteriorDesign">Дизайн интерьеров</option>
+                                <option value="LandscapeDesign">Ландшафтный дизайн</option>
+                                <option value="FashionDesign">Дизайн одежды</option>
+                                <option value="Photography">Профессиональная фотография</option>
+                                <option value="VideoEditing">Монтаж видео (Premiere/Resolve)</option>
+                                <option value="Architecture">Архитектурное проектирование</option>
+                            </optgroup>
 
-                        <div class="input-group">
-                            <label>Опыт преподавания (лет)</label>
-                            <input type="number" name="Experience" min="0" placeholder="5" required>
-                        </div>
+                            <optgroup label="📊 Бизнес и Аналитика">
+                                <option value="ProductManagement">Product Management</option>
+                                <option value="ProjectManagement">Project Management (Agile/Scrum)</option>
+                                <option value="BusinessAnalysis">Бизнес-аналитика</option>
+                                <option value="SystemAnalysis">Системная аналитика</option>
+                                <option value="Marketing_Strategy">Маркетинговая стратегия</option>
+                                <option value="SEO">SEO оптимизация</option>
+                                <option value="ContextAds">Контекстная реклама</option>
+                                <option value="SMM">SMM и продвижение</option>
+                                <option value="Copywriting">Копирайтинг и Сторителлинг</option>
+                                <option value="PR">PR и связи с общественностью</option>
+                                <option value="E-commerce">Управление интернет-магазином</option>
+                            </optgroup>
 
-                        <div class="input-group full-width">
-                            <label>Ссылка на портфолио или резюме</label>
-                            <input type="url" name="PortfolioUrl" placeholder="https://linkedin.com/in/yourprofile">
-                        </div>
+                            <optgroup label="📈 Финансы и Право">
+                                <option value="Accounting">Бухгалтерский учет</option>
+                                <option value="FinancialAnalysis">Финансовый анализ</option>
+                                <option value="Investment">Инвестиции и Трейдинг</option>
+                                <option value="Taxes">Налогообложение</option>
+                                <option value="Law_Civil">Гражданское право</option>
+                                <option value="Law_IT">Право в сфере IT</option>
+                                <option value="Law_Business">Корпоративное право</option>
+                                <option value="CryptoFinance">Криптовалюты и DeFi</option>
+                            </optgroup>
 
-                        <div class="input-group full-width">
-                            <label>Расскажите о себе и ваших курсах</label>
-                            <textarea name="About" rows="4" placeholder="Краткое описание вашего профессионального пути..."></textarea>
-                        </div>
+                            <optgroup label="🌍 Языки и Лингвистика">
+                                <option value="English_General">Английский (общий)</option>
+                                <option value="English_Business">Английский для бизнеса</option>
+                                <option value="English_IT">Английский для IT</option>
+                                <option value="German">Немецкий язык</option>
+                                <option value="French">Французский язык</option>
+                                <option value="Spanish">Испанский язык</option>
+                                <option value="Chinese">Китайский язык</option>
+                                <option value="Japanese">Японский язык</option>
+                                <option value="Translation">Профессиональный перевод</option>
+                            </optgroup>
+
+                            <optgroup label="🧪 Наука и Образование">
+                                <option value="Math_Higher">Высшая математика</option>
+                                <option value="Physics">Физика</option>
+                                <option value="Chemistry">Химия</option>
+                                <option value="Biology">Биология</option>
+                                <option value="Geography">География</option>
+                                <option value="History">История</option>
+                                <option value="Philosophy">Философия</option>
+                                <option value="Psychology_General">Общая психология</option>
+                                <option value="Psychology_Child">Детская психология</option>
+                                <option value="Sociology">Социология</option>
+                            </optgroup>
+
+                            <optgroup label="🛠️ Техника и Ремесла">
+                                <option value="Robotics">Робототехника</option>
+                                <option value="Electronics">Электроника и схемотехника</option>
+                                <option value="Auto_Mechanics">Автомеханика</option>
+                                <option value="Carpentry">Столярное дело</option>
+                                <option value="Jewelry">Ювелирное искусство</option>
+                                <option value="Sewing">Кройка и шитье</option>
+                            </optgroup>
+
+                            <optgroup label="🍏 Здоровье и Спорт">
+                                <option value="Fitness_Trainer">Фитнес-тренер</option>
+                                <option value="Yoga">Йога и Пилатес</option>
+                                <option value="Nutrition">Нутрициология</option>
+                                <option value="Sports_Psychology">Спортивная психология</option>
+                                <option value="Meditation">Медитация и Mindfulness</option>
+                                <option value="First_Aid">Первая помощь</option>
+                            </optgroup>
+
+                            <optgroup label="💡 Soft Skills и Личная эффективность">
+                                <option value="PublicSpeaking">Ораторское мастерство</option>
+                                <option value="TimeManagement">Тайм-менеджмент</option>
+                                <option value="Leadership">Лидерство и управление командой</option>
+                                <option value="Negotiations">Переговоры и конфликты</option>
+                                <option value="Emotional_Intelligence">Эмоциональный интеллект</option>
+                                <option value="Career_Coaching">Карьерный коучинг</option>
+                            </optgroup>
+
+                            <optgroup label="🎸 Хобби и Лайфстайл">
+                                <option value="Cooking_Basic">Кулинария (базовая)</option>
+                                <option value="Pastry_Art">Кондитерское искусство</option>
+                                <option value="Music_Guitar">Игра на гитаре</option>
+                                <option value="Music_Piano">Игра на фортепиано</option>
+                                <option value="Vocals">Вокал</option>
+                                <option value="Drawing_Basic">Рисование (базовое)</option>
+                                <option value="Gardening">Садоводство</option>
+                                <option value="Chess">Шахматы</option>
+                            </optgroup>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Опыт преподавания (лет)</label>
+                        <input type="number" name="Experience" min="0" placeholder="5" required>
                     </div>
 
                     <div class="input-group full-width">
-                        <label>Дополнительная информация</label>
-                        <textarea name="ExtraInfo" rows="4" placeholder="Дополнительные сведения о вас..."></textarea>
+                        <label>Ссылка на портфолио или резюме</label>
+                        <input type="url" name="PortfolioUrl" placeholder="https://linkedin.com/in/yourprofile">
                     </div>
 
-                    <div class="form-footer">
-                        @* <label class="checkbox-container">
-                            <input type="checkbox" required>
-                            <span class="checkmark"></span>
-                            Я согласен с правилами платформы
-                        </label> *@
-
-                        <button type="submit" class="submit-btn">Отправить заявку</button>
+                    <div class="input-group full-width">
+                        <label>Расскажите о себе и ваших курсах</label>
+                        <textarea name="About" rows="4" placeholder="Краткое описание вашего пути..." required></textarea>
                     </div>
-                </form>
-            </div>
+                </div>
+
+                <div class="input-group full-width" style="margin-top: 1rem;">
+                    <label>Дополнительная информация</label>
+                    <textarea name="ExtraInfo" rows="4" placeholder="Дополнительные сведения..."></textarea>
+                </div>
+
+                <div class="form-footer">
+                    <button type="submit" class="submit-btn">Отправить заявку</button>
+                </div>
+            </form>
         </div>
-        }
-        else{
-            @await Html.PartialAsync("_NotAuthorized");
-        }
-    </main>
-
-    @await Html.PartialAsync("_Footer")
-    <script src="~/js/script_for_main_page.js"></script>
+    </div>
     <script src="~/js/teacher_form.js"></script>
-</body>
-</html>
+    }
+    else {
+        @await Html.PartialAsync("_NotAuthorized")
+    }
+</main>

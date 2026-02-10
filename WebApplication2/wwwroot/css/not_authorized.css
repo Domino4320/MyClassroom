@@ -1,9 +1,130 @@
-.error-message{
-    
+.auth-error-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 65vh;
+    padding: 40px;
+    overflow: hidden;
 }
 
-.error-message h1{
-    color: purple;
-    font-family: Tahoma;
-    font-size: 30pt;
+.auth-error-content {
+    text-align: center;
+    max-width: 480px;
+}
+
+/* Контейнер для иконки и эффекта пульсации */
+.auth-error-icon-wrapper {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    margin: 0 auto 30px;
+}
+
+.auth-error-icon {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    height: 100%;
+    background: #fff;
+    color: #ff4d4f;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 10px 30px rgba(255, 77, 79, 0.2);
+    /* Анимация легкого покачивания */
+    animation: lockShake 3s ease-in-out infinite;
+}
+
+    .auth-error-icon svg {
+        width: 45px;
+        height: 45px;
+    }
+
+/* Пульсирующий круг вокруг иконки */
+.icon-pulse {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #ff4d4f;
+    border-radius: 50%;
+    z-index: 1;
+    opacity: 0;
+    animation: ripple 2.5s infinite;
+}
+
+/* Анимация текста */
+.animate-text {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeInUp 0.6s forwards ease-out;
+}
+
+.animate-text-delay {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeInUp 0.6s forwards ease-out;
+    animation-delay: 0.2s; /* Текст появляется чуть позже заголовка */
+}
+
+.auth-error-status {
+    margin-top: 25px;
+    display: inline-block;
+    padding: 5px 15px;
+    background: #f0f0f0;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    color: #888;
+    opacity: 0;
+    animation: fadeInUp 0.6s forwards ease-out;
+    animation-delay: 0.4s;
+}
+
+/* Описание анимаций */
+
+/* 1. Появление снизу вверх */
+@keyframes fadeInUp {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 2. Пульсация (волны от иконки) */
+@keyframes ripple {
+    0% {
+        transform: scale(0.8);
+        opacity: 0.5;
+    }
+
+    100% {
+        transform: scale(1.8);
+        opacity: 0;
+    }
+}
+
+/* 3. Дрожание замка (имитация попытки открытия) */
+@keyframes lockShake {
+    0%, 90%, 100% {
+        transform: rotate(0);
+    }
+
+    92% {
+        transform: rotate(-8deg);
+    }
+
+    94% {
+        transform: rotate(8deg);
+    }
+
+    96% {
+        transform: rotate(-5deg);
+    }
+
+    98% {
+        transform: rotate(5deg);
+    }
 }

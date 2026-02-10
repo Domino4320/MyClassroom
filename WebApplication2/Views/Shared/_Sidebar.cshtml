@@ -2,6 +2,7 @@
     var username = Context.Session.GetString("Username");
     var avatar = Context.Session.GetString("Avatar");
     var login = Context.Session.GetString("Login");
+    var role = Context.Session.GetString("Role");
 }
 
 <div class="sidebar" id="sidebar">
@@ -16,7 +17,11 @@
             <li>Тесты</li>
             <li>Задания</li>
             <li>Форум</li>
-            <li><a href="@Url.Action("Index", "BecomeTeacher")">Стать преподавателем</a></li>
+            @if (role != "Teacher")
+            {
+                <li><a href="@Url.Action("Index", "BecomeTeacher")
+                    ">Стать преподавателем</a></li>
+            }
         </ul>
     </nav>
 </div>

@@ -171,3 +171,25 @@
         transform: translateY(0);
     }
 }
+
+/* В teacher_form.css */
+.input-group label.required-field::after {
+    content: " *";
+    color: #ff4d4f; /* Красный цвет для звездочки */
+    font-weight: bold;
+}
+
+/* Стили для валидации (подсветка ошибок) */
+.input-group input.error,
+.input-group select.error,
+.input-group textarea.error {
+    border-color: #ff4d4f !important;
+    box-shadow: 0 0 5px rgba(255, 77, 79, 0.3) !important;
+}
+
+.error-message {
+    color: #ff4d4f;
+    font-size: 0.8rem;
+    margin-top: 5px;
+    display: block;
+}
