@@ -39,6 +39,7 @@ namespace WebApplication2.Controllers
             HttpContext.Session.SetString("Role", user.Role);
             HttpContext.Session.SetString("Avatar", user?.Avatar ?? "");
 
+
             return RedirectToAction("Index", "Home");
         }
 

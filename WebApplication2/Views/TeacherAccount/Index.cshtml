@@ -1,0 +1,105 @@
+﻿@model ProfileViewModel
+
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Личный кабинет преподавателя</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="~/css/teacher_account.css">
+    <link href="~/css/style_for_main_page.css" rel="stylesheet" />
+    <script src="~/js/script_for_main_page.js"></script>
+    <script src="~/js/teacher_account.js"></script>
+</head>
+<body>
+    @await Html.PartialAsync("_Header");
+    @await Html.PartialAsync("_Sidebar");
+    <div class="main-gradient-bg"></div>
+
+<div class="container">
+    <div class="profile-layout">
+
+        <aside class="side-panel">
+            <div class="avatar-wrapper">
+                <img src="@(Model.User.Avatar ?? Url.Content("~/images/default_avatar.jpg"))" alt="Avatar" class="profile-img" id="mainAvatar">
+                <div class="edit-overlay" onclick="chooseAvatar()">
+                    <i class="fa-solid fa-camera"></i>
+                </div>
+            </div>
+
+            <h1 class="teacher-name">@Model.User.Username</h1>
+            
+            <div class="editable-group">
+                <p class="tagline" id="currentJobText">@Model.TeacherInfo.CurrentJob</p>
+                <i class="fa-solid fa-pen edit-icon" onclick="editField('CurrentJob')"></i>
+            </div>
+
+            <div class="experience-badge">
+                <i class="fa-solid fa-award"></i>
+                <span id="experienceText">@Model.TeacherInfo.Experience</span> лет опыта
+                <i class="fa-solid fa-pen edit-icon" onclick="editField('Experience')"></i>
+            </div>
+
+            <div class="action-buttons">
+                <a href="@Model.TeacherInfo.PortfolioUrl" id="portfolioUrl" class="btn btn-primary">
+                    <i class="fa-solid fa-briefcase"></i>Портфолио
+                </a>
+                <i class="fa-solid fa-pen edit-icon" onclick="editField('PortfolioUrl')"></i>
+            </div>
+        </aside>
+
+        <main class="content-area">
+            <section class="glass-card animate-fade-in">
+                <div class="section-header">
+                    <h2 class="section-title"><i class="fa-solid fa-user-tie"></i> Обо мне</h2>
+                    <i class="fa-solid fa-pen edit-icon" onclick="editField('About')"></i>
+                </div>
+                <p class="description" id="aboutText">@Model.TeacherInfo.About</p>
+                
+                <div class="section-header">
+                    <span class="tag-title">Теги (через запятую):</span>
+                    <i class="fa-solid fa-pen edit-icon" onclick="editField('TeacherTags')"></i>
+                </div>
+                <div class="skills-tags" id="tagsContainer">
+                    @foreach (var tag in Model.TeacherInfo.TeacherTags.Split(","))
+                    {
+                        <span class="tag">@tag</span>
+                    }
+                </div>
+            </section>
+
+            <section class="glass-card animate-fade-in delay-2">
+                <div class="section-header">
+                    <h2 class="section-title"><i class="fa-solid fa-rocket"></i> Дополнительная информация</h2>
+                    <i class="fa-solid fa-pen edit-icon" onclick="editField('ExtraInfo')"></i>
+                </div>
+                <div class="extra-info-list" id="extraInfoText">
+                    @Model.TeacherInfo.ExtraInfo
+                </div>
+            </section>
+        </main>
+    </div>
+</div>
+
+    <div id="editModal" class="modal">
+        <div class="modal-content glass-card">
+            <h3>Редактировать данные</h3>
+            <input type="hidden" id="editFieldName">
+
+            <div id="inputContainer">
+            </div>
+
+            <div id="fieldError" class="error-text" style="display: none; color: #ff4d4d; font-size: 0.85rem; margin-top: 5px; margin-bottom: 10px; padding: 5px; background: rgba(255, 77, 77, 0.1); border-radius: 5px;"></div>
+
+            <div class="modal-buttons">
+                <button class="btn btn-outline" onclick="closeModal()">Отмена</button>
+                <button id="saveBtn" class="btn btn-primary" onclick="saveChanges()">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

@@ -1,26 +1,29 @@
-﻿namespace WebApplication2.Models
+﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations;
+
+public class TeacherProfile
 {
-    using System.ComponentModel.DataAnnotations;
-    using System.ComponentModel.DataAnnotations.Schema;
+    [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.None)]
+    public string UserLogin { get; set; }
 
-    public class TeacherProfile
-    {
-        [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.None)] // Ключ не создается базой, мы передаем его сами
-        public string UserLogin { get; set; }
+    [Required]
+    public string SpecializationCategory { get; set; }
 
-        [Required]
-        public string SpecializationCategory { get; set; }
+    [Required]
+    public int Experience { get; set; }
 
-        [Required]
-        public int Experience { get; set; }
+    // Новое поле: Текущая должность
+    [Required]
+    public string CurrentJob { get; set; }
 
-        public string? PortfolioUrl { get; set; }
+    // Новое поле: Теги (храним как строку через запятую)
+    public string? TeacherTags { get; set; }
 
-        [Required]
-        public string About { get; set; }
+    public string? PortfolioUrl { get; set; }
 
-        public string? ExtraInfo { get; set; }
+    [Required]
+    public string About { get; set; }
 
-    }
+    public string? ExtraInfo { get; set; }
 }

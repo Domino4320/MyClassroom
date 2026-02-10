@@ -26,7 +26,7 @@
             </div>
 
             <form action="@Url.Action("SubmitApplication", "BecomeTeacher")" method="post" class="teacher-form" novalidate>
-                @Html.AntiForgeryToken() @* ДОБАВЬ ЭТУ СТРОКУ СЮДА *@
+                @Html.AntiForgeryToken() 
                 <div class="form-grid">
                     <div class="input-group">
                         <label>Ваша специализация</label>
@@ -160,6 +160,20 @@
                         <label>Опыт преподавания (лет)</label>
                         <input type="number" name="Experience" min="0" placeholder="5" required>
                     </div>
+
+                        <div class="input-group full-width">
+                            <label>Текущая должность / Место работы</label>
+                            <input type="text" name="CurrentJob" placeholder="Например: Senior Backend Developer в Яндекс" required>
+                        </div>
+
+                        <div class="input-group full-width">
+                            <label>Ваши ключевые навыки (через запятую или Enter)</label>
+                            <div class="tags-input-container" id="tagsContainer">
+                                <input type="text" id="tagInput" placeholder="Например: Python, Figma, React...">
+                            </div>
+                            <input type="hidden" name="TeacherTags" id="hiddenTagsInput">
+                            <small class="input-hint">Эти теги будут отображаться в вашем профиле</small>
+                        </div>
 
                     <div class="input-group full-width">
                         <label>Ссылка на портфолио или резюме</label>

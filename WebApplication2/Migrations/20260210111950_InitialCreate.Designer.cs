@@ -10,8 +10,8 @@ using WebApplication2.Data;
 namespace WebApplication2.Migrations
 {
     [DbContext(typeof(ApplicationDBContext))]
-    [Migration("20260210072724_AddTeacherProfileTable")]
-    partial class AddTeacherProfileTable
+    [Migration("20260210111950_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -19,12 +19,16 @@ namespace WebApplication2.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.0");
 
-            modelBuilder.Entity("WebApplication2.Models.TeacherProfile", b =>
+            modelBuilder.Entity("TeacherProfile", b =>
                 {
                     b.Property<string>("UserLogin")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("About")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CurrentJob")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
@@ -39,6 +43,9 @@ namespace WebApplication2.Migrations
 
                     b.Property<string>("SpecializationCategory")
                         .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TeacherTags")
                         .HasColumnType("TEXT");
 
                     b.HasKey("UserLogin");
@@ -71,11 +78,11 @@ namespace WebApplication2.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("WebApplication2.Models.TeacherProfile", b =>
+            modelBuilder.Entity("TeacherProfile", b =>
                 {
                     b.HasOne("WebApplication2.Models.UserModel", null)
                         .WithOne()
-                        .HasForeignKey("WebApplication2.Models.TeacherProfile", "UserLogin")
+                        .HasForeignKey("TeacherProfile", "UserLogin")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

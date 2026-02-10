@@ -22,6 +22,12 @@
                 <li><a href="@Url.Action("Index", "BecomeTeacher")
                     ">Стать преподавателем</a></li>
             }
+            else
+            {
+                <li>
+                    <a href="@Url.Action("GetProfileInfo", "TeacherAccount")">Личный кабинет преподавателя</a>
+                </li>
+            }
         </ul>
     </nav>
 </div>

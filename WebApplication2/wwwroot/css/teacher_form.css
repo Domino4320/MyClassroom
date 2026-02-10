@@ -1,195 +1,213 @@
-﻿/* ========== TEACHER FORM STYLES ========== */
+﻿/* ========== ОБНОВЛЕННЫЙ ТИПОГРАФИЧЕСКИЙ И ЦВЕТОВОЙ СТЕК ========== */
+:root {
+    --accent-main: #4fc3f7; /* Твой основной голубой */
+    --accent-strong: #0288d1;
+    --bg-dark: #1e293b;
+    --text-main: #334155;
+    --text-muted: #64748b;
+    --text-strong: #0f172a;
+    --border-soft: #e2e8f0;
+    --border-focus: #4fc3f7;
+    --surface-card: #ffffff;
+    --input-bg: #f8fafc;
+}
 
+/* ========== КОНТЕЙНЕР ========== */
 .teacher-registration-container {
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 2rem 0;
-    min-height: calc(100vh - 200px);
+    padding: 3rem 1rem;
+    min-height: 100vh;
 }
 
+/* ========== КАРТОЧКА ФОРМЫ ========== */
 .form-glass-card {
     background: var(--surface-card);
-    backdrop-filter: blur(10px);
-    border: 1px solid var(--border-glass);
-    border-radius: 30px;
-    padding: 3rem;
+    border: 1px solid var(--border-soft);
+    border-radius: 32px;
+    padding: 3.5rem;
     width: 100%;
-    max-width: 800px;
-    box-shadow: var(--shadow-strong);
+    max-width: 850px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
     position: relative;
-    overflow: hidden;
 }
-
-    /* Эффект свечения как на карточках */
-    .form-glass-card::before {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background: radial-gradient(circle at top right, rgba(79,195,247,0.15), transparent 50%);
-        pointer-events: none;
-    }
 
 .form-header {
     text-align: center;
-    margin-bottom: 2.5rem;
+    margin-bottom: 3rem;
 }
 
     .form-header h1 {
-        font-size: 2.2rem;
-        background: linear-gradient(90deg, var(--bg-dark), var(--accent-strong));
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        margin-bottom: 0.5rem;
+        font-size: 2.4rem;
+        font-weight: 800;
+        color: var(--bg-dark);
+        margin-bottom: 0.75rem;
+        letter-spacing: -0.5px;
     }
 
     .form-header p {
         color: var(--text-muted);
+        font-size: 1rem;
     }
 
+/* ========== СЕТКА ПОЛЕЙ ========== */
 .form-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 1.5rem;
+    gap: 1.8rem;
+    margin-bottom: 1.5rem;
 }
 
-.input-group.full-width {
-    grid-column: span 2;
-}
-
-.input-group label {
-    display: block;
-    margin-bottom: 0.6rem;
-    font-weight: 600;
-    color: var(--text-strong);
-    font-size: 0.9rem;
-}
-
-.input-group input,
-.input-group textarea {
-    width: 100%;
-    padding: 0.9rem 1.2rem;
-    border-radius: 12px;
-    border: 1px solid var(--border-soft);
-    background: rgba(255, 255, 255, 0.5);
-    transition: all 0.3s ease;
-    outline: none;
-}
-
-    .input-group input:focus,
-    .input-group textarea:focus {
-        border-color: var(--accent-main);
-        background: #ffffff;
-        box-shadow: 0 0 0 4px rgba(79, 195, 247, 0.1);
-    }
-
-.form-footer {
-    margin-top: 2rem;
+.input-group {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 1.5rem;
 }
 
-/* Кнопка в вашем стиле */
+    .input-group.full-width {
+        grid-column: 1 / -1;
+    }
+
+    .input-group label {
+        margin-bottom: 0.6rem;
+        font-weight: 700;
+        color: var(--text-strong);
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* ========== ПОЛЯ ВВОДА (RAMKI И СТИЛЬ) ========== */
+    .input-group input,
+    .input-group textarea,
+    .input-group select,
+    .tags-input-container {
+        width: 100%;
+        padding: 0.9rem 1.2rem;
+        border-radius: 12px;
+        border: 1.5px solid var(--border-soft); /* Четкая рамка */
+        background: var(--input-bg);
+        color: var(--text-main);
+        font-size: 0.95rem;
+        transition: all 0.25s ease;
+        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05); /* Внутренняя тень для глубины */
+    }
+
+        /* Эффект при наведении */
+        .input-group input:hover,
+        .input-group select:hover,
+        .tags-input-container:hover {
+            border-color: #cbd5e1;
+        }
+
+        /* Эффект при клике (FOCUS) */
+        .input-group input:focus,
+        .input-group textarea:focus,
+        .input-group select:focus,
+        .tags-input-container:focus-within {
+            outline: none;
+            border-color: var(--accent-main);
+            background: #ffffff;
+            box-shadow: 0 0 0 4px rgba(79, 195, 247, 0.12), inset 0 1px 2px rgba(0, 0, 0, 0.02);
+            transform: translateY(-1px);
+        }
+
+/* ========== СПЕЦИАЛЬНОЕ ДЛЯ ТЕГОВ ========== */
+.tags-input-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-height: 52px;
+    align-items: center;
+}
+
+    .tags-input-container input {
+        border: none !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        flex: 1;
+        min-width: 120px;
+        transform: none !important;
+    }
+
+.tag-item {
+    background: var(--bg-dark);
+    color: #ffffff;
+    padding: 4px 10px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+    .tag-item span {
+        cursor: pointer;
+        opacity: 0.7;
+    }
+
+        .tag-item span:hover {
+            opacity: 1;
+        }
+
+/* ========== КНОПКА ОТПРАВКИ ========== */
+.form-footer {
+    margin-top: 3rem;
+    text-align: center;
+}
+
 .submit-btn {
     background: var(--bg-dark);
-    color: var(--text-light);
-    border: 1px solid var(--accent-main);
-    padding: 1rem 3rem;
-    border-radius: 999px;
+    color: white;
+    border: none;
+    padding: 1.1rem 4rem;
+    border-radius: 16px;
     font-size: 1.1rem;
-    font-weight: 600;
+    font-weight: 700;
     cursor: pointer;
-    transition: all 0.4s ease;
+    transition: all 0.3s ease;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
 
     .submit-btn:hover {
-        background: var(--accent-main);
-        color: var(--bg-dark);
-        box-shadow: var(--glow-accent);
+        background: var(--accent-strong);
         transform: translateY(-3px);
+        box-shadow: 0 20px 25px -5px rgba(79, 195, 247, 0.2);
     }
 
-/* Стилизация чекбокса */
-.checkbox-container {
-    display: flex;
-    align-items: center;
-    gap: 0.8rem;
-    cursor: pointer;
-    color: var(--text-muted);
-    font-size: 0.9rem;
-}
-
-@media (max-width: 600px) {
-    .form-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .input-group.full-width {
-        grid-column: span 1;
-    }
-}
-
-
-/* Стилизация комбобокса */
-.input-group select {
-    width: 100%;
-    padding: 0.9rem 1.2rem;
-    border-radius: 12px;
-    border: 1px solid var(--border-soft);
-    background: rgba(255, 255, 255, 0.7);
-    color: var(--text-main);
-    appearance: none; /* Убираем стандартную стрелку в некоторых браузерах */
-    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-    background-repeat: no-repeat;
-    background-position: right 1rem center;
-    background-size: 1em;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-    .input-group select:focus {
-        border-color: var(--accent-main);
-        background-color: #ffffff;
-        box-shadow: 0 0 0 4px rgba(79, 195, 247, 0.1);
-    }
-
-/* Анимация появления поля "Иное" */
-#otherSpecializationGroup {
-    animation: fadeIn 0.4s ease forwards;
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* В teacher_form.css */
+/* ========== ВАЛИДАЦИЯ И ОШИБКИ ========== */
 .input-group label.required-field::after {
     content: " *";
-    color: #ff4d4f; /* Красный цвет для звездочки */
-    font-weight: bold;
+    color: #ef4444;
 }
 
-/* Стили для валидации (подсветка ошибок) */
 .input-group input.error,
-.input-group select.error,
 .input-group textarea.error {
-    border-color: #ff4d4f !important;
-    box-shadow: 0 0 5px rgba(255, 77, 79, 0.3) !important;
+    border-color: #ef4444 !important;
+    background: #fef2f2;
 }
 
 .error-message {
-    color: #ff4d4f;
+    color: #ef4444;
     font-size: 0.8rem;
-    margin-top: 5px;
-    display: block;
+    margin-top: 0.4rem;
+    font-weight: 600;
+}
+
+/* ========== АДАПТИВНОСТЬ ========== */
+@media (max-width: 768px) {
+    .form-glass-card {
+        padding: 2rem;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+        gap: 1.2rem;
+    }
+
+    .form-header h1 {
+        font-size: 1.8rem;
+    }
 }

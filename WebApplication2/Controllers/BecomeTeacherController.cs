@@ -18,12 +18,6 @@ namespace WebApplication2.Controllers
         [HttpGet]
         public IActionResult Index()
         {
-            var login = HttpContext.Session.GetString("Login");
-            if (string.IsNullOrEmpty(login))
-            {
-                return RedirectToAction("Login", "Account");
-            }
-
             return View();
         }
 
@@ -32,11 +26,6 @@ namespace WebApplication2.Controllers
         public async Task<IActionResult> SubmitApplication(TeacherProfile profile)
         {
             var loginFromSession = HttpContext.Session.GetString("Login");
-
-            if (string.IsNullOrEmpty(loginFromSession))
-            {
-                return RedirectToAction("Login", "Account");
-            }
 
             // Присваиваем логин
             profile.UserLogin = loginFromSession;
