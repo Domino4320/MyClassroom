@@ -1,240 +1,77 @@
-﻿/* ========== RESET ========== */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: 'Segoe UI', system-ui, sans-serif;
+﻿/* Убираем лишние отступы и растягиваем базу */
+body {
+    height: 100%;
+    background: var(--bg-page);
 }
 
-body {
+/* ========== ОБЩАЯ СТРУКТУРА ========== */
+.main-layout {
+    display: flex;
     min-height: 100vh;
-    background: var(--bg-page);
-    color: var(--text-main);
+    width: 100%;
+
+}
+
+.content-area {
+    flex: 1;
     display: flex;
     flex-direction: column;
-    margin: 0;
-}
-
-/* ========== HEADER ========== */
-.header {
-    position: fixed;
-    top: 0;
     width: 100%;
-    z-index: 1000;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.75rem 1.5rem;
-    background: linear-gradient( 90deg, #06172d, #0b2f5f );
-    border-bottom: 1px solid var(--border-soft);
-    box-shadow: var(--shadow-soft);
-    backdrop-filter: blur(14px);
-}
-
-    .header .burger {
-        font-size: 1.8rem;
-        color: var(--accent-soft);
-        cursor: pointer;
-        transition: transform 0.4s ease, color 0.3s ease;
-    }
-
-        .header .burger:hover {
-            color: var(--accent-main);
-            transform: rotate(180deg) scale(1.15);
-        }
-
-    .header .user-section {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-    }
-
-    /* Buttons */
-    .header .auth-buttons button {
-        background: transparent;
-        border: 1px solid var(--accent-main);
-        color: var(--text-light);
-        padding: 0.4rem 1rem;
-        border-radius: 999px;
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
-
-        .header .auth-buttons button:hover {
-            background: var(--accent-main);
-            color: var(--bg-dark);
-            box-shadow: var(--glow-accent);
-        }
-
-    /* Avatar */
-    .header .user-avatar {
-        width: 42px;
-        height: 42px;
-        border-radius: 50%;
-        border: 2px solid var(--accent-main);
-        transition: all 0.4s ease;
-    }
-
-        .header .user-avatar:hover {
-            transform: scale(1.15);
-            box-shadow: var(--glow-accent);
-        }
-
-/* ========== SIDEBAR ========== */
-.sidebar {
-    position: fixed;
-    top: 0;
-    left: -280px;
-    width: 280px;
-    height: 100%;
-    z-index: 999;
-    background: linear-gradient( 180deg, #06172d, #0a2447 );
-    padding-top: 80px;
-    transition: left 0.45s ease;
-    border-right: 1px solid var(--border-soft);
-}
-
-    .sidebar.open {
-        left: 0;
-    }
-
-    /* Сбрасываем стандартный стиль ссылок внутри sidebar */
-    .sidebar nav ul li a {
-        display: block; /* чтобы ссылка занимала всю площадь li */
-        color: inherit; /* наследуем цвет li */
-        text-decoration: none; /* убираем подчеркивание */
-        width: 100%; /* на всякий случай */
-        height: 100%;
-        padding: 0; /* padding уже у li */
-        transition: color 0.3s ease; /* плавная смена цвета */
-    }
-
-    /* При наведении на li ссылка тоже меняет цвет */
-    .sidebar nav ul li:hover a {
-        color: var(--accent-main);
-    }
-
-
-    .sidebar nav ul {
-        list-style: none;
-    }
-
-        .sidebar nav ul li {
-            padding: 1.1rem 1.5rem;
-            color: #cfe9ff;
-            font-weight: 500;
-            cursor: pointer;
-            position: relative;
-            transition: all 0.3s ease;
-        }
-
-            .sidebar nav ul li::after {
-                content: '';
-                position: absolute;
-                left: 1.2rem;
-                bottom: 0.4rem;
-                width: 0;
-                height: 2px;
-                background: var(--accent-main);
-                transition: width 0.3s;
-            }
-
-            .sidebar nav ul li:hover {
-                color: var(--accent-main);
-                background: rgba(79,195,247,0.08);
-            }
-
-                .sidebar nav ul li:hover::after {
-                    width: 40%;
-                }
-
-    /* Sidebar avatar */
-    .sidebar .avatar {
-        display: flex;
-        align-items: center;
-        gap: 0.9rem;
-        padding: 1.4rem;
-        border-bottom: 1px solid var(--border-soft);
-        color: #ffffff;
-    }
-
-        .sidebar .avatar img {
-            width: 46px;
-            height: 46px;
-            border-radius: 50%;
-            border: 2px solid var(--accent-main);
-        }
-
-/* ========== MAIN CONTENT ========== */
-.main-content {
-    margin-top: 80px;
-    padding: 1.8rem;
     transition: margin-left 0.45s ease;
 }
 
-    .main-content.shift {
-        margin-left: 280px;
-    }
+/* ========== MAIN CONTENT ========== */
+.main-content {
+    margin-top: 70px; /* Отступ под фиксированный хедер */
+    padding: 2rem;
+    min-height: calc(100vh - 70px);
+}
 
-    .main-content h1 {
-        font-size: 1.8rem;
-        color: var(--text-strong);
-        margin-bottom: 1.4rem;
-    }
+/* Если сайдбар открыт, сдвигаем контент (добавляется через JS) */
+.content-area.shift {
+    margin-left: 280px;
+}
 
-/* ========== CARDS ========== */
-.recommendations {
+/* ========== СЕТКА КУРСОВ (GRID) ========== */
+.courses-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
-    gap: 1.6rem;
+    /* repeat(auto-fill) заполнит весь ряд карточками. 
+       minmax(320px, 1fr) говорит: карточка не меньше 320px, 
+       но если есть место — растяни её. */
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 2rem;
+    justify-items: center; /* Центрируем карточки в ячейках */
+    align-items: start;
 }
 
-.card {
-    background: var(--surface-card);
-    border-radius: 20px;
-    padding: 1.5rem;
-    border: 1px solid var(--border-glass);
-    box-shadow: var(--shadow-soft);
-    position: relative;
-    overflow: hidden;
-    transition: all 0.45s ease;
+/* Адаптивность для мобилок */
+@media (max-width: 480px) {
+    .courses-grid {
+        grid-template-columns: 1fr; /* На мобилках строго по одной в ряд */
+        gap: 1.5rem;
+        padding: 0.5rem;
+    }
+
+    .main-content {
+        padding: 1rem;
+    }
 }
 
-    .card::before {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background: radial-gradient( circle at top right, rgba(79,195,247,0.25), transparent 60% );
-        opacity: 0;
-        transition: opacity 0.4s;
-    }
-
-    .card:hover::before {
-        opacity: 1;
-    }
-
-    .card:hover {
-        transform: translateY(-14px) scale(1.04);
-        box-shadow: var(--shadow-strong);
-    }
-
-    .card h3 {
-        color: var(--text-strong);
-        margin-bottom: 0.6rem;
-    }
-
-    .card p {
-        color: var(--text-muted);
-        line-height: 1.6;
-    }
-
-/* ========== FOOTER ========== */
-.footer {
-    margin-top: auto;
-    padding: 1.2rem;
+/* ========== ПУСТОЕ СОСТОЯНИЕ ========== */
+.empty-state {
+    grid-column: 1 / -1; /* Растягиваем на всю ширину сетки */
     text-align: center;
-    color: #e3f2ff;
-    background: linear-gradient(90deg, #06172d, #0b2f5f);
-    border-top: 1px solid var(--border-soft);
+    padding: 4rem 2rem;
+    color: #607d8b;
 }
+
+    .empty-state i {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        display: block;
+        color: rgba(79, 195, 247, 0.3);
+    }
+
+    .empty-state p {
+        font-size: 1.2rem;
+    }

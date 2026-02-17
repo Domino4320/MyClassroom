@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
 using WebApplication2.Data;
 using WebApplication2.Models;
@@ -18,27 +19,45 @@ namespace WebApplication2.Controllers
             _db = db;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            var courses = new List<CourseCardModel>
-        {
-            new CourseCardModel
-            {
-                CourseName = "�������� � Frontend",
-                CourseTeacherName = "������� ������",
-                CourseTeacherAvatar = "https://i.pravatar.cc/100?img=5",
-                CourseStudentsAmount = 18
-            },
-            new CourseCardModel
-            {
-                CourseName = "�������� � Backend",
-                CourseTeacherName = "���� �������",
-                CourseTeacherAvatar = "https://i.pravatar.cc/100?img=6",
-                CourseStudentsAmount = 90
-            }
-        };
 
-            return View(courses);
+            // --- БЛОК ДИАГНОСТИКИ ---
+            var rawCourses = await _db.Courses.ToListAsync();
+            var rawUsers = await _db.Users.ToListAsync();
+
+            Console.WriteLine("=== ПРОВЕРКА ДАННЫХ БД ===");
+            Console.WriteLine($"Курсов в базе: {rawCourses.Count}");
+            foreach (var c in rawCourses)
+            {
+                Console.WriteLine($"Курс: {c.Title} | AuthorLogin в базе: '{c.AuthorLogin}'");
+            }
+
+            Console.WriteLine($"Пользователей в базе: {rawUsers.Count}");
+            foreach (var u in rawUsers)
+            {
+                Console.WriteLine($"User Login: '{u.Login}' | Username: {u.Username}");
+            }
+            Console.WriteLine("==========================");
+            // --- КОНЕЦ БЛОКА ДИАГНОСТИКИ ---с
+            // Соединяем таблицу Courses и Users
+            var query = from course in _db.Courses
+                        join user in _db.Users on course.AuthorLogin equals user.Login
+                        select new CourseCardModel
+                        {
+                            Id = course.Id,
+                            Title = course.Title,
+                            Description = course.Description,
+                            Category = course.Category,
+                            CoverImagePath = course.CoverImagePath,
+                            CreatedAt = course.CreatedAt,
+                            // Берем данные из найденного пользователя:
+                            AuthorUsername = user.Username,
+                            AuthorAvatar = user.Avatar
+                        };
+
+            var list = await query.ToListAsync();
+            return View(list); // Передаем список CourseCardModel в View
         }
 
         public IActionResult Privacy()
@@ -53,7 +72,6 @@ namespace WebApplication2.Controllers
         }
 
         [HttpPost]
-        // Task - ������ ��� ����������� ������
         public async Task<IActionResult> UploadAvatar(IFormFile Avatar)
         {
             if (Avatar == null || Avatar.Length == 0)

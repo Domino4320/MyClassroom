@@ -1,39 +1,252 @@
-﻿
+﻿@model WebApplication2.Models.CourseCardModel
+
+<style>
+    /* 1. БАЗОВЫЙ ШРИФТ ДЛЯ ИКОНОК (КРИТИЧЕСКИ ВАЖНО) */
+    /* Это гарантирует, что теги <i> всегда будут использовать Font Awesome, 
+       даже если у родителя прописан Segoe UI */
+    .course-card i {
+        font-family: "Font Awesome 6 Free", "Font Awesome 5 Free", "Font Awesome 6 Brands", sans-serif !important;
+        font-weight: 900; 
+        font-style: normal;
+        font-variant: normal;
+        text-rendering: auto;
+        -webkit-font-smoothing: antialiased;
+        display: inline-block;
+    }
+
+    /* 2. КОНТЕЙНЕР КАРТОЧКИ */
+    .course-card {
+        max-width: 360px;
+        width: 100%;
+        background: linear-gradient(145deg, #162031, #0f172a);
+        border-radius: 24px;
+        overflow: hidden;
+        position: relative;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        border: 1px solid rgba(79, 195, 247, 0.25);
+        font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        color: #e3f2fd;
+        margin: 20px;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .course-card:hover {
+        transform: translateY(-8px);
+        border-color: rgba(79, 195, 247, 0.6);
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.7), 0 0 15px rgba(79, 195, 247, 0.15);
+    }
+
+    /* 3. БАННЕР И АДМИН-КНОПКИ */
+    .card-banner {
+        width: 100%;
+        height: 200px;
+        overflow: hidden;
+        position: relative;
+        background: #000;
+    }
+
+    .card-banner img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        opacity: 0.9;
+        transition: transform 0.6s ease;
+    }
+
+    .card-admin-controls {
+        position: absolute;
+        top: 15px;
+        left: 15px;
+        display: flex;
+        gap: 10px;
+        z-index: 10;
+    }
+
+    .btn-admin {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(10px);
+        color: #ffffff;
+        padding: 0; /* Убираем внутренние отступы для центровки иконки */
+    }
+
+    .btn-admin i {
+        font-size: 1.1rem;
+        line-height: 1;
+    }
+
+    .btn-admin.edit { background: rgba(3, 169, 244, 0.4); }
+    .btn-admin.edit:hover { background: #03a9f4; transform: scale(1.1); }
+
+    .btn-admin.delete { background: rgba(244, 67, 54, 0.4); }
+    .btn-admin.delete:hover { background: #f44336; transform: scale(1.1); }
+
+    /* 4. АВАТАР И ТЕЛО */
+    .author-avatar {
+        position: absolute;
+        bottom: 15px;
+        right: 15px;
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        border: 2px solid #4fc3f7;
+        overflow: hidden;
+        background: #162031;
+        z-index: 5;
+    }
+
+    .card-body { padding: 24px; flex-grow: 1; }
+
+    .category-badge {
+        background: rgba(2, 136, 209, 0.8);
+        color: white;
+        padding: 4px 12px;
+        border-radius: 8px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        margin-bottom: 12px;
+        display: inline-block;
+    }
+
+    .course-title { font-size: 1.3rem; font-weight: 700; margin-bottom: 6px; color: #fff; }
+
+    /* 5. КНОПКА ДЕТАЛЕЙ И ОПИСАНИЕ */
+    .desc-toggle {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(79, 195, 247, 0.2);
+        color: #e3f2fd;
+        padding: 10px 14px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 0.85rem;
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 10px;
+    }
+
+    .course-description {
+        max-height: 0;
+        overflow: hidden;
+        transition: all 0.4s ease-in-out;
+        font-size: 0.9rem;
+        color: #b0bec5;
+        opacity: 0;
+    }
+
+    .course-description.open {
+        max-height: 500px;
+        opacity: 1;
+        margin-top: 15px;
+    }
+
+    /* 6. ФУТЕР */
+    .card-footer {
+        padding: 18px 24px;
+        background: rgba(0, 0, 0, 0.2);
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .footer-meta {
+        color: #90a4ae;
+        font-size: 0.85rem;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-join {
+        background: linear-gradient(135deg, #0288d1, #26c6da);
+        color: white !important;
+        text-decoration: none;
+        padding: 12px;
+        border-radius: 10px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        display: block;
+        text-align: center;
+        transition: 0.3s;
+    }
+</style>
+
 <div class="course-card">
-    <!-- Three dots -->
-    <button class="course-menu-btn" aria-label="Дополнительные параметры">
-        &#8942;
-    </button>
+    <div class="card-banner">
+        <img src="@(Model.CoverImagePath ?? "/images/default-course.jpg")" alt="Cover">
+        <div class="author-avatar">
+            <img src="@(string.IsNullOrEmpty(Model.AuthorAvatar) ? "/images/default_avatar.jpg" : Model.AuthorAvatar)" alt="Avatar">
+        </div>
 
-    <!-- Dropdown -->
-    <div class="course-menu">
-        <button>Редактировать</button>
-        <button>Участники</button>
-        <button class="danger">Удалить</button>
+        @if (ViewData["IsEditable"] != null && (bool)ViewData["IsEditable"])
+        {
+            <div class="card-admin-controls">
+                @* Иконка карандаша *@
+                <button type="button" class="btn-admin edit" title="Редактировать">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+                    </svg>
+                </button>
+
+                @* Иконка корзины *@
+                <button type="button" class="btn-admin delete" title="Удалить">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                </button>
+            </div>
+        }
     </div>
 
-    <!-- Header -->
-    <div class="course-header">
-        <img class="teacher-avatar"
-             src="https://i.pravatar.cc/100?img=12"
-             alt="Преподаватель">
+    <div class="card-body">
+        <span class="category-badge">@Model.Category</span>
+        <h3 class="course-title">@Model.Title</h3>
+        <span class="author-name">@@@Model.AuthorUsername</span>
 
-        <div class="course-title-block">
-            <h3 class="course-title">Frontend Development</h3>
-            <span class="course-teacher">Иван Иванов</span>
+        <button type="button" class="desc-toggle" onclick="toggleDescription(this)">
+            <span class="btn-text">Прочитать детали</span>
+            <i class="fa-solid fa-chevron-down toggle-icon"></i>
+        </button>
+
+        <div class="course-description">
+            @Model.Description
         </div>
     </div>
 
-    <!-- Info -->
-    <div class="course-info">
-        <div class="info-item">
-            <span class="info-label">Участников</span>
-            <span class="info-value">24</span>
+    <div class="card-footer">
+        <div class="footer-meta">
+            <span><i class="fa-regular fa-calendar"></i> @Model.CreatedAt.ToString("dd MMM yyyy")</span>
         </div>
-
-        <div class="info-item">
-            <span class="info-label">Статус</span>
-            <span class="info-value accent">Активен</span>
-        </div>
+        <a href="#" class="btn-join">Начать обучение</a>
     </div>
 </div>
+
+<script>
+    function toggleDescription(btn) {
+        // Находим блок описания, который идет СРАЗУ после кнопки
+        const desc = btn.nextElementSibling;
+        const icon = btn.querySelector('.toggle-icon');
+        const text = btn.querySelector('.btn-text');
+
+        desc.classList.toggle('open');
+
+        if (desc.classList.contains('open')) {
+            text.innerText = 'Скрыть детали';
+            icon.classList.replace('fa-chevron-down', 'fa-chevron-up');
+        } else {
+            text.innerText = 'Прочитать детали';
+            icon.classList.replace('fa-chevron-up', 'fa-chevron-down');
+        }
+    }
+</script>

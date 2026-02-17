@@ -1,0 +1,222 @@
+﻿<div class="learning-container">
+    
+    <header class="learning-header">
+        <div class="header-content">
+            <a href="/" class="back-link">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                <span>На главную</span>
+            </a>
+            <div class="course-mini-info">
+                <span class="course-name-tag">Курс:</span>
+                <span class="course-name-text">@Model.Title</span>
+            </div>
+            <div class="user-controls">
+                <div class="progress-pill">Прогресс: 0%</div>
+            </div>
+        </div>
+    </header>
+
+    <aside class="learning-sidebar">
+        <div class="sidebar-header">
+            <h3>Содержание</h3>
+        </div>
+        <nav class="sidebar-nav">
+            
+            @* @foreach (var module in Model.Modules)
+            {
+                <div class="sidebar-module">
+                    <div class="module-toggle" onclick="toggleModule(this)">
+                        <span class="module-title">@module.Name</span>
+                        <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </div>
+                    <ul class="module-lessons">
+                        @foreach (var lesson in module.Lessons)
+                        {
+                            <li class="lesson-item" data-lesson-id="@lesson.Id">
+                                <svg class="status-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle></svg>
+                                <span class="lesson-link">@lesson.Title</span>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            } *@
+        </nav>
+    </aside>
+
+    <main class="learning-content">
+        <div class="content-viewport">
+            @* Здесь будет RenderBody() или другой плейсхолдер *@
+            <h1 style="color: white; opacity: 0.2; text-align: center; margin-top: 20vh;">Контент не выбран</h1>
+        </div>
+    </main>
+</div>
+
+<style>
+    :root {
+        --h-height: 60px;
+        --s-width: 320px;
+        --dark-bg: #0f172a;
+        --card-bg: #1e293b;
+        --accent: #38bdf8;
+        --border: rgba(255, 255, 255, 0.1);
+    }
+
+    /* Основной контейнер */
+    .learning-container {
+        display: grid;
+        grid-template-columns: var(--s-width) 1fr;
+        grid-template-rows: var(--h-height) 1fr;
+        height: 100vh;
+        background: var(--dark-bg);
+        font-family: 'Inter', system-ui, sans-serif;
+    }
+
+    /* HEADER СТИЛИ */
+    .learning-header {
+        grid-column: 1 / 3;
+        background: var(--card-bg);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        padding: 0 20px;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+    }
+
+    .header-content {
+        display: flex;
+        width: 100%;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .back-link {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #94a3b8;
+        text-decoration: none;
+        font-size: 14px;
+        transition: 0.2s;
+    }
+
+    .back-link:hover { color: var(--accent); }
+
+    .course-name-text { color: white; font-weight: 600; margin-left: 8px; }
+    .course-name-tag { color: #64748b; font-size: 12px; text-transform: uppercase; }
+
+    .progress-pill {
+        background: rgba(56, 189, 248, 0.1);
+        color: var(--accent);
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    /* SIDEBAR СТИЛИ */
+    .learning-sidebar {
+        background: var(--card-bg);
+        border-right: 1px solid var(--border);
+        overflow-y: auto;
+        position: sticky;
+        top: var(--h-height);
+        height: calc(100vh - var(--h-height));
+    }
+
+    .sidebar-header {
+        padding: 20px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .sidebar-header h3 { color: white; font-size: 16px; margin: 0; }
+
+    .sidebar-module { border-bottom: 1px solid var(--border); }
+
+    .module-toggle {
+        padding: 15px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+        background: rgba(255,255,255,0.02);
+        transition: 0.2s;
+    }
+
+    .module-toggle:hover { background: rgba(255,255,255,0.05); }
+
+    .module-title { color: #cbd5e1; font-size: 14px; font-weight: 500; }
+    .chevron { color: #64748b; transition: 0.3s; }
+
+    .module-lessons {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: none; /* Скрыто по умолчанию */
+    }
+
+    .module-lessons.active { display: block; }
+
+    .lesson-item {
+        padding: 12px 20px 12px 40px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        cursor: pointer;
+        transition: 0.2s;
+        color: #94a3b8;
+    }
+
+    .lesson-item:hover { background: rgba(56, 189, 248, 0.05); color: white; }
+    
+    .lesson-item.active {
+        background: rgba(56, 189, 248, 0.1);
+        color: var(--accent);
+        border-right: 2px solid var(--accent);
+    }
+
+    .status-icon { flex-shrink: 0; }
+
+    /* CONTENT AREA */
+    .learning-content {
+        overflow-y: auto;
+        padding: 40px;
+    }
+
+    .content-viewport {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    /* Кастомизация скроллбара */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+</style>
+
+<script>
+    function toggleModule(element) {
+        const list = element.nextElementSibling;
+        const chevron = element.querySelector('.chevron');
+        
+        const isOpen = list.classList.contains('active');
+        
+        if (!isOpen) {
+            list.classList.add('active');
+            chevron.style.transform = 'rotate(180deg)';
+        } else {
+            list.classList.remove('active');
+            chevron.style.transform = 'rotate(0deg)';
+        }
+    }
+
+    // Пример клика по уроку
+    document.querySelectorAll('.lesson-item').forEach(item => {
+        item.addEventListener('click', () => {
+            document.querySelectorAll('.lesson-item').forEach(i => i.classList.remove('active'));
+            item.classList.add('active');
+            console.log("Загрузка урока ID:", item.dataset.lessonId);
+        });
+    });
+</script>

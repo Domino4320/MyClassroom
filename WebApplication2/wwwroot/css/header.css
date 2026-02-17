@@ -1,0 +1,64 @@
+﻿/* ========== HEADER ========== */
+.header {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1000;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1.5rem;
+    background: linear-gradient( 90deg, #06172d, #0b2f5f );
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1); /* заменил var на стандарт */
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    backdrop-filter: blur(14px);
+    color: #ffffff;
+}
+
+    .header .burger {
+        font-size: 1.8rem;
+        color: #4fc3f7;
+        cursor: pointer;
+        transition: transform 0.4s ease, color 0.3s ease;
+    }
+
+        .header .burger:hover {
+            color: #03a9f4;
+            transform: rotate(180deg) scale(1.15);
+        }
+
+    .header .user-section {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .header .auth-buttons button {
+        background: transparent;
+        border: 1px solid #03a9f4;
+        color: #ffffff;
+        padding: 0.4rem 1rem;
+        border-radius: 999px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+        .header .auth-buttons button:hover {
+            background: #03a9f4;
+            color: #06172d;
+            box-shadow: 0 0 15px rgba(3, 169, 244, 0.5);
+        }
+
+    .header .user-avatar {
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        border: 2px solid #03a9f4;
+        transition: all 0.4s ease;
+    }
+
+        .header .user-avatar:hover {
+            transform: scale(1.15);
+            box-shadow: 0 0 15px rgba(3, 169, 244, 0.5);
+        }

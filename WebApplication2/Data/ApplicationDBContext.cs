@@ -10,6 +10,7 @@ namespace WebApplication2.Data
         public DbSet<UserModel> Users { get; set; }
 
         public DbSet<TeacherProfile> TeacherProfiles { get; set; }
+        public DbSet<CourseModel> Courses { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

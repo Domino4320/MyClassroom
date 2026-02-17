@@ -1,14 +1,78 @@
 ﻿
+@model WebApplication2.Models.CourseModel
 
-<link href="~/css/create_course.css" rel="stylesheet"/>
+<link href="~/css/create_course.css" rel="stylesheet" />
 <link href="~/css/style_for_main_page.css" rel="stylesheet" />
+<style>
+    /* Стили для текста ошибки */
+    .text-danger, .field-validation-error {
+        color: #ff4d4d;
+        font-size: 0.85rem;
+        margin-top: 4px;
+        display: block;
+        animation: fadeIn 0.3s ease-in;
+    }
+
+    /* Подсветка инпута при ошибке */
+    .input-validation-error {
+        border: 1.5px solid #ff4d4d !important;
+        background-color: rgba(255, 77, 77, 0.05) !important;
+    }
+
+        /* Иконка ошибки, если нужно (опционально) */
+        .input-validation-error + .required_icon {
+            color: #ff4d4d;
+        }
+
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-5px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+
+@section Scripts {
+    @* Подключаем стандартные библиотеки валидации (они должны быть в проекте по умолчанию) *@
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            // 1. Скрипт для отображения имени выбранного файла
+            $('#fileInp').on('change', function () {
+                var fileName = $(this).val().split('\\').pop();
+                if (fileName) {
+                    $('#fileName').text("Выбран файл: " + fileName).css("color", "#4ade80");
+                } else {
+                    $('#fileName').text("Нажмите для выбора фото").css("color", "");
+                }
+            });
+
+            // 2. Настройка валидации "на лету"
+            // Переопределяем стандартные классы jquery validate, чтобы они дружили с вашими стилями
+            $('form').bind('invalid-form.validate', function () {
+                // Можно добавить общую логику, если форма не валидна (например, вибрация кнопки)
+                $('.btn-submit-course').addClass('animate-shake');
+                setTimeout(function () {
+                    $('.btn-submit-course').removeClass('animate-shake');
+                }, 500);
+            });
+        });
+
+         document.getElementById('fileInp').onchange = function () {
+            document.getElementById('fileName').innerHTML = this.files[0].name;
+        };
+    </script>
+}
 
 @await Html.PartialAsync("_Header")
 @await Html.PartialAsync("_Sidebar")
-
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-<link href="~/css/create_course.css" rel="stylesheet" />
-
 <div class="page-wrapper">
     <div class="course-registration-card animate-in">
         <header class="header-content">
@@ -19,146 +83,151 @@
             <p>Заполните форму, чтобы создать новую учебную программу</p>
         </header>
 
-        <form class="main-course-form">
+        <form asp-action="Create" method="post" enctype="multipart/form-data" class="main-course-form">
             <div class="field-block">
                 <label>Название курса <span class="required_icon">*</span></label>
                 <div class="input-with-icon">
-                    <input type="text" placeholder="Введите название..." required>
+                    <input asp-for="Title" type="text" placeholder="Введите название...">
                 </div>
+                <span asp-validation-for="Title" class="text-danger"></span>
             </div>
 
             <div class="field-block">
                 <label>Краткое описание</label>
-                <textarea rows="3" placeholder="О чем ваш курс?"></textarea>
+                <textarea asp-for="Description" rows="3" placeholder="О чем ваш курс?"></textarea>
+                <span asp-validation-for="Description" class="text-danger"></span>
             </div>
 
             <div class="dual-fields">
                 <div class="field-block">
                     <label>Категория <span class="required_icon">*</span></label>
-                    <select>
-                        <option value="" disabled selected></option>
+                    <div class="input-with-icon">
+                        <select asp-for="Category">
+                            <option value="" disabled selected>Выберите категорию</option>
 
-                        <optgroup label="💻 IT и Разработка">
-                            <option value="Frontend">Frontend (React/Vue/Angular)</option>
-                            <option value="Backend_NET">Backend (.NET/C#)</option>
-                            <option value="Backend_Java">Backend (Java/Spring)</option>
-                            <option value="Python_Dev">Python разработка</option>
-                            <option value="NodeJS">Node.js / JavaScript Backend</option>
-                            <option value="Mobile_iOS">iOS разработка (Swift)</option>
-                            <option value="Mobile_Android">Android разработка (Kotlin)</option>
-                            <option value="DataScience">Data Science и Machine Learning</option>
-                            <option value="Cybersecurity">Кибербезопасность</option>
-                            <option value="DevOps">DevOps и SRE</option>
-                            <option value="QA_Auto">Автоматизация тестирования</option>
-                            <option value="QA_Manual">Ручное тестирование</option>
-                            <option value="GameDev_Unity">GameDev (Unity)</option>
-                            <option value="GameDev_Unreal">GameDev (Unreal Engine)</option>
-                            <option value="Blockchain">Блокчейн и Смарт-контракты</option>
-                        </optgroup>
+                            <optgroup label="💻 IT и Разработка">
+                                <option value="Frontend (React/Vue/Angular)">Frontend (React/Vue/Angular)</option>
+                                <option value="Backend (.NET/C#)">Backend (.NET/C#)</option>
+                                <option value="Backend (Java/Spring)">Backend (Java/Spring)</option>
+                                <option value="Python разработка">Python разработка</option>
+                                <option value="Node.js / JavaScript Backend">Node.js / JavaScript Backend</option>
+                                <option value="iOS разработка (Swift)">iOS разработка (Swift)</option>
+                                <option value="Android разработка (Kotlin)">Android разработка (Kotlin)</option>
+                                <option value="Data Science и Machine Learning">Data Science и Machine Learning</option>
+                                <option value="Кибербезопасность">Кибербезопасность</option>
+                                <option value="DevOps и SRE">DevOps и SRE</option>
+                                <option value="Автоматизация тестирования">Автоматизация тестирования</option>
+                                <option value="Ручное тестирование">Ручное тестирование</option>
+                                <option value="GameDev (Unity)">GameDev (Unity)</option>
+                                <option value="GameDev (Unreal Engine)">GameDev (Unreal Engine)</option>
+                                <option value="Блокчейн и Смарт-контракты">Блокчейн и Смарт-контракты</option>
+                            </optgroup>
 
-                        <optgroup label="🎨 Дизайн и Творчество">
-                            <option value="UIUX_Design">UI/UX Дизайн</option>
-                            <option value="GraphicDesign">Графический дизайн</option>
-                            <option value="WebDesign">Веб-дизайн</option>
-                            <option value="MotionDesign">Motion Design (After Effects)</option>
-                            <option value="3D_Modeling">3D Моделирование (Blender/Maya)</option>
-                            <option value="Illustration">Цифровая иллюстрация</option>
-                            <option value="InteriorDesign">Дизайн интерьеров</option>
-                            <option value="LandscapeDesign">Ландшафтный дизайн</option>
-                            <option value="FashionDesign">Дизайн одежды</option>
-                            <option value="Photography">Профессиональная фотография</option>
-                            <option value="VideoEditing">Монтаж видео (Premiere/Resolve)</option>
-                            <option value="Architecture">Архитектурное проектирование</option>
-                        </optgroup>
+                            <optgroup label="🎨 Дизайн и Творчество">
+                                <option value="UI/UX Дизайн">UI/UX Дизайн</option>
+                                <option value="Графический дизайн">Графический дизайн</option>
+                                <option value="Веб-дизайн">Веб-дизайн</option>
+                                <option value="Motion Design (After Effects)">Motion Design (After Effects)</option>
+                                <option value="3D Моделирование (Blender/Maya)">3D Моделирование (Blender/Maya)</option>
+                                <option value="Цифровая иллюстрация">Цифровая иллюстрация</option>
+                                <option value="Дизайн интерьеров">Дизайн интерьеров</option>
+                                <option value="Ландшафтный дизайн">Ландшафтный дизайн</option>
+                                <option value="Дизайн одежды">Дизайн одежды</option>
+                                <option value="Профессиональная фотография">Профессиональная фотография</option>
+                                <option value="Монтаж видео (Premiere/Resolve)">Монтаж видео (Premiere/Resolve)</option>
+                                <option value="Архитектурное проектирование">Архитектурное проектирование</option>
+                            </optgroup>
 
-                        <optgroup label="📊 Бизнес и Аналитика">
-                            <option value="ProductManagement">Product Management</option>
-                            <option value="ProjectManagement">Project Management (Agile/Scrum)</option>
-                            <option value="BusinessAnalysis">Бизнес-аналитика</option>
-                            <option value="SystemAnalysis">Системная аналитика</option>
-                            <option value="Marketing_Strategy">Маркетинговая стратегия</option>
-                            <option value="SEO">SEO оптимизация</option>
-                            <option value="ContextAds">Контекстная реклама</option>
-                            <option value="SMM">SMM и продвижение</option>
-                            <option value="Copywriting">Копирайтинг и Сторителлинг</option>
-                            <option value="PR">PR и связи с общественностью</option>
-                            <option value="E-commerce">Управление интернет-магазином</option>
-                        </optgroup>
+                            <optgroup label="📊 Бизнес и Аналитика">
+                                <option value="Product Management">Product Management</option>
+                                <option value="Project Management (Agile/Scrum)">Project Management (Agile/Scrum)</option>
+                                <option value="Бизнес-аналитика">Бизнес-аналитика</option>
+                                <option value="Системная аналитика">Системная аналитика</option>
+                                <option value="Маркетинговая стратегия">Маркетинговая стратегия</option>
+                                <option value="SEO оптимизация">SEO оптимизация</option>
+                                <option value="Контекстная реклама">Контекстная реклама</option>
+                                <option value="SMM и продвижение">SMM и продвижение</option>
+                                <option value="Копирайтинг и Сторителлинг">Копирайтинг и Сторителлинг</option>
+                                <option value="PR и связи с общественностью">PR и связи с общественностью</option>
+                                <option value="Управление интернет-магазином">Управление интернет-магазином</option>
+                            </optgroup>
 
-                        <optgroup label="📈 Финансы и Право">
-                            <option value="Accounting">Бухгалтерский учет</option>
-                            <option value="FinancialAnalysis">Финансовый анализ</option>
-                            <option value="Investment">Инвестиции и Трейдинг</option>
-                            <option value="Taxes">Налогообложение</option>
-                            <option value="Law_Civil">Гражданское право</option>
-                            <option value="Law_IT">Право в сфере IT</option>
-                            <option value="Law_Business">Корпоративное право</option>
-                            <option value="CryptoFinance">Криптовалюты и DeFi</option>
-                        </optgroup>
+                            <optgroup label="📈 Финансы и Право">
+                                <option value="Бухгалтерский учет">Бухгалтерский учет</option>
+                                <option value="Финансовый анализ">Финансовый анализ</option>
+                                <option value="Инвестиции и Трейдинг">Инвестиции и Трейдинг</option>
+                                <option value="Налогообложение">Налогообложение</option>
+                                <option value="Гражданское право">Гражданское право</option>
+                                <option value="Право в сфере IT">Право в сфере IT</option>
+                                <option value="Корпоративное право">Корпоративное право</option>
+                                <option value="Криптовалюты и DeFi">Криптовалюты и DeFi</option>
+                            </optgroup>
 
-                        <optgroup label="🌍 Языки и Лингвистика">
-                            <option value="English_General">Английский (общий)</option>
-                            <option value="English_Business">Английский для бизнеса</option>
-                            <option value="English_IT">Английский для IT</option>
-                            <option value="German">Немецкий язык</option>
-                            <option value="French">Французский язык</option>
-                            <option value="Spanish">Испанский язык</option>
-                            <option value="Chinese">Китайский язык</option>
-                            <option value="Japanese">Японский язык</option>
-                            <option value="Translation">Профессиональный перевод</option>
-                        </optgroup>
+                            <optgroup label="🌍 Языки и Лингвистика">
+                                <option value="Английский (общий)">Английский (общий)</option>
+                                <option value="Английский для бизнеса">Английский для бизнеса</option>
+                                <option value="Английский для IT">Английский для IT</option>
+                                <option value="Немецкий язык">Немецкий язык</option>
+                                <option value="Французский язык">Французский язык</option>
+                                <option value="Испанский язык">Испанский язык</option>
+                                <option value="Китайский язык">Китайский язык</option>
+                                <option value="Японский язык">Японский язык</option>
+                                <option value="Профессиональный перевод">Профессиональный перевод</option>
+                            </optgroup>
 
-                        <optgroup label="🧪 Наука и Образование">
-                            <option value="Math_Higher">Высшая математика</option>
-                            <option value="Physics">Физика</option>
-                            <option value="Chemistry">Химия</option>
-                            <option value="Biology">Биология</option>
-                            <option value="Geography">География</option>
-                            <option value="History">История</option>
-                            <option value="Philosophy">Философия</option>
-                            <option value="Psychology_General">Общая психология</option>
-                            <option value="Psychology_Child">Детская психология</option>
-                            <option value="Sociology">Социология</option>
-                        </optgroup>
+                            <optgroup label="🧪 Наука и Образование">
+                                <option value="Высшая математика">Высшая математика</option>
+                                <option value="Физика">Физика</option>
+                                <option value="Химия">Химия</option>
+                                <option value="Биология">Биология</option>
+                                <option value="География">География</option>
+                                <option value="История">История</option>
+                                <option value="Философия">Философия</option>
+                                <option value="Общая психология">Общая психология</option>
+                                <option value="Детская психология">Детская психология</option>
+                                <option value="Социология">Социология</option>
+                            </optgroup>
 
-                        <optgroup label="🛠️ Техника и Ремесла">
-                            <option value="Robotics">Робототехника</option>
-                            <option value="Electronics">Электроника и схемотехника</option>
-                            <option value="Auto_Mechanics">Автомеханика</option>
-                            <option value="Carpentry">Столярное дело</option>
-                            <option value="Jewelry">Ювелирное искусство</option>
-                            <option value="Sewing">Кройка и шитье</option>
-                        </optgroup>
+                            <optgroup label="🛠️ Техника и Ремесла">
+                                <option value="Робототехника">Робототехника</option>
+                                <option value="Электроника и схемотехника">Электроника и схемотехника</option>
+                                <option value="Автомеханика">Автомеханика</option>
+                                <option value="Столярное дело">Столярное дело</option>
+                                <option value="Ювелирное искусство">Ювелирное искусство</option>
+                                <option value="Кройка и шитье">Кройка и шитье</option>
+                            </optgroup>
 
-                        <optgroup label="🍏 Здоровье и Спорт">
-                            <option value="Fitness_Trainer">Фитнес-тренер</option>
-                            <option value="Yoga">Йога и Пилатес</option>
-                            <option value="Nutrition">Нутрициология</option>
-                            <option value="Sports_Psychology">Спортивная психология</option>
-                            <option value="Meditation">Медитация и Mindfulness</option>
-                            <option value="First_Aid">Первая помощь</option>
-                        </optgroup>
+                            <optgroup label="🍏 Здоровье и Спорт">
+                                <option value="Фитнес-тренер">Фитнес-тренер</option>
+                                <option value="Йога и Пилатес">Йога и Пилатес</option>
+                                <option value="Нутрициология">Нутрициология</option>
+                                <option value="Спортивная психология">Спортивная психология</option>
+                                <option value="Медитация и Mindfulness">Медитация и Mindfulness</option>
+                                <option value="Первая помощь">Первая помощь</option>
+                            </optgroup>
 
-                        <optgroup label="💡 Soft Skills и Личная эффективность">
-                            <option value="PublicSpeaking">Ораторское мастерство</option>
-                            <option value="TimeManagement">Тайм-менеджмент</option>
-                            <option value="Leadership">Лидерство и управление командой</option>
-                            <option value="Negotiations">Переговоры и конфликты</option>
-                            <option value="Emotional_Intelligence">Эмоциональный интеллект</option>
-                            <option value="Career_Coaching">Карьерный коучинг</option>
-                        </optgroup>
+                            <optgroup label="💡 Soft Skills и Личная эффективность">
+                                <option value="Ораторское мастерство">Ораторское мастерство</option>
+                                <option value="Тайм-менеджмент">Тайм-менеджмент</option>
+                                <option value="Лидерство и управление командой">Лидерство и управление командой</option>
+                                <option value="Переговоры и конфликты">Переговоры и конфликты</option>
+                                <option value="Эмоциональный интеллект">Эмоциональный интеллект</option>
+                                <option value="Карьерный коучинг">Карьерный коучинг</option>
+                            </optgroup>
 
-                        <optgroup label="🎸 Хобби и Лайфстайл">
-                            <option value="Cooking_Basic">Кулинария (базовая)</option>
-                            <option value="Pastry_Art">Кондитерское искусство</option>
-                            <option value="Music_Guitar">Игра на гитаре</option>
-                            <option value="Music_Piano">Игра на фортепиано</option>
-                            <option value="Vocals">Вокал</option>
-                            <option value="Drawing_Basic">Рисование (базовое)</option>
-                            <option value="Gardening">Садоводство</option>
-                            <option value="Chess">Шахматы</option>
-                        </optgroup>
-                    </select>
+                            <optgroup label="🎸 Хобби и Лайфстайл">
+                                <option value="Кулинария (базовая)">Кулинария (базовая)</option>
+                                <option value="Кондитерское искусство">Кондитерское искусство</option>
+                                <option value="Игра на гитаре">Игра на гитаре</option>
+                                <option value="Игра на фортепиано">Игра на фортепиано</option>
+                                <option value="Вокал">Вокал</option>
+                                <option value="Рисование (базовое)">Рисование (базовое)</option>
+                                <option value="Садоводство">Садоводство</option>
+                                <option value="Шахматы">Шахматы</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <span asp-validation-for="Category" class="text-danger"></span>
                 </div>
             </div>
 
@@ -166,13 +235,13 @@
                 <label>Обложка курса</label>
                 <div class="upload-box" onclick="document.getElementById('fileInp').click()">
                     <i class="fa-solid fa-image"></i>
-                    <p>Нажмите для выбора фото</p>
-                    <input type="file" id="fileInp" hidden>
+                    <p id="fileName">Нажмите для выбора фото</p>
+                    <input type="file" name="imageFile" id="fileInp" hidden accept="image/*">
                 </div>
             </div>
 
             <div class="form-actions-row">
-                <button type="button" class="btn-ghost">Отмена</button>
+                <button type="button" class="btn-ghost" onclick="history.back()">Отмена</button>
                 <button type="submit" class="btn-submit-course">Создать курс</button>
             </div>
         </form>

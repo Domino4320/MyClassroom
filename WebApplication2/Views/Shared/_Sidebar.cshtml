@@ -5,6 +5,7 @@
     var role = Context.Session.GetString("Role");
 }
 
+<link href="~/css/sidebar.css" rel="stylesheet" />
 <div class="sidebar" id="sidebar">
     <div class="avatar">
         <img src="@(string.IsNullOrEmpty(avatar) ? Url.Content("~/images/default_avatar.jpg") : avatar)" alt="avatar" id="sidebarAvatar">
@@ -24,7 +25,7 @@
             else
             {
                 <li>
-                    <a href="">Мои курсы</a>
+                    <a href="@Url.Action("Index", "MyCourses")">Мои курсы</a>
                 </li>
                 <li>
                     <a href="@Url.Action("GetProfileInfo", "TeacherAccount")">Личный кабинет преподавателя</a>

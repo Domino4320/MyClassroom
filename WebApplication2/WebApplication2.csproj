@@ -7,6 +7,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Remove="Views\MyCourses\Index.cshtml" />
+    <Content Remove="Views\Shared\_CoursePage.cshtml" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Folder Include="Migrations\" />
     <Folder Include="wwwroot\avatars\" />
   </ItemGroup>
@@ -50,6 +55,11 @@
 
   <ItemGroup>
     <UpToDateCheckInput Remove="Views\CreateCourse\Index.cshtml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="Views\MyCourses\Index.cshtml" />
+    <Compile Include="Views\Shared\_CoursePage.cshtml" />
   </ItemGroup>
 
 </Project>
