@@ -7,8 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Remove="Views\MyCourses\Index.cshtml" />
-    <Content Remove="Views\Shared\_CoursePage.cshtml" />
+    <Content Remove="Views\Courses\Details.cshtml" />
   </ItemGroup>
 
   <ItemGroup>
@@ -35,7 +34,9 @@
 
   <ItemGroup>
     <_ContentIncludedByDefault Remove="Views\BecomeTeacher\Index.cshtml" />
+    <_ContentIncludedByDefault Remove="Views\Courses\Details.cshtml" />
     <_ContentIncludedByDefault Remove="Views\Courses\Index.cshtml" />
+    <_ContentIncludedByDefault Remove="Views\Course\Index.cshtml" />
     <_ContentIncludedByDefault Remove="Views\CreateCourse\Index.cshtml" />
     <_ContentIncludedByDefault Remove="Views\Shared\_Footer.cshtml" />
     <_ContentIncludedByDefault Remove="Views\Shared\_Sidebar.cshtml" />
@@ -58,8 +59,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="Views\MyCourses\Index.cshtml" />
-    <Compile Include="Views\Shared\_CoursePage.cshtml" />
+    <UpToDateCheckInput Remove="Views\Course\Index.cshtml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Views\Course\Details.cshtml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <UpToDateCheckInput Remove="Views\Courses\Details.cshtml" />
   </ItemGroup>
 
 </Project>

@@ -1,0 +1,321 @@
+﻿@model WebApplication2.Models.CourseLearnViewModel
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Обучение - @Model.CurrentStep.Title</title>
+    <style>
+        /* 1. ГЛОБАЛЬНЫЙ СБРОС ДЛЯ УДАЛЕНИЯ ОТСТУПОВ */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            width: 100%;
+            overflow: hidden; /* Запрещаем общий скролл страницы */
+            background-color: #0f172a;
+            color: #e2e8f0;
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* 2. СТРУКТУРА НА ВЕСЬ ЭКРАН */
+        .learn-container {
+            display: flex;
+            height: 100vh; /* Ровно 100% высоты видимой области */
+            width: 100%;
+        }
+
+        /* САЙДБАР */
+        .learn-sidebar {
+            width: 300px;
+            background: #1e293b;
+            border-right: 1px solid #334155;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0; /* Чтобы сайдбар не сжимался */
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            font-weight: bold;
+            border-bottom: 1px solid #334155;
+            color: #38bdf8;
+        }
+
+        .modules-list {
+            overflow-y: auto; /* Скролл только внутри списка модулей */
+            flex-grow: 1;
+        }
+
+        .module-item {
+            padding: 10px 0;
+        }
+
+        .module-title {
+            padding: 8px 20px;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            color: #94a3b8;
+        }
+
+        .lesson-link {
+            display: block;
+            padding: 10px 20px;
+            color: #cbd5e1;
+            text-decoration: none;
+            transition: 0.2s;
+            font-size: 0.95rem;
+        }
+
+            .lesson-link:hover {
+                background: #334155;
+            }
+
+            .lesson-link.active {
+                background: #0ea5e9;
+                color: white;
+            }
+
+        /* ОСНОВНАЯ ОБЛАСТЬ СО СКРОЛЛОМ */
+        .learn-main {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            overflow-y: auto; /* Скролл появляется здесь, если контента много */
+            background-color: #0f172a;
+        }
+
+        /* НАВИГАЦИЯ ШАГОВ */
+        .steps-top-nav {
+            position: sticky; /* Чтобы точки всегда были сверху при скролле */
+            top: 0;
+            z-index: 10;
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            padding: 15px;
+            background: #1e293b;
+            border-bottom: 1px solid #334155;
+        }
+
+        .step-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 4px;
+            background: #475569;
+            transition: 0.3s;
+            border: 2px solid transparent;
+            text-decoration: none;
+        }
+
+            .step-dot.active {
+                border-color: #38bdf8;
+                background: #38bdf8;
+                transform: scale(1.2);
+            }
+
+            .step-dot.completed {
+                background: #10b981;
+            }
+
+        /* КОНТЕНТ */
+        .step-content-area {
+            max-width: 850px;
+            margin: 40px auto 0 auto;
+            padding: 0 20px;
+            width: 100%;
+        }
+
+        .step-body {
+            background: #1e293b;
+            padding: 30px;
+            border-radius: 12px;
+            border: 1px solid #334155;
+            line-height: 1.6;
+        }
+
+        .step-footer {
+            margin-top: 30px;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .btn-next {
+            background: #0ea5e9;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+            .btn-next:hover {
+                background: #0284c7;
+            }
+
+        /* КОММЕНТАРИИ */
+        .comments-section {
+            max-width: 850px;
+            margin: 50px auto 0 auto;
+            width: 100%;
+            padding: 0 20px 60px 20px; /* Уменьшили нижний отступ до 60px */
+        }
+
+        .comment-card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .comment-input {
+            width: 100%;
+            background: #0f172a;
+            border: 1px solid #334155;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            resize: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="learn-container">
+        <aside class="learn-sidebar">
+            <div class="sidebar-header">Содержание курса</div>
+            <div class="modules-list">
+                @foreach (var module in Model.AllModules)
+                {
+                    <div class="module-item">
+                        <div class="module-title">@module.Title</div>
+                        @foreach (var lesson in module.Lessons)
+                        {
+                            var firstStepId = lesson.Steps.OrderBy(s => s.Order).FirstOrDefault()?.Id;
+                            <a href="?courseId=@Model.CourseId&stepId=@firstStepId"
+                               class="lesson-link @(lesson.Id == Model.CurrentStep.LessonId ? "active" : "")">
+                                @lesson.Title
+                            </a>
+                        }
+                    </div>
+                }
+            </div>
+        </aside>
+
+        <main class="learn-main">
+            <nav class="steps-top-nav">
+                @foreach (var step in Model.CurrentStep.Lesson.Steps.OrderBy(s => s.Order))
+                {
+                    var isDone = Model.CompletedStepIds.Contains(step.Id);
+                    var isCurrent = step.Id == Model.CurrentStep.Id;
+                    <a href="?courseId=@Model.CourseId&stepId=@step.Id"
+                       class="step-dot @(isCurrent ? "active" : "") @(isDone ? "completed" : "")"
+                       title="@step.Title"></a>
+                }
+            </nav>
+
+            <div class="step-content-area">
+                <div class="step-body">
+                    <h2 style="margin-bottom: 15px;">@Model.CurrentStep.Title</h2>
+                    <div style="height: 1px; background: #334155; margin-bottom: 25px;"></div>
+
+                    <div class="content-render">
+                        @if (Model.CurrentStep.Type == StepType.Text)
+                        {
+                            @Html.Raw(Model.CurrentStep.TextContent)
+                        }
+                        else if (Model.CurrentStep.Type == StepType.Quiz)
+                        {
+                            <p style="margin-bottom: 15px;">Выберите правильный ответ:</p>
+                            @foreach (var opt in Model.CurrentStep.QuizOptions)
+                            {
+                                <label style="display: block; background: #0f172a; padding: 12px; border-radius: 8px; margin-bottom: 10px; cursor: pointer; border: 1px solid #334155;">
+                                    <input type="radio" name="quiz" value="@opt.IsCorrect"> <span style="margin-left: 10px;">@opt.Text</span>
+                                </label>
+                            }
+                        }
+                    </div>
+
+                    <div class="step-footer">
+                        <button class="btn-next" onclick="nextStep(@Model.CurrentStep.Id)">
+                            Продолжить
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <section class="comments-section">
+                <h3 style="margin-bottom: 20px;">Обсуждения</h3>
+                <textarea id="commentText" class="comment-input" rows="3" placeholder="Напишите ваш комментарий..."></textarea>
+                <div style="display: flex; justify-content: flex-end;">
+                    <button class="btn-next" style="padding: 8px 20px; font-size: 0.9rem;" onclick="sendComment()">Отправить</button>
+                </div>
+
+                <div id="commentsList" style="margin-top: 30px;">
+                    @foreach (var comment in Model.Comments)
+                    {
+                        <div class="comment-card">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span style="color: #38bdf8; font-weight: bold;">@comment.UserLogin</span>
+                                    @if (Model.IsAuthor)
+                                    {
+                                        <span style="background: #0ea5e9; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px;">Автор</span>
+                                    }
+                                </div>
+                                <span style="color: #64748b; font-size: 0.85rem;">@comment.CreatedAt.ToString("g")</span>
+                            </div>
+                            <div style="color: #cbd5e1;">@comment.Text</div>
+                        </div>
+                    }
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        function nextStep(stepId) {
+            fetch('/Course/CompleteStep?stepId=' + stepId, { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        const activeDot = document.querySelector('.step-dot.active');
+                        const nextDot = activeDot.nextElementSibling;
+                        if (nextDot) {
+                            window.location.href = nextDot.href;
+                        } else {
+                            alert("Урок завершен!");
+                        }
+                    }
+                });
+        }
+
+        function sendComment() {
+            const text = document.getElementById('commentText').value;
+            if (!text.trim()) return;
+
+            const formData = new URLSearchParams();
+            formData.append('stepId', '@Model.CurrentStep.Id');
+            formData.append('text', text);
+
+            fetch('/Course/AddComment', { method: 'POST', body: formData })
+                .then(res => res.json())
+                .then(data => { if (data.success) location.reload(); });
+        }
+    </script>
+
+</body>
+</html>

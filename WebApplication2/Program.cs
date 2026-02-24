@@ -1,73 +1,47 @@
 using Microsoft.EntityFrameworkCore;
 using WebApplication2.Data;
 
-
 var builder = WebApplication.CreateBuilder(args);
 
+// 1. Настройка БД
 builder.Services.AddDbContext<ApplicationDBContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-
+// 2. Настройка сессий
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
-    options.IdleTimeout = TimeSpan.FromHours(1);
+    options.IdleTimeout = TimeSpan.FromHours(2); // Увеличил время, чтобы препод не вылетел при долгом наборе текста
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
+    options.Cookie.Name = ".MyClassroom.Session"; // Уникальное имя куки
 });
 
-// Add services to the container.
 builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
-
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
 
-app.UseAuthorization();
-
+// ПРАВИЛЬНЫЙ ПОРЯДОК: Сначала сессия, потом аутентификация/авторизация
 app.UseSession();
+app.UseAuthorization();
 
 app.UseEndpoints(endpoints =>
 {
+    // Этот роут покроет и MyCourses, и CourseConstructor, и остальные контроллеры автоматически
     endpoints.MapControllerRoute(
         name: "default",
         pattern: "{controller=Home}/{action=Index}/{id?}"
-    );
-    endpoints.MapControllerRoute(
-        name: "registration",
-        pattern: "{controller=Register}/{action=Index}/{id?}"
-    );
-    endpoints.MapControllerRoute(
-        name: "authorization",
-        pattern: "{controller=Authorization}/{action=Index}/{id?}"
-    );
-    endpoints.MapControllerRoute(
-        name: "courses",
-        pattern: "{controller=Courses}/{action=Index}/{id?}"
-    );
-    endpoints.MapControllerRoute(
-        name: "teacher_account",
-        pattern: "{controller=TeacherAccount}/{action=Index}/{id?}"
-    );
-    endpoints.MapControllerRoute(
-        name: "create_course",
-        pattern: "{controller=CreateCourse}/{action=Index}/{id?}"
-    );
-    endpoints.MapControllerRoute(
-        name: "my_courses",
-        pattern: "{controller=MyCourses}/{action=Index}/{id?}"
     );
 });
 

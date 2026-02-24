@@ -1,0 +1,200 @@
+﻿@model WebApplication2.Models.CourseModel
+@{
+    Layout = null;
+}
+
+<style>
+
+    /* Убираем отступы браузера и Layout */
+    html, body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+    }
+
+    .course-details-bg {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        background: #0f172a;
+        color: #f8fafc;
+        min-height: 100vh;
+        font-family: 'Inter', sans-serif;
+    }
+    .course-details-bg {
+        background: #0f172a;
+        color: #f8fafc;
+        min-height: 100vh;
+        font-family: 'Inter', sans-serif;ф
+    }
+
+    /* Шапка курса */
+    .course-hero {
+        background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+        padding: 60px 0;
+        border-bottom: 1px solid #334155;
+    }
+
+    .hero-container {
+        max-width: 1100px;
+        margin: 0 auto;
+        display: flex;
+        gap: 50px;
+        padding: 0 20px;
+    }
+
+    .hero-info {
+        flex: 2;
+    }
+
+    .hero-image {
+        flex: 1;
+    }
+
+        .hero-image img {
+            width: 100%;
+            border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            border: 1px solid #475569;
+        }
+
+    .badge-cat {
+        background: #0ea5e9;
+        padding: 4px 12px;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+
+    /* Кнопка поступления */
+    .btn-enroll {
+        background: #10b981;
+        color: white;
+        border: none;
+        padding: 16px 40px;
+        border-radius: 12px;
+        font-size: 1.2rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: 0.3s;
+        box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3);
+    }
+
+        .btn-enroll:hover {
+            background: #059669;
+            transform: translateY(-2px);
+        }
+
+    /* Вкладки (Tabs) */
+    .course-tabs {
+        max-width: 1100px;
+        margin: 40px auto;
+        padding: 0 20px;
+    }
+
+    .tab-nav {
+        display: flex;
+        gap: 30px;
+        border-bottom: 1px solid #334155;
+        margin-bottom: 30px;
+    }
+
+    .tab-link {
+        padding: 10px 0;
+        color: #94a3b8;
+        text-decoration: none;
+        font-weight: 600;
+        border-bottom: 3px solid transparent;
+        cursor: pointer;
+    }
+
+        .tab-link.active {
+            color: #38bdf8;
+            border-color: #38bdf8;
+        }
+
+    .rating-star {
+        color: #f59e0b;
+        font-size: 1.2rem;
+    }
+
+    .comment-mock {
+        background: #1e293b;
+        padding: 20px;
+        border-radius: 12px;
+        margin-bottom: 15px;
+        border: 1px solid #334155;
+    }
+</style>
+
+
+
+<div class="course-details-bg">
+    <section class="course-hero">
+        <div class="hero-container">
+            <div class="hero-info">
+                <span class="badge-cat">@Model.Category</span>
+                <h1 style="font-size: 3rem; margin: 20px 0;">@Model.Title</h1>
+                <p style="font-size: 1.2rem; color: #94a3b8; line-height: 1.6; margin-bottom: 30px;">
+                    @Model.Description
+                </p>
+
+                <div style="display: flex; align-items: center; gap: 20px;">
+                    @if (ViewData["IsEnrolled"] != null && (bool)ViewData["IsEnrolled"])
+                    {
+                        @if (ViewData["IsEnrolled"] != null && (bool)ViewData["IsEnrolled"])
+                        {
+                            @* Измени asp-action="Learn" на "Index" *@
+                            <a asp-action="Index" asp-route-courseId="@Model.Id" class="btn-enroll" style="background: #38bdf8; text-decoration:none;">
+                                Продолжить обучение
+                            </a>
+                        }
+                    }
+                    else
+                    {
+                        <form asp-action="Enroll" method="post">
+                            <input type="hidden" name="courseId" value="@Model.Id" />
+                            <button type="submit" class="btn-enroll">Поступить на курс</button>
+                        </form>
+                    }
+                    <div>
+                        <span class="rating-star">★★★★☆</span>
+                        <span style="color: #64748b; margin-left: 5px;">(4.8 / 120 оценок)</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hero-image">
+                <img src="@(string.IsNullOrEmpty(Model.CoverImagePath) ? "/images/default-course.jpg" : Model.CoverImagePath)" alt="Cover">
+            </div>
+        </div>
+    </section>
+
+    <div class="course-tabs">
+        <nav class="tab-nav">
+            <div class="tab-link active">О курсе</div>
+            <div class="tab-link">Отзывы</div>
+            <div class="tab-link">Программа</div>
+        </nav>
+
+        <div class="tab-content">
+            <div id="about">
+                <h3>Чему вы научитесь</h3>
+                <p style="color: #cbd5e1;">На этом курсе вы освоите фундаментальные навыки и примените их на практике под руководством опытного наставника.</p>
+            </div>
+
+            <div id="reviews" style="margin-top: 50px;">
+                <h3>Последние отзывы</h3>
+                <div class="comment-mock">
+                    <strong>Алексей С.</strong> <span class="rating-star">★★★★★</span>
+                    <p style="margin-top: 10px; color: #94a3b8;">Отличный курс! Все разложено по полочкам, очень помогло в работе.</p>
+                </div>
+                <div class="comment-mock">
+                    <strong>Мария И.</strong> <span class="rating-star">★★★★☆</span>
+                    <p style="margin-top: 10px; color: #94a3b8;">Хороший материал, но хотелось бы больше практических заданий во втором модуле.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

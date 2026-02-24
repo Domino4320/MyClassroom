@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WebApplication2.Data;
 
@@ -10,70 +11,14 @@ using WebApplication2.Data;
 namespace WebApplication2.Migrations
 {
     [DbContext(typeof(ApplicationDBContext))]
-    partial class ApplicationDBContextModelSnapshot : ModelSnapshot
+    [Migration("20260224120929_InitialCreate")]
+    partial class InitialCreate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.0");
-
-            modelBuilder.Entity("CommentModel", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int?>("ParentCommentId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("StepId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Text")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("UserLogin")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ParentCommentId");
-
-                    b.HasIndex("StepId");
-
-                    b.ToTable("Comments");
-                });
-
-            modelBuilder.Entity("EnrollmentModel", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("CourseId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime>("EnrolledAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("IsFinished")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("UserLogin")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CourseId");
-
-                    b.ToTable("Enrollments");
-                });
 
             modelBuilder.Entity("TeacherProfile", b =>
                 {
@@ -107,32 +52,6 @@ namespace WebApplication2.Migrations
                     b.HasKey("UserLogin");
 
                     b.ToTable("TeacherProfiles");
-                });
-
-            modelBuilder.Entity("UserProgressModel", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime>("CompletedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("IsCompleted")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("StepId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("UserLogin")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("StepId");
-
-                    b.ToTable("UserProgressModel");
                 });
 
             modelBuilder.Entity("WebApplication2.Models.CourseModel", b =>
@@ -303,32 +222,30 @@ namespace WebApplication2.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("CommentModel", b =>
+            modelBuilder.Entity("WebApplication2.Models.UserProgressModel", b =>
                 {
-                    b.HasOne("CommentModel", "ParentComment")
-                        .WithMany()
-                        .HasForeignKey("ParentCommentId");
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
 
-                    b.HasOne("WebApplication2.Models.StepModel", "Step")
-                        .WithMany()
-                        .HasForeignKey("StepId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.Property<DateTime>("CompletedAt")
+                        .HasColumnType("TEXT");
 
-                    b.Navigation("ParentComment");
+                    b.Property<bool>("IsCompleted")
+                        .HasColumnType("INTEGER");
 
-                    b.Navigation("Step");
-                });
+                    b.Property<int>("StepId")
+                        .HasColumnType("INTEGER");
 
-            modelBuilder.Entity("EnrollmentModel", b =>
-                {
-                    b.HasOne("WebApplication2.Models.CourseModel", "Course")
-                        .WithMany()
-                        .HasForeignKey("CourseId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.Property<string>("UserLogin")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
 
-                    b.Navigation("Course");
+                    b.HasKey("Id");
+
+                    b.HasIndex("StepId");
+
+                    b.ToTable("UserProgress");
                 });
 
             modelBuilder.Entity("TeacherProfile", b =>
@@ -338,17 +255,6 @@ namespace WebApplication2.Migrations
                         .HasForeignKey("TeacherProfile", "UserLogin")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("UserProgressModel", b =>
-                {
-                    b.HasOne("WebApplication2.Models.StepModel", "Step")
-                        .WithMany()
-                        .HasForeignKey("StepId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Step");
                 });
 
             modelBuilder.Entity("WebApplication2.Models.LessonModel", b =>
@@ -393,6 +299,17 @@ namespace WebApplication2.Migrations
                         .IsRequired();
 
                     b.Navigation("Lesson");
+                });
+
+            modelBuilder.Entity("WebApplication2.Models.UserProgressModel", b =>
+                {
+                    b.HasOne("WebApplication2.Models.StepModel", "Step")
+                        .WithMany()
+                        .HasForeignKey("StepId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Step");
                 });
 
             modelBuilder.Entity("WebApplication2.Models.CourseModel", b =>

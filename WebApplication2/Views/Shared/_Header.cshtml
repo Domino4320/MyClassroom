@@ -1,7 +1,6 @@
 ﻿@{
     var username = Context.Session.GetString("Username");
     var avatar = Context.Session.GetString("Avatar");
-    var login = Context.Session.GetString("Login");
 }
 
 <link href="~/css/header.css" rel="stylesheet" />
@@ -10,7 +9,18 @@
     <div class="user-section">
         @if (!string.IsNullOrEmpty(username))
         {
-            <img src="@(string.IsNullOrEmpty(avatar) ? Url.Content("~/images/default_avatar.jpg") : avatar)" alt="avatar" id="headerAvatar" class="user-avatar" onclick="chooseAvatar()">
+            @* Добавляем параметр версии, чтобы избежать кеширования браузером *@
+            var avatarPath = string.IsNullOrEmpty(avatar)
+            ? Url.Content("~/images/default_avatar.jpg")
+            : avatar + "?v=" + DateTime.Now.Ticks;
+
+            <img src="@avatarPath"
+                 alt="avatar"
+                 id="headerAvatar"
+                 class="user-avatar"
+                 onclick="chooseAvatar()"
+                 onerror="this.src='@Url.Content("~/images/default_avatar.jpg")'">
+
             <div class="auth-buttons">
                 <form method="post" asp-controller="Authorization" asp-action="Logout">
                     <button type="submit">Выйти из аккаунта</button>
@@ -29,6 +39,3 @@
 </div>
 
 <input type="file" id="avatarInput" accept="image/*" style="display:none">
-
-
-<script src="~/js/script_for_main_page.js"></script>

@@ -1,20 +1,7 @@
 ﻿@model WebApplication2.Models.CourseCardModel
 
 <style>
-    /* 1. БАЗОВЫЙ ШРИФТ ДЛЯ ИКОНОК (КРИТИЧЕСКИ ВАЖНО) */
-    /* Это гарантирует, что теги <i> всегда будут использовать Font Awesome, 
-       даже если у родителя прописан Segoe UI */
-    .course-card i {
-        font-family: "Font Awesome 6 Free", "Font Awesome 5 Free", "Font Awesome 6 Brands", sans-serif !important;
-        font-weight: 900; 
-        font-style: normal;
-        font-variant: normal;
-        text-rendering: auto;
-        -webkit-font-smoothing: antialiased;
-        display: inline-block;
-    }
-
-    /* 2. КОНТЕЙНЕР КАРТОЧКИ */
+    /* Основной контейнер карточки */
     .course-card {
         max-width: 360px;
         width: 100%;
@@ -23,230 +10,271 @@
         overflow: hidden;
         position: relative;
         transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        border: 1px solid rgba(79, 195, 247, 0.25);
-        font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        border: 1px solid rgba(79, 195, 247, 0.2);
+        font-family: 'Segoe UI', Roboto, sans-serif;
         color: #e3f2fd;
-        margin: 20px;
         display: flex;
         flex-direction: column;
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
     }
 
-    .course-card:hover {
-        transform: translateY(-8px);
-        border-color: rgba(79, 195, 247, 0.6);
-        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.7), 0 0 15px rgba(79, 195, 247, 0.15);
-    }
+        .course-card:hover {
+            transform: translateY(-8px);
+            border-color: rgba(79, 195, 247, 0.5);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.7);
+        }
 
-    /* 3. БАННЕР И АДМИН-КНОПКИ */
+    /* Стили баннера (обложки) */
     .card-banner {
         width: 100%;
         height: 200px;
-        overflow: hidden;
         position: relative;
-        background: #000;
+        background: #0a0f1a;
     }
 
-    .card-banner img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        opacity: 0.9;
-        transition: transform 0.6s ease;
+        .card-banner img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* Заполняет блок без искажения пропорций */
+            display: block;
+        }
+
+    /* Аватар автора */
+    .author-avatar-box {
+        position: absolute;
+        bottom: -25px;
+        right: 20px;
+        width: 54px;
+        height: 54px;
+        border-radius: 14px;
+        border: 3px solid #162031;
+        overflow: hidden;
+        background: #1e293b;
+        z-index: 10;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
     }
 
-    .card-admin-controls {
+        .author-avatar-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+    /* Кнопки управления (редактировать/удалить) */
+    .card-admin-overlay {
         position: absolute;
         top: 15px;
         left: 15px;
         display: flex;
-        gap: 10px;
-        z-index: 10;
+        gap: 8px;
+        z-index: 15;
     }
 
-    .btn-admin {
-        width: 40px;
-        height: 40px;
-        border-radius: 12px;
-        border: 1px solid rgba(255, 255, 255, 0.2);
+    .btn-admin-tool {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
         display: flex;
         align-items: center;
         justify-content: center;
+        border: none;
         cursor: pointer;
-        transition: all 0.3s ease;
-        backdrop-filter: blur(10px);
-        color: #ffffff;
-        padding: 0; /* Убираем внутренние отступы для центровки иконки */
-    }
-
-    .btn-admin i {
-        font-size: 1.1rem;
-        line-height: 1;
-    }
-
-    .btn-admin.edit { background: rgba(3, 169, 244, 0.4); }
-    .btn-admin.edit:hover { background: #03a9f4; transform: scale(1.1); }
-
-    .btn-admin.delete { background: rgba(244, 67, 54, 0.4); }
-    .btn-admin.delete:hover { background: #f44336; transform: scale(1.1); }
-
-    /* 4. АВАТАР И ТЕЛО */
-    .author-avatar {
-        position: absolute;
-        bottom: 15px;
-        right: 15px;
-        width: 48px;
-        height: 48px;
-        border-radius: 12px;
-        border: 2px solid #4fc3f7;
-        overflow: hidden;
-        background: #162031;
-        z-index: 5;
-    }
-
-    .card-body { padding: 24px; flex-grow: 1; }
-
-    .category-badge {
-        background: rgba(2, 136, 209, 0.8);
+        transition: 0.3s;
         color: white;
+        backdrop-filter: blur(4px);
+    }
+
+        .btn-admin-tool.edit {
+            background: rgba(3, 169, 244, 0.6);
+        }
+
+        .btn-admin-tool.delete {
+            background: rgba(244, 67, 54, 0.6);
+        }
+
+        .btn-admin-tool:hover {
+            transform: scale(1.1);
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+    /* Тело карточки */
+    .card-main-content {
+        padding: 35px 24px 20px 24px;
+        flex-grow: 1;
+    }
+
+    .cat-badge {
+        background: rgba(79, 195, 247, 0.1);
+        color: #4fc3f7;
         padding: 4px 12px;
-        border-radius: 8px;
-        font-size: 0.7rem;
+        border-radius: 6px;
+        font-size: 0.75rem;
         font-weight: 700;
         text-transform: uppercase;
-        margin-bottom: 12px;
-        display: inline-block;
+        letter-spacing: 0.5px;
     }
 
-    .course-title { font-size: 1.3rem; font-weight: 700; margin-bottom: 6px; color: #fff; }
+    .card-course-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        margin: 12px 0 4px 0;
+        line-height: 1.2;
+        color: #ffffff;
+    }
 
-    /* 5. КНОПКА ДЕТАЛЕЙ И ОПИСАНИЕ */
-    .desc-toggle {
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(79, 195, 247, 0.2);
-        color: #e3f2fd;
-        padding: 10px 14px;
-        border-radius: 10px;
-        cursor: pointer;
+    .card-author-handle {
+        color: #90a4ae;
         font-size: 0.85rem;
-        width: 100%;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-top: 10px;
+        margin-bottom: 15px;
+        display: block;
     }
 
-    .course-description {
+    /* Выпадающее описание */
+    .description-collapse {
         max-height: 0;
         overflow: hidden;
-        transition: all 0.4s ease-in-out;
+        transition: all 0.4s ease;
         font-size: 0.9rem;
         color: #b0bec5;
         opacity: 0;
+        line-height: 1.5;
     }
 
-    .course-description.open {
-        max-height: 500px;
-        opacity: 1;
-        margin-top: 15px;
+        .description-collapse.show {
+            max-height: 150px;
+            opacity: 1;
+            margin-top: 15px;
+        }
+
+    .toggle-desc-btn {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: #e3f2fd;
+        width: 100%;
+        padding: 8px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 0.8rem;
+        transition: 0.3s;
     }
 
-    /* 6. ФУТЕР */
-    .card-footer {
-        padding: 18px 24px;
-        background: rgba(0, 0, 0, 0.2);
+        .toggle-desc-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+    /* Футер с кнопкой действия */
+    .card-action-footer {
+        padding: 20px 24px 24px 24px;
         border-top: 1px solid rgba(255, 255, 255, 0.05);
     }
 
-    .footer-meta {
-        color: #90a4ae;
-        font-size: 0.85rem;
-        margin-bottom: 12px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .btn-join {
+    .btn-start-course {
         background: linear-gradient(135deg, #0288d1, #26c6da);
         color: white !important;
         text-decoration: none;
-        padding: 12px;
-        border-radius: 10px;
-        font-size: 0.95rem;
-        font-weight: 600;
         display: block;
         text-align: center;
+        padding: 12px;
+        border-radius: 12px;
+        font-weight: 600;
         transition: 0.3s;
+        box-shadow: 0 4px 15px rgba(2, 136, 209, 0.3);
     }
+
+        .btn-start-course:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(2, 136, 209, 0.5);
+            filter: brightness(1.1);
+        }
 </style>
 
-<div class="course-card">
+<div class="course-card" id="course-card-@Model.Id">
     <div class="card-banner">
-        <img src="@(Model.CoverImagePath ?? "/images/default-course.jpg")" alt="Cover">
-        <div class="author-avatar">
-            <img src="@(string.IsNullOrEmpty(Model.AuthorAvatar) ? "/images/default_avatar.jpg" : Model.AuthorAvatar)" alt="Avatar">
+        <img src="@(string.IsNullOrEmpty(Model.CoverImagePath) ? "/images/default-course.jpg" : Model.CoverImagePath)"
+             alt="Course Cover"
+             onerror="this.src='/images/default-course.jpg'">
+
+        <div class="author-avatar-box">
+            @if (!string.IsNullOrEmpty(Model.AuthorAvatar) && Model.AuthorAvatar != "/images/default_avatar.jpg")
+            {
+                @* Если в БД есть путь, используем его *@
+                <img src="@Model.AuthorAvatar" alt="Author" onerror="this.src='/images/default_avatar.jpg'">
+            }
+            else
+            {
+                @* Если в БД пусто или стоит заглушка — принудительно выводим дефолт *@
+                <img src="/images/default_avatar.jpg" alt="Author Default">
+            }
         </div>
 
         @if (ViewData["IsEditable"] != null && (bool)ViewData["IsEditable"])
         {
-            <div class="card-admin-controls">
-                @* Иконка карандаша *@
-                <button type="button" class="btn-admin edit" title="Редактировать">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+            <div class="card-admin-overlay">
+                <a asp-controller="CourseConstructor" asp-action="Index" asp-route-id="@Model.Id"
+                   class="btn-admin-tool edit" title="Редактировать структуру">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M11 4H4C2.89543 4 2 4.89543 2 6V20C2 21.1046 2.89543 22 4 22H18C19.1046 22 20 21.1046 20 20V13"
+                              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        <path d="M18.5 2.5C19.3284 1.67157 20.6716 1.67157 21.5 2.5C22.3284 3.32843 22.3284 4.67157 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z"
+                              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                     </svg>
-                </button>
+                </a>
 
-                @* Иконка корзины *@
-                <button type="button" class="btn-admin delete" title="Удалить">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="3 6 5 6 21 6"></polyline>
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                <button onclick="deleteCourse(@Model.Id)" class="btn-admin-tool delete" title="Удалить курс">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M3 6H5H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        <path d="M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z"
+                              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        <path d="M10 11V17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        <path d="M14 11V17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                     </svg>
                 </button>
             </div>
         }
     </div>
 
-    <div class="card-body">
-        <span class="category-badge">@Model.Category</span>
-        <h3 class="course-title">@Model.Title</h3>
-        <span class="author-name">@@@Model.AuthorUsername</span>
+    <div class="card-main-content">
+        <span class="cat-badge">@Model.Category</span>
+        <h3 class="card-course-title">@Model.Title</h3>
+        <span class="card-author-handle">@@@Model.AuthorUsername</span>
 
-        <button type="button" class="desc-toggle" onclick="toggleDescription(this)">
-            <span class="btn-text">Прочитать детали</span>
-            <i class="fa-solid fa-chevron-down toggle-icon"></i>
-        </button>
-
-        <div class="course-description">
+        @* Убрали кнопку "Подробнее", описание теперь просто текст (обрезанный или скрытый) *@
+        <p style="color: #b0bec5; font-size: 0.9rem; margin-top: 10px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
             @Model.Description
-        </div>
+        </p>
     </div>
 
-    <div class="card-footer">
-        <div class="footer-meta">
-            <span><i class="fa-regular fa-calendar"></i> @Model.CreatedAt.ToString("dd MMM yyyy")</span>
-        </div>
-        <a href="#" class="btn-join">Начать обучение</a>
+    <div class="card-action-footer">
+        @* Если юзер записан — кнопка ведет в Learn, если нет — в Details *@
+        @if (ViewData["IsEnrolled"] != null && (bool)ViewData["IsEnrolled"])
+        {
+            <a asp-controller="Course" asp-action="Learn" asp-route-id="@Model.Id" class="btn-start-course" style="background: linear-gradient(135deg, #10b981, #059669);">
+                Продолжить обучение
+            </a>
+        }
+        else
+        {
+            <a asp-controller="Course" asp-action="Details" asp-route-id="@Model.Id" class="btn-start-course">
+                Посмотреть курс
+            </a>
+        }
     </div>
 </div>
 
 <script>
-    function toggleDescription(btn) {
-        // Находим блок описания, который идет СРАЗУ после кнопки
-        const desc = btn.nextElementSibling;
-        const icon = btn.querySelector('.toggle-icon');
-        const text = btn.querySelector('.btn-text');
+    // Функция раскрытия описания
+    if (typeof toggleCardDescription !== 'function') {
+        window.toggleCardDescription = function (id) {
+            const desc = document.getElementById('desc-' + id);
+            const btnText = document.getElementById('text-' + id);
 
-        desc.classList.toggle('open');
-
-        if (desc.classList.contains('open')) {
-            text.innerText = 'Скрыть детали';
-            icon.classList.replace('fa-chevron-down', 'fa-chevron-up');
-        } else {
-            text.innerText = 'Прочитать детали';
-            icon.classList.replace('fa-chevron-up', 'fa-chevron-down');
-        }
+            if (desc.classList.contains('show')) {
+                desc.classList.remove('show');
+                btnText.innerText = 'Подробнее';
+            } else {
+                desc.classList.add('show');
+                btnText.innerText = 'Скрыть';
+            }
+        };
     }
 </script>

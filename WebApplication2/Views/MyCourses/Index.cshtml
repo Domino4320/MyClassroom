@@ -41,6 +41,35 @@
     </div>
 
     <script src="~/js/script_for_main_page.js"></script>
+    <script>
+        async function deleteCourse(courseId) {
+            // 1. Подтверждение удаления
+            if (!confirm("Вы уверены, что хотите полностью удалить этот курс? Все модули и уроки внутри него будут стерты.")) {
+                return;
+            }
+
+            // 2. Отправка запроса на контроллер
+            try {
+                const response = await fetch(`/CourseConstructor/DeleteCourse/${courseId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                        // Если у тебя настроена CSRF защита, здесь нужно будет добавить токен
+                    }
+                });
+
+                if (response.ok) {
+                    window.location.reload();
+                } else {
+                    const errorData = await response.text();
+                    alert("Ошибка при удалении: " + (errorData || "Сервер вернул ошибку"));
+                }
+            } catch (error) {
+                console.error("Ошибка запроса:", error);
+                alert("Не удалось отправить запрос на удаление.");
+            }
+        }
+    </script>
 
 </body>
 </html>
