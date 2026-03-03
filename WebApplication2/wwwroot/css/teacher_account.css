@@ -1,11 +1,12 @@
 ﻿:root {
     --accent: #6366f1;
     --accent-dark: #4f46e5;
-    --bg-light-blue: #f0f7ff; /* Светло-голубой фон */
+    --bg-light-blue: #f0f7ff;
     --card-bg: #ffffff;
     --text-dark: #1e293b;
     --text-light: #64748b;
     --border-color: #e2e8f0;
+    --error-red: #ff4d4d;
 }
 
 * {
@@ -21,12 +22,7 @@ body {
     line-height: 1.6;
 }
 
-.page-bg-wrapper {
-    min-height: 100vh;
-    padding-top: 80px; /* Отступ под Header */
-    padding-left: 260px; /* Отступ под Sidebar (настройте под свой) */
-}
-
+/* --- Оболочка и сетка --- */
 .container {
     max-width: 1200px;
     margin: 0 auto;
@@ -40,7 +36,7 @@ body {
     align-items: start;
 }
 
-/* Левая панель */
+/* --- Левая панель (Side Panel) --- */
 .side-panel {
     background: var(--card-bg);
     padding: 40px 30px;
@@ -48,6 +44,8 @@ body {
     box-shadow: 0 10px 30px rgba(0,0,0,0.04);
     text-align: center;
     border: 1px solid rgba(255,255,255,0.8);
+    position: sticky;
+    top: 100px;
 }
 
 .avatar-wrapper {
@@ -67,28 +65,15 @@ body {
     object-fit: cover;
 }
 
-.edit-overlay {
-    position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.5);
-    display: flex; justify-content: center; align-items: center;
-    color: white; opacity: 0; transition: 0.3s; cursor: pointer;
-}
-
-.avatar-wrapper:hover .edit-overlay { opacity: 1; }
-
 .teacher-name {
     font-size: 1.6rem;
     font-weight: 800;
     margin-bottom: 5px;
 }
 
-/* Флекс-группы для иконок редактирования справа */
-.editable-inline-group {
-    display: flex;
-    align-items: center;
-    justify-content: center; /* Центровка в сайдбаре */
-    gap: 8px;
+.tagline {
+    color: var(--accent);
+    font-weight: 600;
     margin-bottom: 10px;
 }
 
@@ -104,23 +89,7 @@ body {
     margin: 15px 0;
 }
 
-.edit-icon {
-    color: var(--accent);
-    cursor: pointer;
-    font-size: 0.8rem;
-    opacity: 0.3;
-    transition: 0.2s;
-    padding: 4px;
-}
-
-.editable-inline-group:hover .edit-icon,
-.experience-badge:hover .edit-icon,
-.section-header:hover .edit-icon,
-.btn-with-edit:hover .edit-icon {
-    opacity: 1;
-}
-
-/* Контентные карточки */
+/* --- Контентные карточки --- */
 .glass-card {
     background: white;
     padding: 35px;
@@ -132,7 +101,7 @@ body {
 
 .section-header {
     display: flex;
-    justify-content: space-between; /* Текст слева - Иконка справа */
+    justify-content: space-between;
     align-items: center;
     margin-bottom: 15px;
 }
@@ -142,28 +111,65 @@ body {
     align-items: center;
     gap: 12px;
     font-size: 1.3rem;
-    margin: 0;
 }
 
-.section-title i { color: var(--accent); }
+    .section-title i {
+        color: var(--accent);
+    }
 
-.tagline { color: var(--accent); font-weight: 600; }
+.description {
+    color: #475569;
+    font-size: 1.05rem;
+    white-space: pre-line; /* Чтобы сохранялись переносы строк */
+}
 
-.description { color: #475569; font-size: 1.05rem; }
+/* --- Иконки редактирования --- */
+.edit-icon {
+    color: var(--accent);
+    cursor: pointer;
+    font-size: 0.9rem;
+    opacity: 0.3;
+    transition: 0.2s;
+    padding: 5px;
+}
 
-/* Кнопки */
+.editable-group:hover .edit-icon,
+.experience-badge:hover .edit-icon,
+.section-header:hover .edit-icon,
+.action-buttons:hover .edit-icon {
+    opacity: 1;
+}
+
+/* --- Теги --- */
+.skills-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.tag {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--accent);
+}
+
+.text-muted {
+    color: var(--text-light);
+    font-size: 0.9rem;
+    font-style: italic;
+}
+
+/* --- Кнопки --- */
 .action-buttons {
     display: flex;
     flex-direction: column;
     gap: 12px;
     margin-top: 20px;
-}
-
-.btn-with-edit {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
 }
 
 .btn {
@@ -178,10 +184,19 @@ body {
     justify-content: center;
     gap: 8px;
     transition: 0.3s;
+    cursor: pointer;
 }
 
-.btn-primary { background: var(--accent); color: white; border: none; }
-.btn-primary:hover { background: var(--accent-dark); transform: translateY(-2px); }
+.btn-primary {
+    background: var(--accent);
+    color: white;
+    border: none;
+}
+
+    .btn-primary:hover {
+        background: var(--accent-dark);
+        transform: translateY(-2px);
+    }
 
 .btn-accent-outline {
     background: transparent;
@@ -189,53 +204,117 @@ body {
     color: var(--accent);
 }
 
-.btn-accent-outline:hover { background: var(--accent); color: white; border-style: solid; }
-
-/* Теги */
-.skills-tags { display: flex; flex-wrap: wrap; gap: 8px; }
-.tag {
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    padding: 6px 14px;
-    border-radius: 8px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: var(--accent);
+.btn-outline {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-light);
 }
 
-/* Модалка */
+/* --- ИСПРАВЛЕННОЕ МОДАЛЬНОЕ ОКНО --- */
 .modal {
-    display: none;
+    display: none; /* Переключается на flex через JS классом .active */
     position: fixed;
-    z-index: 2000;
-    left: 0; top: 0; width: 100%; height: 100%;
-    background: rgba(15, 23, 42, 0.6);
+    z-index: 9999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.7);
     backdrop-filter: blur(8px);
+    /* Центрирование контента */
     justify-content: center;
     align-items: center;
+    padding: 20px;
 }
+
+    .modal.active {
+        display: flex !important;
+    }
 
 .modal-content {
     background: white;
     padding: 30px;
     border-radius: 24px;
     width: 100%;
-    max-width: 450px;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+    max-width: 480px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    position: relative;
+    animation: modalSlideUp 0.3s ease-out;
 }
 
-/* Анимации */
-.animate-fade-in { animation: fadeIn 0.6s ease forwards; opacity: 0; }
-.delay-2 { animation-delay: 0.2s; }
+@keyframes modalSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-content h3 {
+    margin-bottom: 20px;
+    font-size: 1.4rem;
+    color: var(--text-dark);
+}
+
+/* Стили полей ввода внутри модалки */
+#inputContainer input,
+#inputContainer textarea {
+    width: 100%;
+    padding: 14px;
+    border: 2px solid var(--border-color);
+    border-radius: 14px;
+    font-family: inherit;
+    font-size: 1rem;
+    margin-bottom: 15px;
+    outline: none;
+    transition: 0.2s;
+}
+
+    #inputContainer input:focus,
+    #inputContainer textarea:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+    }
+
+.modal-buttons {
+    display: flex;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+/* --- Анимации --- */
+.animate-fade-in {
+    animation: fadeIn 0.6s ease forwards;
+    opacity: 0;
+}
+
+.delay-2 {
+    animation-delay: 0.2s;
+}
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(15px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(15px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
-/* Адаптивность */
+/* --- Адаптивность --- */
 @media (max-width: 1024px) {
-    .page-bg-wrapper { padding-left: 0; }
-    .profile-layout { grid-template-columns: 1fr; }
-    .side-panel { max-width: 100%; }
+    .profile-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .side-panel {
+        position: static;
+    }
 }

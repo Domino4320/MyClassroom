@@ -88,11 +88,10 @@ namespace WebApplication2.Controllers
             return Ok();
         }
 
-        // 4. Добавление Шага (Лекция, Видео, Тест)
+        // 4. Добавление Шага
         [HttpPost]
         public async Task<IActionResult> AddStep(int lessonId, string type)
         {
-            // Маппинг строкового типа из JS в Enum
             StepType stepType = type switch
             {
                 "Text" => StepType.Text,
@@ -115,7 +114,8 @@ namespace WebApplication2.Controllers
                 Title = GetDefaultTitle(stepType),
                 Order = nextOrder,
                 TextContent = stepType == StepType.Text ? "Введите текст лекции..." : "",
-                VideoUrl = ""
+                VideoUrl = "",
+                IsMultipleChoice = false // По умолчанию одиночный выбор
             };
 
             _db.Steps.Add(newStep);
@@ -124,7 +124,7 @@ namespace WebApplication2.Controllers
             return Ok();
         }
 
-        // 5. Получение данных урока для редактора (AJAX)
+        // 5. Получение данных урока (AJAX) - Исправлено (добавлен isMultipleChoice)
         [HttpGet]
         public async Task<IActionResult> GetLessonData(int id)
         {
@@ -137,17 +137,19 @@ namespace WebApplication2.Controllers
             return Json(new
             {
                 title = lesson.Title,
-                steps = lesson.Steps.OrderBy(s => s.Order).Select(s => new {
+                steps = lesson.Steps.OrderBy(s => s.Order).Select(s => new
+                {
                     id = s.Id,
                     title = s.Title,
                     type = (int)s.Type,
                     textContent = s.TextContent ?? "",
-                    videoUrl = s.VideoUrl ?? ""
+                    videoUrl = s.VideoUrl ?? "",
+                    isMultipleChoice = s.IsMultipleChoice // Добавлено для фронта
                 })
             });
         }
 
-        // 6. Сохранение урока и всех его шагов
+        // 6. Сохранение урока - Исправлено (сохранение IsMultipleChoice)
         [HttpPost]
         public async Task<IActionResult> SaveLesson([FromBody] LessonUpdateDto model)
         {
@@ -166,9 +168,11 @@ namespace WebApplication2.Controllers
                 var step = lesson.Steps.FirstOrDefault(s => s.Id == stepData.Id);
                 if (step != null)
                 {
-                    step.Title = stepData.Title;
+                    step.Title = stepData.Title ?? step.Title;
                     step.TextContent = stepData.TextContent;
                     step.VideoUrl = stepData.VideoUrl;
+                    // Исправление: сохраняем настройку множественного выбора
+                    step.IsMultipleChoice = stepData.IsMultipleChoice;
                 }
             }
 
@@ -176,7 +180,7 @@ namespace WebApplication2.Controllers
             return Ok();
         }
 
-        // 7. Удаление шага (вызывается из иконки x-circle во вьюхе)
+        // 7. Удаление шага
         [HttpPost]
         public async Task<IActionResult> DeleteStep(int id)
         {
@@ -188,7 +192,22 @@ namespace WebApplication2.Controllers
             return Ok();
         }
 
-        // 8. Удаление курса
+        // 8. Удаление урока
+        [HttpPost]
+        public async Task<IActionResult> DeleteLesson(int id)
+        {
+            var lesson = await _db.Lessons
+                .Include(l => l.Steps)
+                .FirstOrDefaultAsync(l => l.Id == id);
+
+            if (lesson == null) return NotFound();
+
+            _db.Lessons.Remove(lesson);
+            await _db.SaveChangesAsync();
+            return Ok();
+        }
+
+        // 9. Удаление курса
         [HttpPost]
         public async Task<IActionResult> DeleteCourse(int id)
         {
@@ -211,8 +230,7 @@ namespace WebApplication2.Controllers
             _ => "Новый шаг"
         };
 
-
-        // --- МЕТОДЫ ДЛЯ ТЕСТОВ (QUIZ) ---
+        // --- QUIZ METHODS ---
 
         [HttpGet]
         public async Task<IActionResult> GetQuizOptions(int stepId)
@@ -264,36 +282,14 @@ namespace WebApplication2.Controllers
         public async Task<IActionResult> PublishCourse(int id)
         {
             var course = await _db.Courses.FindAsync(id);
-
             if (course == null) return NotFound();
 
-            // Проверка прав (только автор)
             var userLogin = HttpContext.Session.GetString("Login");
             if (course.AuthorLogin != userLogin) return Forbid();
 
-            // Переключаем статус
             course.IsPublished = true;
-
             await _db.SaveChangesAsync();
             return Ok(new { success = true });
         }
     }
-
-
-    // Классы переноса данных
-    public class LessonUpdateDto
-    {
-        public int LessonId { get; set; }
-        public string Title { get; set; }
-        public List<StepUpdateDto> Steps { get; set; } = new();
-    }
-
-    public class StepUpdateDto
-    {
-        public int Id { get; set; }
-        public string Title { get; set; }
-        public string? TextContent { get; set; }
-        public string? VideoUrl { get; set; }
-    }
-
 }

@@ -4,16 +4,14 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace WebApplication2.Models
 {
-    // 1. ТИПЫ ШАГОВ (Контент-блоков)
     public enum StepType
     {
-        Text,   // Лекция/Теория
-        Video,  // Видео-урок
-        Quiz,   // Тест с вариантами ответов
-        Code    // Задача на программирование
+        Text,
+        Video,
+        Quiz,
+        Code
     }
 
-    // 2. КУРС (Уже имеющаяся у вас модель, дополненная связью)
     public class CourseModel
     {
         [Key]
@@ -36,14 +34,22 @@ namespace WebApplication2.Models
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        // Связь: Один курс -> Много модулей
         public List<ModuleModel> Modules { get; set; } = new();
 
         [Required]
-        public bool IsPublished { get; set; } = false; // По умолчанию курс — черновик
+        public bool IsPublished { get; set; } = false;
+        public List<CourseReviewModel> Reviews { get; set; } = new List<CourseReviewModel>();
+
+        [NotMapped]
+        public double AverageRating => Reviews != null && Reviews.Any()
+            ? Math.Round(Reviews.Average(r => r.Rating), 1)
+            : 0;
+
+        [NotMapped]
+        public int ReviewsCount => Reviews?.Count ?? 0;
+
     }
 
-    // 3. МОДУЛЬ (Глава курса)
     public class ModuleModel
     {
         [Key]
@@ -52,18 +58,15 @@ namespace WebApplication2.Models
         [Required(ErrorMessage = "Название модуля обязательно")]
         public string Title { get; set; }
 
-        public int Order { get; set; } // Порядок в списке
+        public int Order { get; set; }
 
-        // Внешний ключ на курс
         public int CourseId { get; set; }
         [ForeignKey("CourseId")]
         public CourseModel Course { get; set; }
 
-        // Связь: Один модуль -> Много уроков
         public List<LessonModel> Lessons { get; set; } = new();
     }
 
-    // 4. УРОК (Страница с набором шагов)
     public class LessonModel
     {
         [Key]
@@ -74,50 +77,42 @@ namespace WebApplication2.Models
 
         public int Order { get; set; }
 
-        // Внешний ключ на модуль
         public int ModuleId { get; set; }
         [ForeignKey("ModuleId")]
         public ModuleModel Module { get; set; }
 
-        // Связь: Один урок -> Много шагов
         public List<StepModel> Steps { get; set; } = new();
     }
 
-    // 5. ШАГ (Атомарная единица контента)
     public class StepModel
     {
         [Key]
         public int Id { get; set; }
 
-        public string? Title { get; set; } // Необязательный заголовок шага
+        public string? Title { get; set; }
 
         [Required]
-        public StepType Type { get; set; } // Тип (Text, Quiz и т.д.)
+        public StepType Type { get; set; }
 
         public int Order { get; set; }
 
         // --- ПОЛЯ КОНТЕНТА ---
-
-        // Для типа Text: храним HTML разметку
         public string? TextContent { get; set; }
-
-        // Для типа Video: ссылка (YouTube/Vimeo)
         public string? VideoUrl { get; set; }
-
-        // Для типа Code: шаблон кода и проверочный скрипт
         public string? CodeTemplate { get; set; }
         public string? ExpectedOutput { get; set; }
 
-        // Внешний ключ на урок
+        // НОВОЕ: Позволяет конструктору и плееру понимать тип теста
+        [Required]
+        public bool IsMultipleChoice { get; set; } = false;
+
         public int LessonId { get; set; }
         [ForeignKey("LessonId")]
         public LessonModel Lesson { get; set; }
 
-        // Связь: Один шаг (Quiz) -> Много вариантов ответа
         public List<QuizOptionModel> QuizOptions { get; set; } = new();
     }
 
-    // 6. ВАРИАНТ ОТВЕТА (Для тестов)
     public class QuizOptionModel
     {
         [Key]
@@ -126,15 +121,13 @@ namespace WebApplication2.Models
         [Required]
         public string Text { get; set; }
 
-        public bool IsCorrect { get; set; } // Является ли ответ верным
+        public bool IsCorrect { get; set; }
 
-        // Внешний ключ на шаг
         public int StepId { get; set; }
         [ForeignKey("StepId")]
         public StepModel Step { get; set; }
     }
 
-    // 7. ПРОГРЕСС (Для отслеживания прохождения курса студентом)
     public class UserProgressModel
     {
         [Key]

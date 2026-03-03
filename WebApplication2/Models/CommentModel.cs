@@ -15,12 +15,15 @@ public class CommentModel
     [Required]
     public string UserLogin { get; set; }
 
-    // К какому шагу относится комментарий
+    // --- НОВОЕ СВОЙСТВО СВЯЗИ ---
+    [ForeignKey("UserLogin")]
+    public virtual UserModel User { get; set; }
+    // ----------------------------
+
     public int StepId { get; set; }
     [ForeignKey("StepId")]
     public StepModel Step { get; set; }
 
-    // Для реализации ответов (реплик) на комментарии
     public int? ParentCommentId { get; set; }
     [ForeignKey("ParentCommentId")]
     public CommentModel? ParentComment { get; set; }

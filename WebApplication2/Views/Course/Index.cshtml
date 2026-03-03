@@ -1,6 +1,9 @@
 ﻿@model WebApplication2.Models.CourseLearnViewModel
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 @{
     Layout = null;
+    var tokens = Antiforgery.GetAndStoreTokens(Context);
+    var isStepCompleted = Model.CompletedStepIds.Contains(Model.CurrentStep.Id);
 }
 
 <!DOCTYPE html>
@@ -10,7 +13,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Обучение - @Model.CurrentStep.Title</title>
     <style>
-        /* 1. ГЛОБАЛЬНЫЙ СБРОС ДЛЯ УДАЛЕНИЯ ОТСТУПОВ */
         * {
             margin: 0;
             padding: 0;
@@ -20,16 +22,15 @@
         html, body {
             height: 100%;
             width: 100%;
-            overflow: hidden; /* Запрещаем общий скролл страницы */
+            overflow: hidden;
             background-color: #0f172a;
             color: #e2e8f0;
             font-family: 'Inter', sans-serif;
         }
 
-        /* 2. СТРУКТУРА НА ВЕСЬ ЭКРАН */
         .learn-container {
             display: flex;
-            height: 100vh; /* Ровно 100% высоты видимой области */
+            height: 100vh;
             width: 100%;
         }
 
@@ -40,8 +41,27 @@
             border-right: 1px solid #334155;
             display: flex;
             flex-direction: column;
-            flex-shrink: 0; /* Чтобы сайдбар не сжимался */
+            flex-shrink: 0;
         }
+
+        .back-to-main {
+            padding: 15px 20px;
+            border-bottom: 1px solid #334155;
+        }
+
+        .btn-back {
+            color: #94a3b8;
+            text-decoration: none;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.2s;
+        }
+
+            .btn-back:hover {
+                color: #38bdf8;
+            }
 
         .sidebar-header {
             padding: 20px;
@@ -51,7 +71,7 @@
         }
 
         .modules-list {
-            overflow-y: auto; /* Скролл только внутри списка модулей */
+            overflow-y: auto;
             flex-grow: 1;
         }
 
@@ -75,7 +95,7 @@
             font-size: 0.95rem;
         }
 
-            .lesson-link:hover {
+            .lesson-link:hover:not(.locked) {
                 background: #334155;
             }
 
@@ -84,19 +104,24 @@
                 color: white;
             }
 
-        /* ОСНОВНАЯ ОБЛАСТЬ СО СКРОЛЛОМ */
+            .lesson-link.locked {
+                opacity: 0.5;
+                cursor: not-allowed;
+                color: #64748b;
+            }
+
+        /* ОСНОВНАЯ ОБЛАСТЬ */
         .learn-main {
             flex-grow: 1;
             display: flex;
             flex-direction: column;
             height: 100%;
-            overflow-y: auto; /* Скролл появляется здесь, если контента много */
+            overflow-y: auto;
             background-color: #0f172a;
         }
 
-        /* НАВИГАЦИЯ ШАГОВ */
         .steps-top-nav {
-            position: sticky; /* Чтобы точки всегда были сверху при скролле */
+            position: sticky;
             top: 0;
             z-index: 10;
             display: flex;
@@ -127,7 +152,6 @@
                 background: #10b981;
             }
 
-        /* КОНТЕНТ */
         .step-content-area {
             max-width: 850px;
             margin: 40px auto 0 auto;
@@ -143,10 +167,76 @@
             line-height: 1.6;
         }
 
+        /* ТЕСТЫ */
+        .quiz-option {
+            display: flex;
+            align-items: center;
+            background: #0f172a;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            border: 1px solid #334155;
+            transition: 0.2s;
+            user-select: none;
+        }
+
+            .quiz-option:hover {
+                border-color: #475569;
+            }
+
+            .quiz-option input {
+                margin-right: 12px;
+                width: 18px;
+                height: 18px;
+                cursor: pointer;
+            }
+
+            .quiz-option.active-selection {
+                border-color: #38bdf8;
+                background: rgba(56, 189, 248, 0.1);
+            }
+
+            .quiz-option.correct {
+                border-color: #10b981 !important;
+                background: rgba(16, 185, 129, 0.1);
+            }
+
+            .quiz-option.wrong {
+                border-color: #ef4444 !important;
+                background: rgba(239, 68, 68, 0.1);
+            }
+
+            .quiz-option.disabled {
+                cursor: default;
+                pointer-events: none;
+                opacity: 0.9;
+            }
+
+        .video-wrapper {
+            position: relative;
+            padding-bottom: 56.25%;
+            height: 0;
+            margin-bottom: 25px;
+            overflow: hidden;
+            border-radius: 12px;
+            background: #000;
+        }
+
+            .video-wrapper iframe {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+            }
+
         .step-footer {
             margin-top: 30px;
             display: flex;
             justify-content: flex-end;
+            min-height: 50px;
+            align-items: center;
         }
 
         .btn-next {
@@ -164,12 +254,29 @@
                 background: #0284c7;
             }
 
+            .btn-next:disabled {
+                opacity: 0.6;
+                cursor: not-allowed;
+            }
+
+        .finish-message {
+            color: #10b981;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(16, 185, 129, 0.1);
+            padding: 15px 25px;
+            border-radius: 8px;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
         /* КОММЕНТАРИИ */
         .comments-section {
             max-width: 850px;
             margin: 50px auto 0 auto;
             width: 100%;
-            padding: 0 20px 60px 20px; /* Уменьшили нижний отступ до 60px */
+            padding: 0 20px 60px 20px;
         }
 
         .comment-card {
@@ -178,6 +285,24 @@
             border-radius: 10px;
             padding: 15px;
             margin-bottom: 15px;
+        }
+
+        .comment-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1px solid #475569;
+        }
+
+        .author-badge {
+            background: #0ea5e9;
+            color: white;
+            font-size: 0.65rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            font-weight: 800;
         }
 
         .comment-input {
@@ -196,6 +321,9 @@
 
     <div class="learn-container">
         <aside class="learn-sidebar">
+            <div class="back-to-main">
+                <a href="/" class="btn-back"><span>←</span> На главную</a>
+            </div>
             <div class="sidebar-header">Содержание курса</div>
             <div class="modules-list">
                 @foreach (var module in Model.AllModules)
@@ -205,9 +333,13 @@
                         @foreach (var lesson in module.Lessons)
                         {
                             var firstStepId = lesson.Steps.OrderBy(s => s.Order).FirstOrDefault()?.Id;
-                            <a href="?courseId=@Model.CourseId&stepId=@firstStepId"
-                               class="lesson-link @(lesson.Id == Model.CurrentStep.LessonId ? "active" : "")">
-                                @lesson.Title
+                            var isLessonCompleted = Model.CompletedStepIds.Contains(firstStepId ?? 0);
+                            var isCurrentLesson = lesson.Id == Model.CurrentStep.LessonId;
+                            var isLocked = !isLessonCompleted && !isCurrentLesson;
+
+                            <a href="@(isLocked ? "javascript:void(0)" : $"?courseId={Model.CourseId}&stepId={firstStepId}")"
+                               class="lesson-link @(isCurrentLesson ? "active" : "") @(isLocked ? "locked" : "")">
+                                @lesson.Title @(isLocked ? "🔒" : "")
                             </a>
                         }
                     </div>
@@ -233,26 +365,87 @@
                     <div style="height: 1px; background: #334155; margin-bottom: 25px;"></div>
 
                     <div class="content-render">
-                        @if (Model.CurrentStep.Type == StepType.Text)
+                        @if (!string.IsNullOrEmpty(Model.CurrentStep.VideoUrl))
+                        {
+                            <div class="video-wrapper">
+                                @{
+                                    var videoId = "";
+                                    if (Model.CurrentStep.VideoUrl.Contains("v=")) { videoId = Model.CurrentStep.VideoUrl.Split("v=")[1].Split("&")[0]; }
+                                    else if (Model.CurrentStep.VideoUrl.Contains("youtu.be/")) { videoId = Model.CurrentStep.VideoUrl.Split("be/")[1].Split("?")[0]; }
+                                    var embedUrl = "https://www.youtube.com/embed/" + videoId;
+                                }
+                                <iframe src="@embedUrl" frameborder="0" allowfullscreen></iframe>
+                            </div>
+                        }
+
+                        @if (Model.CurrentStep.Type == WebApplication2.Models.StepType.Text)
                         {
                             @Html.Raw(Model.CurrentStep.TextContent)
                         }
-                        else if (Model.CurrentStep.Type == StepType.Quiz)
+                        else if (Model.CurrentStep.Type == WebApplication2.Models.StepType.Quiz)
                         {
-                            <p style="margin-bottom: 15px;">Выберите правильный ответ:</p>
-                            @foreach (var opt in Model.CurrentStep.QuizOptions)
-                            {
-                                <label style="display: block; background: #0f172a; padding: 12px; border-radius: 8px; margin-bottom: 10px; cursor: pointer; border: 1px solid #334155;">
-                                    <input type="radio" name="quiz" value="@opt.IsCorrect"> <span style="margin-left: 10px;">@opt.Text</span>
-                                </label>
-                            }
+                            <p style="margin-bottom: 15px; font-weight: 500;">
+                                @(isStepCompleted ? "Вы успешно прошли этот тест. Правильные ответы отмечены зелёным:" : (Model.CurrentStep.IsMultipleChoice ? "Выберите все верные ответы:" : "Выберите один правильный ответ:"))
+                            </p>
+                            <div id="quiz-container">
+                                @foreach (var opt in Model.CurrentStep.QuizOptions)
+                                {
+                                    var highlightClass = (isStepCompleted && opt.IsCorrect) ? "correct" : "";
+                                    <label class="quiz-option @highlightClass @(isStepCompleted ? "disabled" : "")" data-option-id="@opt.Id">
+                                        @if (Model.CurrentStep.IsMultipleChoice)
+                                        {
+                                            <input type="checkbox" name="quiz" value="@opt.Id" @(isStepCompleted ? "disabled" : "") @(isStepCompleted && opt.IsCorrect ? "checked" : "")>
+                                        }
+                                        else
+                                        {
+                                            <input type="radio" name="quiz" value="@opt.Id" @(isStepCompleted ? "disabled" : "") @(isStepCompleted && opt.IsCorrect ? "checked" : "")>
+                                        }
+                                        <span>@opt.Text</span>
+                                    </label>
+                                }
+                            </div>
                         }
                     </div>
 
                     <div class="step-footer">
-                        <button class="btn-next" onclick="nextStep(@Model.CurrentStep.Id)">
-                            Продолжить
-                        </button>
+                        @if (Model.CurrentStep.Type == WebApplication2.Models.StepType.Quiz)
+                        {
+                            @if (!isStepCompleted)
+                            {
+                                <button id="action-btn" class="btn-next" onclick="handleQuizSubmit(@Model.CurrentStep.Id)">
+                                    @(Model.IsLastStep ? "Завершить курс" : "Проверить ответ")
+                                </button>
+                            }
+                            else if (Model.IsLastStep)
+                            {
+                                <div class="finish-message">
+                                    <span>🎉</span> Курс завершен! &nbsp; <a href="/Course/Details/@Model.CourseId" style="color:#38bdf8; text-decoration:none;">Оставить отзыв</a>
+                                </div>
+                            }
+                            else
+                            {
+                                <button id="action-btn" class="btn-next" onclick="goToNextDirectly()">Продолжить</button>
+                            }
+                        }
+                        else // Шаг типа Текст или Видео
+                        {
+                            @if (!isStepCompleted)
+                            {
+                                <button id="action-btn" class="btn-next" onclick="nextStep(@Model.CurrentStep.Id)">
+                                    @(Model.IsLastStep ? "Завершить обучение" : "Продолжить")
+                                </button>
+                            }
+                            else if (Model.IsLastStep)
+                            {
+                                <div class="finish-message">
+                                    <span>🎉</span> Курс завершен! &nbsp; <a href="/Course/Details/@Model.CourseId" style="color:#38bdf8; text-decoration:none;">Оставить отзыв</a>
+                                </div>
+                            }
+                            else
+                            {
+                                <button id="action-btn" class="btn-next" onclick="goToNextDirectly()">Продолжить</button>
+                            }
+                        }
                     </div>
                 </div>
             </div>
@@ -263,22 +456,29 @@
                 <div style="display: flex; justify-content: flex-end;">
                     <button class="btn-next" style="padding: 8px 20px; font-size: 0.9rem;" onclick="sendComment()">Отправить</button>
                 </div>
-
                 <div id="commentsList" style="margin-top: 30px;">
                     @foreach (var comment in Model.Comments)
                     {
                         <div class="comment-card">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                                <div style="display: flex; align-items: center; gap: 8px;">
-                                    <span style="color: #38bdf8; font-weight: bold;">@comment.UserLogin</span>
-                                    @if (Model.IsAuthor)
-                                    {
-                                        <span style="background: #0ea5e9; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px;">Автор</span>
-                                    }
+                            <div style="display: flex; gap: 12px; align-items: flex-start;">
+                                <img src="@(string.IsNullOrEmpty(comment.User?.Avatar) ? Url.Content("~/images/default_avatar.jpg") : comment.User.Avatar)"
+                                     class="comment-avatar"
+                                     onerror="this.onerror=null; this.src='@Url.Content("~/images/default_avatar.jpg")';" />
+
+                                <div style="flex-grow: 1;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <span style="color: #38bdf8; font-weight: bold; font-size: 0.95rem;">@("@" + comment.UserLogin)</span>
+                                            @if (comment.UserLogin == Model.CurrentStep.Lesson.Module.Course.AuthorLogin)
+                                            {
+                                                <span class="author-badge">Автор</span>
+                                            }
+                                        </div>
+                                        <span style="color: #64748b; font-size: 0.8rem;">@comment.CreatedAt.ToString("g")</span>
+                                    </div>
+                                    <div style="color: #cbd5e1; font-size: 0.95rem; line-height: 1.5;">@comment.Text</div>
                                 </div>
-                                <span style="color: #64748b; font-size: 0.85rem;">@comment.CreatedAt.ToString("g")</span>
                             </div>
-                            <div style="color: #cbd5e1;">@comment.Text</div>
                         </div>
                     }
                 </div>
@@ -287,19 +487,73 @@
     </div>
 
     <script>
+        const antiForgeryToken = '@tokens.RequestToken';
+
+        document.addEventListener('change', function (e) {
+            if (e.target.name === 'quiz' && !e.target.disabled) {
+                const label = e.target.closest('.quiz-option');
+                if (e.target.type === 'radio') {
+                    const container = e.target.closest('#quiz-container');
+                    container.querySelectorAll('.quiz-option').forEach(el => el.classList.remove('active-selection'));
+                }
+                if (e.target.checked) label.classList.add('active-selection');
+                else label.classList.remove('active-selection');
+            }
+        });
+
+        function goToNextDirectly() {
+            const nextStepDot = document.querySelector('.step-dot.active + .step-dot');
+            if (nextStepDot) window.location.href = nextStepDot.href;
+            else location.reload();
+        }
+
+        function handleQuizSubmit(stepId) {
+            const selectedInputs = document.querySelectorAll('input[name="quiz"]:checked');
+            if (selectedInputs.length === 0) {
+                alert("Пожалуйста, выберите хотя бы один ответ.");
+                return;
+            }
+            const selectedOptionIds = Array.from(selectedInputs).map(input => parseInt(input.value));
+            saveProgressAndContinue(stepId, selectedOptionIds);
+        }
+
         function nextStep(stepId) {
-            fetch('/Course/CompleteStep?stepId=' + stepId, { method: 'POST' })
+            saveProgressAndContinue(stepId, []);
+        }
+
+        function saveProgressAndContinue(stepId, selectedOptionIds = []) {
+            const btn = document.querySelector('#action-btn');
+            if (btn) btn.disabled = true;
+
+            const formData = new URLSearchParams();
+            formData.append('stepId', stepId);
+            selectedOptionIds.forEach(id => formData.append('selectedOptionIds', id));
+
+            fetch('/Course/CompleteStep', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'RequestVerificationToken': antiForgeryToken
+                },
+                body: formData
+            })
                 .then(res => res.json())
                 .then(data => {
                     if (data.success) {
-                        const activeDot = document.querySelector('.step-dot.active');
-                        const nextDot = activeDot.nextElementSibling;
-                        if (nextDot) {
-                            window.location.href = nextDot.href;
+                        if (data.nextStepId) {
+                            window.location.href = `?courseId=@Model.CourseId&stepId=${data.nextStepId}`;
                         } else {
-                            alert("Урок завершен!");
+                            // Это был последний шаг курса
+                            location.reload();
                         }
+                    } else {
+                        alert(data.message || "Ошибка при сохранении прогресса.");
+                        if (btn) btn.disabled = false;
                     }
+                })
+                .catch(err => {
+                    console.error(err);
+                    if (btn) btn.disabled = false;
                 });
         }
 
@@ -311,11 +565,17 @@
             formData.append('stepId', '@Model.CurrentStep.Id');
             formData.append('text', text);
 
-            fetch('/Course/AddComment', { method: 'POST', body: formData })
+            fetch('/Course/AddComment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'RequestVerificationToken': antiForgeryToken
+                },
+                body: formData
+            })
                 .then(res => res.json())
                 .then(data => { if (data.success) location.reload(); });
         }
     </script>
-
 </body>
 </html>

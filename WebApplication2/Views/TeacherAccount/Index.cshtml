@@ -62,12 +62,19 @@
                     <span class="tag-title">Теги (через запятую):</span>
                     <i class="fa-solid fa-pen edit-icon" onclick="editField('TeacherTags')"></i>
                 </div>
-                <div class="skills-tags" id="tagsContainer">
-                    @foreach (var tag in Model.TeacherInfo.TeacherTags.Split(","))
-                    {
-                        <span class="tag">@tag</span>
-                    }
-                </div>
+                    <div class="skills-tags" id="tagsContainer">
+                        @if (!string.IsNullOrEmpty(Model.TeacherInfo?.TeacherTags))
+                        {
+                            @foreach (var tag in Model.TeacherInfo.TeacherTags.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                            {
+                                <span class="tag">@tag.Trim()</span>
+                            }
+                        }
+                        else
+                        {
+                            <span class="text-muted">Теги не указаны</span>
+                        }
+                    </div>
             </section>
 
             <section class="glass-card animate-fade-in delay-2">

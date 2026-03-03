@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WebApplication2.Data;
 
@@ -10,9 +11,11 @@ using WebApplication2.Data;
 namespace WebApplication2.Migrations
 {
     [DbContext(typeof(ApplicationDBContext))]
-    partial class ApplicationDBContextModelSnapshot : ModelSnapshot
+    [Migration("20260303120355_course_update")]
+    partial class course_update
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.0");
@@ -172,39 +175,6 @@ namespace WebApplication2.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Courses");
-                });
-
-            modelBuilder.Entity("WebApplication2.Models.CourseReviewModel", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("CourseId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("Rating")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Text")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("UserLogin")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CourseId");
-
-                    b.HasIndex("UserLogin");
-
-                    b.ToTable("CourseReviews");
                 });
 
             modelBuilder.Entity("WebApplication2.Models.LessonModel", b =>
@@ -397,25 +367,6 @@ namespace WebApplication2.Migrations
                     b.Navigation("Step");
                 });
 
-            modelBuilder.Entity("WebApplication2.Models.CourseReviewModel", b =>
-                {
-                    b.HasOne("WebApplication2.Models.CourseModel", "Course")
-                        .WithMany("Reviews")
-                        .HasForeignKey("CourseId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("WebApplication2.Models.UserModel", "User")
-                        .WithMany()
-                        .HasForeignKey("UserLogin")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Course");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("WebApplication2.Models.LessonModel", b =>
                 {
                     b.HasOne("WebApplication2.Models.ModuleModel", "Module")
@@ -463,8 +414,6 @@ namespace WebApplication2.Migrations
             modelBuilder.Entity("WebApplication2.Models.CourseModel", b =>
                 {
                     b.Navigation("Modules");
-
-                    b.Navigation("Reviews");
                 });
 
             modelBuilder.Entity("WebApplication2.Models.LessonModel", b =>

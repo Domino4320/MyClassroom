@@ -16,26 +16,38 @@ namespace WebApplication2.Controllers
         }
         public IActionResult Index()
         {
-            return View();
+            // Вместо пустой View вызываем получение данных
+            return GetProfileInfo();
         }
+
         public IActionResult GetProfileInfo()
         {
             var login = HttpContext.Session.GetString("Login");
-            var role = HttpContext.Session.GetString("Role");
+            if (string.IsNullOrEmpty(login)) return RedirectToAction("Login", "Account");
 
             var user = _db.Users.FirstOrDefault(u => u.Login == login);
-            TeacherProfile teacherData = null;
-            if (role == "Teacher")
+            var teacherData = _db.TeacherProfiles.FirstOrDefault(tp => tp.UserLogin == login);
+
+            // Если данных о преподавателе нет в базе, создаем пустой объект, чтобы View не выдавала Error
+            if (teacherData == null)
             {
-                teacherData = _db.TeacherProfiles.FirstOrDefault(tp => tp.UserLogin == login);
+                teacherData = new TeacherProfile
+                {
+                    UserLogin = login,
+                    TeacherTags = "", // Инициализируем пустой строкой
+                    About = "Расскажите о себе",
+                    CurrentJob = "Не указано",
+                    Experience = 0
+                };
             }
+
             var viewModel = new ProfileViewModel
             {
                 User = user,
                 TeacherInfo = teacherData
             };
 
-            return View("Index",viewModel);
+            return View("Index", viewModel);
         }
         [HttpPost]
         public async Task<IActionResult> UpdateProfile([FromBody] UpdateFieldModel model)

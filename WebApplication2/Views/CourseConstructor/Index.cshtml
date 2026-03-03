@@ -20,6 +20,8 @@
             --text: #e3f2fd;
             --text-muted: #90a4ae;
             --accent-gradient: linear-gradient(135deg, #0288d1, #26c6da);
+            --danger: #ff453a;
+            --success: #4caf50;
         }
 
         body {
@@ -29,9 +31,9 @@
             margin: 0;
             display: flex;
             height: 100vh;
+            overflow: hidden;
         }
 
-        /* ЛЕВАЯ ПАНЕЛЬ */
         .sidebar {
             width: 320px;
             background: var(--sidebar-bg);
@@ -44,14 +46,7 @@
         .sidebar-header {
             padding: 25px 20px;
             border-bottom: 1px solid var(--border);
-            background: rgba(0,0,0,0.1);
         }
-
-            .sidebar-header h3 {
-                font-size: 1.1rem;
-                margin: 15px 0;
-                color: #fff;
-            }
 
         .module-list {
             overflow-y: auto;
@@ -75,12 +70,13 @@
             cursor: pointer;
             transition: 0.3s;
             font-size: 0.9rem;
-            border: 1px solid transparent;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
             .lesson-item:hover {
                 background: rgba(79, 195, 247, 0.15);
-                border-color: var(--primary);
             }
 
             .lesson-item.active {
@@ -88,7 +84,17 @@
                 color: white;
             }
 
-        /* ПРАВАЯ ПАНЕЛЬ */
+        .delete-lesson-btn {
+            opacity: 0;
+            transition: 0.2s;
+            color: var(--danger);
+            padding: 2px 5px;
+        }
+
+        .lesson-item:hover .delete-lesson-btn {
+            opacity: 1;
+        }
+
         .editor-area {
             flex-grow: 1;
             display: flex;
@@ -122,30 +128,17 @@
             box-shadow: 0 20px 50px rgba(0,0,0,0.4);
         }
 
-        input, textarea {
+        input[type="text"], textarea {
             width: 100%;
             background: rgba(15, 23, 42, 0.6);
             border: 1px solid var(--border);
             border-radius: 10px;
             color: white;
             padding: 12px;
-            box-sizing: border-box;
             margin-top: 5px;
             outline: none;
+            box-sizing: border-box;
         }
-
-            input:focus {
-                border-color: var(--primary);
-                box-shadow: 0 0 10px rgba(79, 195, 247, 0.2);
-            }
-
-            /* Специальный стиль для чекбоксов в квизе */
-            input[type="checkbox"] {
-                width: 20px;
-                height: 20px;
-                cursor: pointer;
-                accent-color: var(--primary);
-            }
 
         .btn {
             padding: 10px 22px;
@@ -153,7 +146,6 @@
             border: none;
             cursor: pointer;
             font-weight: 600;
-            transition: 0.3s;
             display: inline-flex;
             align-items: center;
             gap: 8px;
@@ -164,28 +156,18 @@
             color: white;
         }
 
-            .btn-primary:hover {
-                transform: scale(1.02);
-                box-shadow: 0 5px 15px rgba(2, 136, 209, 0.4);
-            }
-
         .btn-outline {
             background: rgba(79, 195, 247, 0.1);
             border: 1px solid var(--primary);
             color: var(--primary);
         }
 
-            .btn-outline:hover {
-                background: var(--primary);
-                color: #000;
-            }
-
         .step-card {
             background: rgba(255,255,255,0.02);
             border: 1px solid var(--border);
             border-radius: 15px;
             padding: 20px;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
         }
 
         .badge-type {
@@ -195,16 +177,41 @@
             border-radius: 6px;
             font-size: 0.75rem;
             font-weight: 800;
-            text-transform: uppercase;
         }
 
         .quiz-editor-box {
             background: rgba(0,0,0,0.2);
-            padding: 15px;
+            padding: 20px;
             border-radius: 12px;
             border: 1px dashed var(--border);
             margin-top: 15px;
         }
+
+        .quiz-option-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+
+            .quiz-option-row input[type="checkbox"],
+            .quiz-option-row input[type="radio"] {
+                width: 20px;
+                height: 20px;
+                flex-shrink: 0;
+                cursor: pointer;
+            }
+
+        .btn-delete-opt {
+            color: var(--danger);
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+            .btn-delete-opt.disabled {
+                opacity: 0.2;
+                cursor: not-allowed;
+            }
     </style>
 </head>
 <body>
@@ -231,7 +238,8 @@
                         @foreach (var l in m.Lessons.OrderBy(x => x.Order))
                         {
                             <div class="lesson-item" onclick="loadLessonEditor(@l.Id, this)">
-                                <i class="bi bi-file-earmark-text"></i> @l.Title
+                                <span><i class="bi bi-file-earmark-text"></i> @l.Title</span>
+                                <i class="bi bi-trash delete-lesson-btn" onclick="event.stopPropagation(); deleteLesson(@l.Id)"></i>
                             </div>
                         }
                     </div>
@@ -241,10 +249,10 @@
     </div>
 
     <div class="editor-area">
-        <div id="editorPlaceholder" class="empty-state" style="text-align: center; margin-top: 150px; color: var(--text-muted);">
+        <div id="editorPlaceholder" style="text-align: center; margin-top: 150px; color: var(--text-muted);">
             <i class="bi bi-palette2" style="font-size: 5rem; color: var(--primary); opacity: 0.5;"></i>
             <h2>Мастерская курса</h2>
-            <p>Выберите урок в левой панели, чтобы наполнить его знаниями</p>
+            <p>Выберите урок в левой панели</p>
         </div>
 
         <div id="editorForm" style="display: none; height: 100%; flex-direction: column;">
@@ -254,11 +262,10 @@
                     <h2 id="currentLessonTitle" style="margin: 0;">Панель управления</h2>
                 </div>
                 <div style="display: flex; gap: 10px;">
-                    <button id="publishBtn" class="btn btn-outline" onclick="publishCourse(@Model.CourseId)"
-                            style="border-color: #4caf50; color: #4caf50;">
-                        <i class="bi bi-send"></i> Опубликовать курс
+                    <button class="btn btn-outline" onclick="publishCourse(@Model.CourseId)" style="border-color: #4caf50; color: #4caf50;">
+                        <i class="bi bi-send"></i> Опубликовать
                     </button>
-                    <button class="btn btn-primary" onclick="saveCurrentLesson()">
+                    <button class="btn btn-primary" onclick="saveCurrentLesson(true)">
                         <i class="bi bi-cloud-check"></i> Сохранить урок
                     </button>
                 </div>
@@ -267,15 +274,15 @@
                 <div class="content-card">
                     <div style="margin-bottom: 30px;">
                         <label>Заголовок урока</label>
-                        <input type="text" id="editLessonName" style="font-size: 1.2rem; font-weight: 600;">
+                        <input type="text" id="editLessonName">
                     </div>
 
                     <div id="stepsContainer"></div>
 
                     <div style="display:flex; gap:15px; margin-top:40px; border-top:1px solid var(--border); padding-top:30px; justify-content: center;">
-                        <button class="btn btn-outline" onclick="addNewStep('Text')"><i class="bi bi-text-paragraph"></i> Текст</button>
-                        <button class="btn btn-outline" onclick="addNewStep('Video')"><i class="bi bi-play-btn"></i> Видео</button>
-                        <button class="btn btn-outline" onclick="addNewStep('Quiz')"><i class="bi bi-check2-square"></i> Тест</button>
+                        <button class="btn btn-outline" onclick="addNewStep('Text')"><i class="bi bi-text-paragraph"></i> + Текст</button>
+                        <button class="btn btn-outline" onclick="addNewStep('Video')"><i class="bi bi-play-btn"></i> + Видео</button>
+                        <button class="btn btn-outline" onclick="addNewStep('Quiz')"><i class="bi bi-check2-square"></i> + Тест</button>
                     </div>
                 </div>
             </div>
@@ -291,21 +298,27 @@
         }
 
         async function addModule() {
-            const title = prompt("Введите название модуля:");
+            const title = prompt("Название модуля:");
             if (!title) return;
-            const response = await fetch(`/CourseConstructor/AddModule?courseId=@Model.CourseId&title=${encodeURIComponent(title)}`, { method: 'POST' });
-            if (response.ok) location.reload();
+            await fetch(`/CourseConstructor/AddModule?courseId=@Model.CourseId&title=${encodeURIComponent(title)}`, { method: 'POST' });
+            location.reload();
         }
 
         async function addLesson(moduleId) {
-            const title = prompt("Название нового урока:");
+            const title = prompt("Название урока:");
             if (!title) return;
             await fetch(`/CourseConstructor/AddLesson?moduleId=${moduleId}&title=${encodeURIComponent(title)}`, { method: 'POST' });
             location.reload();
         }
 
+        async function deleteLesson(lessonId) {
+            if (!confirm("Удалить этот урок?")) return;
+            const response = await fetch(`/CourseConstructor/DeleteLesson/${lessonId}`, { method: 'POST' });
+            if (response.ok) location.reload();
+        }
+
         async function loadLessonEditor(lessonId, element) {
-            setActiveLesson(element);
+            if (element) setActiveLesson(element);
             currentLessonId = lessonId;
             document.getElementById('editorPlaceholder').style.display = 'none';
             document.getElementById('editorForm').style.display = 'flex';
@@ -323,62 +336,65 @@
             const container = document.getElementById('stepsContainer');
             container.innerHTML = '';
 
-            steps.forEach((step, index) => {
+            steps.forEach((step) => {
                 const stepDiv = document.createElement('div');
                 stepDiv.className = 'step-card';
-
-                const typeLabel = step.type === 0 ? "Текстовая лекция" : step.type === 1 ? "Видео-материал" : "Тестирование";
+                const typeLabel = step.type === 0 ? "Текст" : step.type === 1 ? "Видео" : "Тест";
 
                 stepDiv.innerHTML = `
-                            <div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:center;">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
                                 <span class="badge-type">${typeLabel}</span>
-                                <i class="bi bi-x-circle" style="cursor:pointer; color:#ff453a; font-size:1.2rem;" onclick="deleteStep(${step.id})"></i>
+                                <i class="bi bi-x-circle" style="cursor:pointer; color:var(--danger);" onclick="deleteStep(${step.id})"></i>
                             </div>
-                            <label>Заголовок шага #${index + 1}</label>
+                            <label>Заголовок шага</label>
                             <input type="text" value="${step.title || ''}" class="step-title" data-id="${step.id}">
 
                             <div style="margin-top:15px;">
-                                ${step.type === 0 ? `<label>Текст лекции</label><textarea rows="8" class="step-content" data-id="${step.id}">${step.textContent || ''}</textarea>` : ''}
-                                ${step.type === 1 ? `<label>URL видео (YouTube/Vimeo)</label><input type="text" class="step-video" data-id="${step.id}" value="${step.videoUrl || ''}">` : ''}
+                                ${step.type === 0 ? `<textarea rows="6" class="step-content" data-id="${step.id}">${step.textContent || ''}</textarea>` : ''}
+                                ${step.type === 1 ? `<input type="text" class="step-video" data-id="${step.id}" value="${step.videoUrl || ''}" placeholder="Ссылка на видео">` : ''}
+
                                 ${step.type === 2 ? `
                                     <div class="quiz-editor-box">
-                                        <label style="font-size: 0.8rem; color: var(--primary); font-weight: bold;">ВАРИАНТЫ ОТВЕТОВ (отметьте правильные)</label>
-                                        <div id="quiz-options-${step.id}" style="margin-top:10px;"></div>
-                                        <button class="btn btn-outline" style="width:100%; margin-top:10px; font-size: 0.8rem;" onclick="addOption(${step.id})">
-                                            <i class="bi bi-plus-circle"></i> Добавить вариант
-                                        </button>
-                                    </div>
-                                ` : ''}
-                            </div>
-                        `;
+                                        <div style="margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid var(--border);">
+                                            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                                                <input type="checkbox" class="step-is-multiple" data-id="${step.id}"
+                                                       ${step.isMultipleChoice ? 'checked' : ''}
+                                                       onchange="toggleMultipleChoice(${step.id}, this.checked)">
+                                                <span>Множественный выбор (несколько верных ответов)</span>
+                                            </label>
+                                        </div>
+                                        <div id="quiz-options-${step.id}"></div>
+                                        <button class="btn btn-outline" style="width:100%; margin-top:10px;" onclick="addOption(${step.id})">+ Добавить вариант</button>
+                                    </div>` : ''}
+                            </div>`;
                 container.appendChild(stepDiv);
-            });
-
-            // После отрисовки всех карточек, загружаем данные для квизов
-            steps.forEach(step => {
-                if (step.type === 2) loadQuizOptions(step.id);
+                if (step.type === 2) loadQuizOptions(step.id, step.isMultipleChoice);
             });
         }
 
-        async function addNewStep(type) {
-            if (!currentLessonId) return;
-            await fetch(`/CourseConstructor/AddStep?lessonId=${currentLessonId}&type=${type}`, { method: 'POST' });
-            loadLessonEditor(currentLessonId, document.querySelector('.lesson-item.active'));
+        async function toggleMultipleChoice(stepId, isMultiple) {
+            await saveCurrentLesson(false);
+            loadQuizOptions(stepId, isMultiple);
         }
 
-        async function saveCurrentLesson() {
+        async function saveCurrentLesson(showAlert = false) {
+            if (!currentLessonId) return false;
+
             const steps = [];
             document.querySelectorAll('.step-title').forEach(input => {
                 const id = input.dataset.id;
+                const multCheck = document.querySelector(`.step-is-multiple[data-id="${id}"]`);
+
                 steps.push({
                     id: parseInt(id),
                     title: input.value,
                     textContent: document.querySelector(`textarea[data-id="${id}"]`)?.value || "",
-                    videoUrl: document.querySelector(`input.step-video[data-id="${id}"]`)?.value || ""
+                    videoUrl: document.querySelector(`input.step-video[data-id="${id}"]`)?.value || "",
+                    isMultipleChoice: multCheck ? multCheck.checked : false
                 });
             });
 
-            const result = await fetch('/CourseConstructor/SaveLesson', {
+            const response = await fetch('/CourseConstructor/SaveLesson', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -388,66 +404,95 @@
                 })
             });
 
-            if (result.ok) alert("Урок успешно сохранен!");
+            if (response.ok && showAlert) alert("Сохранено!");
+            return response.ok;
+        }
+
+        async function addNewStep(type) {
+            await saveCurrentLesson(false);
+            const response = await fetch(`/CourseConstructor/AddStep?lessonId=${currentLessonId}&type=${type}`, { method: 'POST' });
+            if (response.ok) {
+                const newLessonData = await (await fetch(`/CourseConstructor/GetLessonData/${currentLessonId}`)).json();
+                // Если добавили Тест, проверяем наличие опций. Если их 0, добавляем 2 дефолтных
+                const lastStep = newLessonData.steps[newLessonData.steps.length - 1];
+                if (type === 'Quiz' && lastStep) {
+                    await fetch(`/CourseConstructor/AddQuizOption?stepId=${lastStep.id}`, { method: 'POST' });
+                    await fetch(`/CourseConstructor/AddQuizOption?stepId=${lastStep.id}`, { method: 'POST' });
+                }
+                loadLessonEditor(currentLessonId);
+            }
         }
 
         async function deleteStep(stepId) {
-            if (!confirm("Удалить этот шаг?")) return;
+            if (!confirm("Удалить шаг?")) return;
+            await saveCurrentLesson(false);
             const response = await fetch(`/CourseConstructor/DeleteStep/${stepId}`, { method: 'POST' });
-            if (response.ok) loadLessonEditor(currentLessonId, document.querySelector('.lesson-item.active'));
+            if (response.ok) loadLessonEditor(currentLessonId);
         }
 
-        async function loadQuizOptions(stepId) {
+        async function loadQuizOptions(stepId, isMultipleChoice) {
             const response = await fetch(`/CourseConstructor/GetQuizOptions?stepId=${stepId}`);
             const options = await response.json();
             const container = document.getElementById(`quiz-options-${stepId}`);
-            if (!container) return;
+            if (container) {
+                const inputType = isMultipleChoice ? "checkbox" : "radio";
+                const isDeleteDisabled = options.length <= 2;
 
-            container.innerHTML = options.map(opt => `
-                        <div class="quiz-option-row" style="display:flex; gap:10px; margin-bottom:8px; align-items:center;">
-                            <input type="checkbox" ${opt.isCorrect ? 'checked' : ''}
-                                   onchange="updateOption(${opt.id}, ${stepId}, this.checked, null)">
-                            <input type="text" value="${opt.text}" style="margin:0; flex-grow:1;"
-                                   onchange="updateOption(${opt.id}, ${stepId}, null, this.value)">
-                            <i class="bi bi-trash" style="color:#ff453a; cursor:pointer;" onclick="deleteOption(${opt.id}, ${stepId})"></i>
-                        </div>
-                    `).join('');
+                container.innerHTML = options.map(opt => `
+                            <div class="quiz-option-row" data-opt-id="${opt.id}">
+                                <input type="${inputType}" name="quiz-${stepId}"
+                                       ${opt.isCorrect ? 'checked' : ''}
+                                       onchange="handleOptionUpdate(${opt.id}, ${stepId}, '${inputType}')">
+                                <input type="text" value="${opt.text || ''}"
+                                       onchange="handleOptionUpdate(${opt.id}, ${stepId}, '${inputType}')" style="margin:0;">
+                                <i class="bi bi-trash btn-delete-opt ${isDeleteDisabled ? 'disabled' : ''}"
+                                   onclick="${isDeleteDisabled ? '' : `deleteOption(${opt.id}, ${stepId})`}"></i>
+                            </div>`).join('');
+            }
+        }
+
+        async function handleOptionUpdate(optId, stepId, inputType) {
+            const container = document.getElementById(`quiz-options-${stepId}`);
+
+            if (inputType === 'radio') {
+                const rows = container.querySelectorAll('.quiz-option-row');
+                for (const row of rows) {
+                    const id = row.getAttribute('data-opt-id');
+                    const isCorrect = row.querySelector('input[type="radio"]').checked;
+                    const text = row.querySelector('input[type="text"]').value;
+                    await fetch(`/CourseConstructor/UpdateQuizOption?id=${id}&text=${encodeURIComponent(text)}&isCorrect=${isCorrect}`, { method: 'POST' });
+                }
+            } else {
+                const row = container.querySelector(`.quiz-option-row[data-opt-id="${optId}"]`);
+                const isCorrect = row.querySelector('input[type="checkbox"]').checked;
+                const text = row.querySelector('input[type="text"]').value;
+                await fetch(`/CourseConstructor/UpdateQuizOption?id=${optId}&text=${encodeURIComponent(text)}&isCorrect=${isCorrect}`, { method: 'POST' });
+            }
         }
 
         async function addOption(stepId) {
-            const response = await fetch(`/CourseConstructor/AddQuizOption?stepId=${stepId}`, { method: 'POST' });
-            if (response.ok) loadQuizOptions(stepId);
-        }
-
-        async function updateOption(id, stepId, isCorrect, text) {
-            const row = event.target.closest('.quiz-option-row');
-            const currentText = text !== null ? text : row.querySelector('input[type="text"]').value;
-            const currentCheck = isCorrect !== null ? isCorrect : row.querySelector('input[type="checkbox"]').checked;
-
-            await fetch(`/CourseConstructor/UpdateQuizOption?id=${id}&text=${encodeURIComponent(currentText)}&isCorrect=${currentCheck}`, {
-                method: 'POST'
-            });
+            const multCheck = document.querySelector(`.step-is-multiple[data-id="${stepId}"]`);
+            await fetch(`/CourseConstructor/AddQuizOption?stepId=${stepId}`, { method: 'POST' });
+            loadQuizOptions(stepId, multCheck.checked);
         }
 
         async function deleteOption(id, stepId) {
+            // Дополнительная проверка на фронте
+            const container = document.getElementById(`quiz-options-${stepId}`);
+            if (container.querySelectorAll('.quiz-option-row').length <= 2) {
+                alert("В тесте должно быть минимум 2 варианта ответа");
+                return;
+            }
+
+            const multCheck = document.querySelector(`.step-is-multiple[data-id="${stepId}"]`);
             await fetch(`/CourseConstructor/DeleteQuizOption/${id}`, { method: 'POST' });
-            loadQuizOptions(stepId);
+            loadQuizOptions(stepId, multCheck.checked);
         }
 
         async function publishCourse(courseId) {
-            if (!confirm("После публикации курс станет доступен всем студентам. Продолжить?")) return;
-
+            if (!confirm("Опубликовать курс?")) return;
             const response = await fetch(`/CourseConstructor/PublishCourse?id=${courseId}`, { method: 'POST' });
-
-            if (response.ok) {
-                alert("Поздравляем! Курс опубликован.");
-                const btn = document.getElementById('publishBtn');
-                btn.innerHTML = '<i class="bi bi-check-all"></i> Опубликован';
-                btn.disabled = true;
-                btn.style.opacity = "0.7";
-            } else {
-                alert("Ошибка при публикации.");
-            }
+            if (response.ok) alert("Курс опубликован!");
         }
     </script>
 </body>

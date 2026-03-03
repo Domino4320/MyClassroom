@@ -21,6 +21,7 @@ namespace WebApplication2.Data
         public DbSet<EnrollmentModel> Enrollments { get; set; } // Новое
         public DbSet<CommentModel> Comments { get; set; }
         public DbSet<UserProgressModel> Progress { get; set; }
+        public DbSet<CourseReviewModel> CourseReviews { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

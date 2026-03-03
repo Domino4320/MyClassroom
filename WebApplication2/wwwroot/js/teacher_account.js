@@ -1,4 +1,5 @@
 ﻿document.addEventListener('DOMContentLoaded', () => {
+    // Анимация цифр
     const stats = document.querySelectorAll('.stat-value');
     stats.forEach(stat => {
         const target = +stat.getAttribute('data-target');
@@ -14,6 +15,16 @@
         };
         count();
     });
+
+    // Закрытие модалки при клике на темный фон
+    const modal = document.getElementById('editModal');
+    if (modal) {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
+    }
 });
 
 function editField(fieldName) {
@@ -22,57 +33,58 @@ function editField(fieldName) {
     const fieldInput = document.getElementById('editFieldName');
     const errorDiv = document.getElementById('fieldError');
 
-    // Сброс ошибок при открытии
+    if (!modal || !container) return;
+
     errorDiv.style.display = 'none';
     errorDiv.innerText = '';
-
     fieldInput.value = fieldName;
     container.innerHTML = '';
 
     let currentValue = "";
 
-    // Логика получения текущего значения из DOM
     if (fieldName === 'About') {
-        currentValue = document.getElementById('aboutText').innerText;
+        currentValue = document.getElementById('aboutText')?.innerText || "";
         container.innerHTML = `<textarea id="editValue" rows="5">${currentValue}</textarea>`;
     } else if (fieldName === 'ExtraInfo') {
-        currentValue = document.getElementById('extraInfoText').innerText.trim();
+        currentValue = document.getElementById('extraInfoText')?.innerText.trim() || "";
         container.innerHTML = `<textarea id="editValue" rows="5">${currentValue}</textarea>`;
     } else if (fieldName === 'CurrentJob') {
-        currentValue = document.getElementById('currentJobText').innerText;
+        currentValue = document.getElementById('currentJobText')?.innerText || "";
         container.innerHTML = `<input type="text" id="editValue" value="${currentValue}">`;
     } else if (fieldName === 'Experience') {
-        currentValue = document.getElementById('experienceText').innerText;
+        currentValue = document.getElementById('experienceText')?.innerText || "0";
         container.innerHTML = `<input type="number" id="editValue" value="${currentValue}">`;
     } else if (fieldName === 'TeacherTags') {
-        // Собираем теги обратно в строку через запятую
         const tags = Array.from(document.querySelectorAll('#tagsContainer .tag')).map(t => t.innerText);
         currentValue = tags.join(', ');
-        container.innerHTML = `<input type="text" id="editValue" value="${currentValue}">`;
+        container.innerHTML = `<input type="text" id="editValue" placeholder="Напр: C#, SQL" value="${currentValue}">`;
     } else if (fieldName === 'PortfolioUrl') {
-        currentValue = document.getElementById('portfolioUrl').getAttribute('href');
+        const link = document.getElementById('portfolioUrl');
+        currentValue = link ? link.getAttribute('href') : "";
         container.innerHTML = `<input type="text" id="editValue" value="${currentValue}">`;
     }
 
-    modal.style.display = 'block';
+    modal.classList.add('active');
 }
 
 function closeModal() {
-    document.getElementById('editModal').style.display = 'none';
+    const modal = document.getElementById('editModal');
+    if (modal) modal.classList.remove('active');
 }
 
 async function saveChanges() {
     const fieldName = document.getElementById('editFieldName').value;
-    const newValue = document.getElementById('editValue').value;
+    const inputElement = document.getElementById('editValue');
+    const newValue = inputElement.value;
     const errorDiv = document.getElementById('fieldError');
     const saveBtn = document.getElementById('saveBtn');
 
     errorDiv.style.display = 'none';
+    inputElement.style.borderColor = '';
     saveBtn.disabled = true;
     saveBtn.innerText = 'Сохранение...';
 
     try {
-        // ИСПРАВЛЕННЫЙ ПУТЬ: TeacherProfile вместо Teacher
         const response = await fetch('/TeacherAccount/UpdateProfile', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -83,15 +95,15 @@ async function saveChanges() {
             location.reload();
         } else {
             const errorMessage = await response.text();
-            errorDiv.innerText = errorMessage || "Ошибка валидации";
+            errorDiv.innerText = errorMessage || "Ошибка при сохранении";
             errorDiv.style.display = 'block';
-            document.getElementById('editValue').style.borderColor = '#ff4d4d';
+            inputElement.style.borderColor = '#ff4d4d';
         }
     } catch (err) {
-        errorDiv.innerText = "Ошибка сети: проверьте соединение или адрес контроллера";
+        errorDiv.innerText = "Ошибка сети.";
         errorDiv.style.display = 'block';
     } finally {
         saveBtn.disabled = false;
         saveBtn.innerText = 'Сохранить';
     }
-}
+} 
