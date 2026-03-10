@@ -1,10 +1,16 @@
-﻿
-@model WebApplication2.Models.CourseModel
+﻿@model WebApplication2.Models.CourseModel
+
+@{
+    // Автоматический флаг: если ID не 0, значит мы в режиме редактирования
+    bool isEdit = Model != null && Model.Id != 0;
+    ViewData["Title"] = isEdit ? "Редактирование курса" : "Создание нового курса";
+}
 
 <link href="~/css/create_course.css" rel="stylesheet" />
 <link href="~/css/style_for_main_page.css" rel="stylesheet" />
+
 <style>
-    /* Стили для текста ошибки */
+    /* Стили валидации */
     .text-danger, .field-validation-error {
         color: #ff4d4d;
         font-size: 0.85rem;
@@ -13,15 +19,28 @@
         animation: fadeIn 0.3s ease-in;
     }
 
-    /* Подсветка инпута при ошибке */
     .input-validation-error {
         border: 1.5px solid #ff4d4d !important;
         background-color: rgba(255, 77, 77, 0.05) !important;
     }
 
-        /* Иконка ошибки, если нужно (опционально) */
-        .input-validation-error + .required_icon {
-            color: #ff4d4d;
+    /* Превью текущей обложки при редактировании */
+    .current-cover-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 15px;
+        padding: 12px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid #334155;
+        border-radius: 12px;
+    }
+
+        .current-cover-wrapper img {
+            width: 120px;
+            height: 70px;
+            object-fit: cover;
+            border-radius: 6px;
         }
 
     @@keyframes fadeIn {
@@ -38,52 +57,52 @@
 </style>
 
 @section Scripts {
-    @* Подключаем стандартные библиотеки валидации (они должны быть в проекте по умолчанию) *@
     <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
     <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
 
     <script>
         $(document).ready(function () {
-            // 1. Скрипт для отображения имени выбранного файла
+            // Отображение имени выбранного файла
             $('#fileInp').on('change', function () {
                 var fileName = $(this).val().split('\\').pop();
                 if (fileName) {
                     $('#fileName').text("Выбран файл: " + fileName).css("color", "#4ade80");
-                } else {
-                    $('#fileName').text("Нажмите для выбора фото").css("color", "");
                 }
             });
 
-            // 2. Настройка валидации "на лету"
-            // Переопределяем стандартные классы jquery validate, чтобы они дружили с вашими стилями
+            // Анимация кнопки при ошибках
             $('form').bind('invalid-form.validate', function () {
-                // Можно добавить общую логику, если форма не валидна (например, вибрация кнопки)
                 $('.btn-submit-course').addClass('animate-shake');
                 setTimeout(function () {
                     $('.btn-submit-course').removeClass('animate-shake');
                 }, 500);
             });
         });
-
-         document.getElementById('fileInp').onchange = function () {
-            document.getElementById('fileName').innerHTML = this.files[0].name;
-        };
     </script>
 }
 
 @await Html.PartialAsync("_Header")
 @await Html.PartialAsync("_Sidebar")
+
 <div class="page-wrapper">
     <div class="course-registration-card animate-in">
         <header class="header-content">
             <div class="icon-circle">
-                <i class="fa-solid fa-plus"></i>
+                <i class="fa-solid @(isEdit ? "fa-pen-to-square" : "fa-plus")"></i>
             </div>
-            <h1>Регистрация курса</h1>
-            <p>Заполните форму, чтобы создать новую учебную программу</p>
+            <h1>@(isEdit ? "Редактирование курса" : "Регистрация курса")</h1>
+            <p>@(isEdit ? $"Изменение данных курса: {Model.Title}" : "Заполните форму, чтобы создать новую учебную программу")</p>
         </header>
 
-        <form asp-action="Create" method="post" enctype="multipart/form-data" class="main-course-form">
+        <form asp-action="@(isEdit ? "Edit" : "Create")" method="post" enctype="multipart/form-data" class="main-course-form">
+
+            @if (isEdit)
+            {
+                <input type="hidden" asp-for="Id" />
+                @* Скрытое поле, чтобы сохранить текущий статус публикации при редактировании инфо *@
+                <input type="hidden" asp-for="IsPublished" />
+            }
+
             <div class="field-block">
                 <label>Название курса <span class="required_icon">*</span></label>
                 <div class="input-with-icon">
@@ -131,11 +150,8 @@
                                 <option value="3D Моделирование (Blender/Maya)">3D Моделирование (Blender/Maya)</option>
                                 <option value="Цифровая иллюстрация">Цифровая иллюстрация</option>
                                 <option value="Дизайн интерьеров">Дизайн интерьеров</option>
-                                <option value="Ландшафтный дизайн">Ландшафтный дизайн</option>
-                                <option value="Дизайн одежды">Дизайн одежды</option>
                                 <option value="Профессиональная фотография">Профессиональная фотография</option>
                                 <option value="Монтаж видео (Premiere/Resolve)">Монтаж видео (Premiere/Resolve)</option>
-                                <option value="Архитектурное проектирование">Архитектурное проектирование</option>
                             </optgroup>
 
                             <optgroup label="📊 Бизнес и Аналитика">
@@ -147,9 +163,6 @@
                                 <option value="SEO оптимизация">SEO оптимизация</option>
                                 <option value="Контекстная реклама">Контекстная реклама</option>
                                 <option value="SMM и продвижение">SMM и продвижение</option>
-                                <option value="Копирайтинг и Сторителлинг">Копирайтинг и Сторителлинг</option>
-                                <option value="PR и связи с общественностью">PR и связи с общественностью</option>
-                                <option value="Управление интернет-магазином">Управление интернет-магазином</option>
                             </optgroup>
 
                             <optgroup label="📈 Финансы и Право">
@@ -157,9 +170,7 @@
                                 <option value="Финансовый анализ">Финансовый анализ</option>
                                 <option value="Инвестиции и Трейдинг">Инвестиции и Трейдинг</option>
                                 <option value="Налогообложение">Налогообложение</option>
-                                <option value="Гражданское право">Гражданское право</option>
                                 <option value="Право в сфере IT">Право в сфере IT</option>
-                                <option value="Корпоративное право">Корпоративное право</option>
                                 <option value="Криптовалюты и DeFi">Криптовалюты и DeFi</option>
                             </optgroup>
 
@@ -169,29 +180,21 @@
                                 <option value="Английский для IT">Английский для IT</option>
                                 <option value="Немецкий язык">Немецкий язык</option>
                                 <option value="Французский язык">Французский язык</option>
-                                <option value="Испанский язык">Испанский язык</option>
                                 <option value="Китайский язык">Китайский язык</option>
                                 <option value="Японский язык">Японский язык</option>
-                                <option value="Профессиональный перевод">Профессиональный перевод</option>
                             </optgroup>
 
                             <optgroup label="🧪 Наука и Образование">
                                 <option value="Высшая математика">Высшая математика</option>
-                                <option value="Физика">Физика</option>
-                                <option value="Химия">Химия</option>
-                                <option value="Биология">Биология</option>
-                                <option value="География">География</option>
-                                <option value="История">История</option>
-                                <option value="Философия">Философия</option>
                                 <option value="Общая психология">Общая психология</option>
                                 <option value="Детская психология">Детская психология</option>
                                 <option value="Социология">Социология</option>
+                                <option value="Физика/Химия">Физика/Химия</option>
                             </optgroup>
 
                             <optgroup label="🛠️ Техника и Ремесла">
                                 <option value="Робототехника">Робототехника</option>
                                 <option value="Электроника и схемотехника">Электроника и схемотехника</option>
-                                <option value="Автомеханика">Автомеханика</option>
                                 <option value="Столярное дело">Столярное дело</option>
                                 <option value="Ювелирное искусство">Ювелирное искусство</option>
                                 <option value="Кройка и шитье">Кройка и шитье</option>
@@ -201,28 +204,21 @@
                                 <option value="Фитнес-тренер">Фитнес-тренер</option>
                                 <option value="Йога и Пилатес">Йога и Пилатес</option>
                                 <option value="Нутрициология">Нутрициология</option>
-                                <option value="Спортивная психология">Спортивная психология</option>
                                 <option value="Медитация и Mindfulness">Медитация и Mindfulness</option>
-                                <option value="Первая помощь">Первая помощь</option>
                             </optgroup>
 
-                            <optgroup label="💡 Soft Skills и Личная эффективность">
+                            <optgroup label="💡 Soft Skills">
                                 <option value="Ораторское мастерство">Ораторское мастерство</option>
                                 <option value="Тайм-менеджмент">Тайм-менеджмент</option>
-                                <option value="Лидерство и управление командой">Лидерство и управление командой</option>
-                                <option value="Переговоры и конфликты">Переговоры и конфликты</option>
+                                <option value="Лидерство">Лидерство</option>
                                 <option value="Эмоциональный интеллект">Эмоциональный интеллект</option>
-                                <option value="Карьерный коучинг">Карьерный коучинг</option>
                             </optgroup>
 
                             <optgroup label="🎸 Хобби и Лайфстайл">
-                                <option value="Кулинария (базовая)">Кулинария (базовая)</option>
-                                <option value="Кондитерское искусство">Кондитерское искусство</option>
-                                <option value="Игра на гитаре">Игра на гитаре</option>
-                                <option value="Игра на фортепиано">Игра на фортепиано</option>
+                                <option value="Кулинария/Кондитер">Кулинария/Кондитер</option>
+                                <option value="Игра на гитаре/фортепиано">Игра на гитаре/фортепиано</option>
                                 <option value="Вокал">Вокал</option>
-                                <option value="Рисование (базовое)">Рисование (базовое)</option>
-                                <option value="Садоводство">Садоводство</option>
+                                <option value="Рисование">Рисование</option>
                                 <option value="Шахматы">Шахматы</option>
                             </optgroup>
                         </select>
@@ -231,18 +227,32 @@
                 </div>
             </div>
 
-            <div class="field-block">
+            <div class="field-block" style="margin-bottom: 30px;">
                 <label>Обложка курса</label>
+
+                @if (isEdit && !string.IsNullOrEmpty(Model.CoverImagePath))
+                {
+                    <div class="current-cover-wrapper">
+                        <img src="@Model.CoverImagePath" alt="Текущая обложка" />
+                        <div>
+                            <span style="display: block; font-size: 0.85rem; color: #94a3b8;">Текущая обложка</span>
+                            <span style="font-size: 0.75rem; color: #64748b;">Загрузите новый файл для замены</span>
+                        </div>
+                    </div>
+                }
+
                 <div class="upload-box" onclick="document.getElementById('fileInp').click()">
                     <i class="fa-solid fa-image"></i>
-                    <p id="fileName">Нажмите для выбора фото</p>
-                    <input type="file" name="imageFile" id="fileInp" hidden accept="image/*">
+                    <p id="fileName">@(isEdit ? "Заменить текущую обложку" : "Нажмите для выбора фото")</p>
+                    <input type="file" name="uploadCover" id="fileInp" hidden accept="image/*">
                 </div>
             </div>
 
             <div class="form-actions-row">
                 <button type="button" class="btn-ghost" onclick="history.back()">Отмена</button>
-                <button type="submit" class="btn-submit-course">Создать курс</button>
+                <button type="submit" class="btn-submit-course" style="@(isEdit ? "background: #10b981;" : "")">
+                    @(isEdit ? "Сохранить изменения" : "Создать курс")
+                </button>
             </div>
         </form>
     </div>

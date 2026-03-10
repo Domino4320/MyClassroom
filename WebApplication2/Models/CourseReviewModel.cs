@@ -27,5 +27,6 @@ namespace WebApplication2.Models
         public string Text { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public bool IsRecommended { get; set; }
     }
 }

@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <Folder Include="Migrations\" />
+    <Folder Include="Views\ActiveCourses\" />
     <Folder Include="wwwroot\avatars\" />
   </ItemGroup>
 

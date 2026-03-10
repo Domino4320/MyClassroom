@@ -15,17 +15,31 @@
         <ul>
             <li><a href="@Url.Action("Index", "Home")">Главная</a></li>
             <li><a href="@Url.Action("Index", "Courses")">Библиотека курсов</a></li>
-            <li>Активные курсы</li>
+
+            @* 1. Активные курсы: доступны любому авторизованному пользователю (и ученику, и учителю) *@
+            @if (!string.IsNullOrEmpty(login))
+            {
+                <li>
+                    <a asp-controller="ActiveCourses" asp-action="Index" class="sidebar-link">
+                        <span>Активные курсы</span>
+                    </a>
+                </li>
+            }
+
             <li>Форум</li>
+
+            @* 2. Блок в зависимости от роли *@
             @if (role != "Teacher")
             {
-                <li><a href="@Url.Action("Index", "BecomeTeacher")
-                    ">Стать преподавателем</a></li>
+                <li>
+                    <a href="@Url.Action("Index", "BecomeTeacher")">Стать преподавателем</a>
+                </li>
             }
             else
             {
+                @* Раздел для тех, кто сам создает курсы *@
                 <li>
-                    <a href="@Url.Action("Index", "MyCourses")">Мои курсы</a>
+                    <a href="@Url.Action("Index", "MyCourses")">Управление курсами</a>
                 </li>
                 <li>
                     <a href="@Url.Action("GetProfileInfo", "TeacherAccount")">Личный кабинет преподавателя</a>

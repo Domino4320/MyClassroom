@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using WebApplication2.Data;
 using WebApplication2.Models;
-using System.Diagnostics; // Для отладки в Output
+using System.Diagnostics;
 
 namespace WebApplication2.Controllers
 {
@@ -28,20 +28,44 @@ namespace WebApplication2.Controllers
 
             if (course == null) return NotFound();
 
+            // --- РАСЧЕТ АНАЛИТИКИ ---
+
+            // 1. Процент рекомендаций
+            double recPercent = 0;
+            if (course.Reviews != null && course.Reviews.Any())
+            {
+                int totalReviews = course.Reviews.Count;
+                int recommendedCount = course.Reviews.Count(r => r.IsRecommended);
+                recPercent = (double)recommendedCount / totalReviews * 100;
+            }
+
+            // 2. Место в категории и общее кол-во курсов в категории
+            var allInCat = await _db.Courses
+                .Where(c => c.Category == course.Category)
+                .Include(c => c.Reviews)
+                .ToListAsync();
+
+            var rankedList = allInCat
+                .OrderByDescending(c => c.Reviews.Any() ? c.Reviews.Average(r => r.Rating) : 0)
+                .ToList();
+
+            int categoryRank = rankedList.FindIndex(c => c.Id == id) + 1;
+
+            // Передаем данные во View
+            ViewData["RecPercent"] = Math.Round(recPercent, 0);
+            ViewData["CategoryRank"] = categoryRank == 0 ? "-" : categoryRank.ToString();
+            ViewData["TotalInCat"] = allInCat.Count;
+
+            // --- ПРОВЕРКА ЗАПИСИ И ПРОГРЕССА ---
             var login = HttpContext.Session.GetString("Login");
             bool isEnrolled = false;
             bool hasCompletedCourse = false;
 
             if (!string.IsNullOrEmpty(login))
             {
-                // 1. Проверяем запись
                 isEnrolled = await _db.Enrollments
                     .AnyAsync(e => e.CourseId == id && e.UserLogin == login);
 
-                // 2. Улучшенная проверка прогресса
-                // Получаем ID всех шагов, которые принадлежат этому курсу
-                // 2. Улучшенная проверка прогресса
-                // Запрашиваем ID шагов напрямую из базы, а не из навигационных свойств
                 var allStepIds = await _db.Steps
                     .Where(s => s.Lesson.Module.CourseId == id)
                     .Select(s => s.Id)
@@ -55,15 +79,7 @@ namespace WebApplication2.Controllers
                         .Distinct()
                         .ToListAsync();
 
-                    // ВАЖНО: используем >= на случай, если в базе есть дубликаты прогресса
                     hasCompletedCourse = completedStepIds.Count >= allStepIds.Count;
-
-                    Debug.WriteLine($"[DEBUG] User: {login}, Course: {id}, Total Steps: {allStepIds.Count}, Completed: {completedStepIds.Count}");
-                }
-                else
-                {
-                    // Если в курсе 0 шагов, технически он не пройден
-                    hasCompletedCourse = false;
                 }
             }
 
@@ -75,19 +91,18 @@ namespace WebApplication2.Controllers
 
         // --- ДОБАВЛЕНИЕ ОТЗЫВА (AJAX) ---
         [HttpPost]
-        public async Task<IActionResult> AddReview(int courseId, int rating, string text)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddReview(int courseId, int rating, string text, bool isRecommended)
         {
             var login = HttpContext.Session.GetString("Login");
             if (string.IsNullOrEmpty(login))
                 return Json(new { success = false, message = "Нужно войти в систему" });
 
-            // 1. Получаем список всех шагов курса из БД напрямую
             var allStepIds = await _db.Steps
                 .Where(s => s.Lesson.Module.CourseId == courseId)
                 .Select(s => s.Id)
                 .ToListAsync();
 
-            // 2. Считаем, сколько из них пройдено
             int completedCount = await _db.Progress
                 .Where(p => p.UserLogin == login && p.IsCompleted && allStepIds.Contains(p.StepId))
                 .Select(p => p.StepId)
@@ -96,14 +111,9 @@ namespace WebApplication2.Controllers
 
             if (allStepIds.Count == 0 || completedCount < allStepIds.Count)
             {
-                return Json(new
-                {
-                    success = false,
-                    message = $"Для отзыва нужно пройти все уроки. Пройдено: {completedCount} из {allStepIds.Count}"
-                });
+                return Json(new { success = false, message = "Для отзыва нужно пройти все уроки." });
             }
 
-            // 3. Проверка на дубликат отзыва
             var alreadyExists = await _db.CourseReviews
                 .AnyAsync(r => r.CourseId == courseId && r.UserLogin == login);
 
@@ -116,6 +126,7 @@ namespace WebApplication2.Controllers
                 UserLogin = login,
                 Rating = rating,
                 Text = text,
+                IsRecommended = isRecommended, // Теперь сохраняем реальное значение
                 CreatedAt = DateTime.Now
             };
 
@@ -189,7 +200,6 @@ namespace WebApplication2.Controllers
 
             if (currentStep == null) return NotFound();
 
-            // Защита от прыжков через уроки
             int currentIndex = allStepsSorted.IndexOf(currentStep);
             if (currentIndex > 0)
             {
@@ -243,7 +253,6 @@ namespace WebApplication2.Controllers
 
             if (currentStep == null) return Json(new { success = false, message = "Шаг не найден" });
 
-            // Проверка квиза
             if (currentStep.Type == StepType.Quiz)
             {
                 var correctIds = currentStep.QuizOptions.Where(o => o.IsCorrect).Select(o => o.Id).OrderBy(id => id).ToList();
@@ -255,7 +264,6 @@ namespace WebApplication2.Controllers
                 }
             }
 
-            // Сохранение прогресса
             var progress = await _db.Progress.FirstOrDefaultAsync(p => p.StepId == stepId && p.UserLogin == login);
             if (progress == null)
             {
@@ -268,7 +276,6 @@ namespace WebApplication2.Controllers
             }
             await _db.SaveChangesAsync();
 
-            // Поиск следующего шага
             var allIds = await _db.Modules
                 .Where(m => m.CourseId == currentStep.Lesson.Module.CourseId)
                 .OrderBy(m => m.Order)
@@ -301,6 +308,62 @@ namespace WebApplication2.Controllers
             await _db.SaveChangesAsync();
 
             return Json(new { success = true });
+        }
+
+        // --- РЕДАКТИРОВАНИЕ КУРСА (GET) ---
+        [HttpGet]
+        public async Task<IActionResult> Edit(int id)
+        {
+            var login = HttpContext.Session.GetString("Login");
+            if (string.IsNullOrEmpty(login)) return RedirectToAction("Index", "Authorization");
+
+            var course = await _db.Courses.FirstOrDefaultAsync(c => c.Id == id);
+
+            if (course == null) return NotFound();
+
+            // Проверка на авторство (чтобы никто не мог править чужой курс через URL)
+            if (course.AuthorLogin != login) return Forbid();
+
+            return View(course);
+        }
+
+        // --- РЕДАКТИРОВАНИЕ КУРСА (POST) ---
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(int id, CourseModel model, IFormFile? uploadCover)
+        {
+            var login = HttpContext.Session.GetString("Login");
+            if (string.IsNullOrEmpty(login)) return RedirectToAction("Index", "Authorization");
+
+            var courseInDb = await _db.Courses.FirstOrDefaultAsync(c => c.Id == id);
+            if (courseInDb == null) return NotFound();
+            if (courseInDb.AuthorLogin != login) return Forbid();
+
+            // Обновляем только основные поля
+            courseInDb.Title = model.Title;
+            courseInDb.Description = model.Description;
+            courseInDb.Category = model.Category;
+            courseInDb.IsPublished = model.IsPublished;
+
+            // Обработка новой обложки, если она загружена
+            if (uploadCover != null && uploadCover.Length > 0)
+            {
+                var fileName = Guid.NewGuid().ToString() + Path.GetExtension(uploadCover.FileName);
+                var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads", fileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await uploadCover.CopyToAsync(stream);
+                }
+
+                courseInDb.CoverImagePath = "/uploads/" + fileName;
+            }
+
+            _db.Courses.Update(courseInDb);
+            await _db.SaveChangesAsync();
+
+            // Возвращаем в личный кабинет (замени на свой Action, например "MyCourses")
+            return RedirectToAction("Details", new { id = courseInDb.Id });
         }
     }
 }

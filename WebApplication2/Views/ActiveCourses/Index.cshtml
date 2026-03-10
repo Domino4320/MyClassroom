@@ -1,12 +1,12 @@
 ﻿@model IEnumerable<WebApplication2.Models.CourseCardModel>
 
 @{
-    ViewData["Title"] = "MyClassroom - Библиотека курсов";
-    Layout = null;
+    ViewData["Title"] = "MyClassroom - Мои курсы";
+    Layout = null; // Отключаем стандартный Layout, так как используем свои Header и Sidebar
 }
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,12 +14,12 @@
     <title>@ViewData["Title"]</title>
 
     <style>
-        /* Базовые настройки страницы */
+        /* Базовые стили для корректного отображения */
         body {
             margin: 0;
             padding: 0;
             background-color: #f8fafc;
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
         .main-layout {
@@ -28,7 +28,6 @@
             min-height: 100vh;
         }
 
-        /* Область контента */
         .content-area {
             flex: 1;
             display: flex;
@@ -42,7 +41,7 @@
             box-sizing: border-box;
         }
 
-        /* Стили заголовка страницы (как в Активных курсах) */
+        /* Стили заголовка страницы */
         .page-header {
             margin-bottom: 30px;
             border-bottom: 2px solid #e2e8f0;
@@ -55,7 +54,7 @@
                 font-size: 1.8rem;
             }
 
-        /* Секция поиска */
+        /* Поиск */
         .search-container {
             margin-bottom: 40px;
             display: flex;
@@ -84,7 +83,7 @@
                 box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
             }
 
-        /* СЕТКА - Решение проблемы сплющивания */
+        /* Сетка курсов (защита от сплющивания) */
         .courses-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -92,7 +91,6 @@
             width: 100%;
         }
 
-        /* Элемент сетки */
         .course-item {
             display: flex;
             justify-content: center;
@@ -100,9 +98,8 @@
             min-width: 320px;
         }
 
-            /* Форсируем размеры для вложенной карточки */
-            .course-item > div,
-            .course-item > .course-card {
+            /* Принудительный размер для карточки из Partial */
+            .course-item > div {
                 width: 100% !important;
                 max-width: 360px !important;
             }
@@ -111,29 +108,46 @@
                 display: none !important;
             }
 
-        /* Состояния поиска */
+        /* Состояния "Пусто" */
         .no-search-results {
             display: none;
             grid-column: 1 / -1;
             text-align: center;
-            padding: 60px 20px;
+            padding: 60px;
             color: #64748b;
-            background: rgba(226, 232, 240, 0.5);
+            background: #f1f5f9;
             border-radius: 20px;
             border: 2px dashed #cbd5e1;
         }
 
-        .empty-state {
+        .empty-active-state {
             grid-column: 1 / -1;
             text-align: center;
             padding: 100px 20px;
             color: #94a3b8;
         }
 
-            .empty-state i {
+            .empty-active-state i {
                 font-size: 4rem;
                 margin-bottom: 20px;
                 display: block;
+                color: #cbd5e1;
+            }
+
+        .btn-to-library {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 12px 24px;
+            background-color: #38bdf8;
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+            .btn-to-library:hover {
+                background-color: #0ea5e9;
             }
     </style>
 </head>
@@ -147,15 +161,15 @@
 
             <main class="main-content">
                 <div class="page-header">
-                    <h2>Библиотека курсов</h2>
+                    <h2>Мои активные курсы</h2>
                 </div>
 
                 <section class="search-container">
                     <div class="search-input-wrapper">
                         <input type="text"
-                               id="librarySearch"
+                               id="activeSearch"
                                class="dynamic-search-input"
-                               placeholder="Введите название курса для поиска..."
+                               placeholder="Поиск среди ваших курсов..."
                                autocomplete="off">
                     </div>
                 </section>
@@ -172,16 +186,17 @@
                     }
                     else
                     {
-                        <div class="empty-state">
-                            <i class="fa-solid fa-box-open"></i>
-                            <p>В данный момент доступных курсов нет.</p>
+                        <div class="empty-active-state">
+                            <i class="fa-solid fa-book-open"></i>
+                            <h3>У вас пока нет активных курсов</h3>
+                            <p>Вы еще не записались ни на один курс. Самое время начать обучение!</p>
+                            <a href="@Url.Action("Index", "Courses")" class="btn-to-library">Перейти в библиотеку</a>
                         </div>
                     }
 
-                    @* Сообщение о поиске *@
+                    @* Сообщение для поиска *@
                     <div id="noResults" class="no-search-results">
-                        <i class="fa-solid fa-magnifying-glass" style="font-size: 2rem; margin-bottom: 10px; display: block;"></i>
-                        <p>По вашему запросу ничего не найдено. Попробуйте другое название.</p>
+                        <p>Курс с таким названием не найден в вашем списке.</p>
                     </div>
                 </section>
             </main>
@@ -192,7 +207,7 @@
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            const searchInput = document.getElementById('librarySearch');
+            const searchInput = document.getElementById('activeSearch');
             const items = document.querySelectorAll('.course-item');
             const noResults = document.getElementById('noResults');
 
@@ -201,12 +216,14 @@
                     const query = this.value.toLowerCase().trim();
                     let foundCount = 0;
 
+                    // Если поле пустое — показываем все активные курсы
                     if (query === "") {
                         items.forEach(item => item.classList.remove('hidden'));
                         if (noResults) noResults.style.display = 'none';
                         return;
                     }
 
+                    // Фильтрация по введенным буквам
                     items.forEach(item => {
                         const title = item.getAttribute('data-title') || "";
                         if (title.includes(query)) {
@@ -217,6 +234,7 @@
                         }
                     });
 
+                    // Управление плашкой "Ничего не найдено"
                     if (noResults) {
                         noResults.style.display = (foundCount === 0) ? 'block' : 'none';
                     }

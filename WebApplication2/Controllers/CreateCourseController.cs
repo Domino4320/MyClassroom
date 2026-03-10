@@ -2,8 +2,6 @@
 using WebApplication2.Data;
 using WebApplication2.Models;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Hosting;
-using System;
 
 namespace WebApplication2.Controllers
 {
@@ -12,67 +10,137 @@ namespace WebApplication2.Controllers
         private readonly ApplicationDBContext _context;
         private readonly IWebHostEnvironment _hostEnvironment;
 
-        // В конструкторе мы ДОЛЖНЫ принять эти параметры и присвоить их полям класса
         public CreateCourseController(ApplicationDBContext context, IWebHostEnvironment hostEnvironment)
         {
             _context = context;
             _hostEnvironment = hostEnvironment;
         }
+
+        // 1. Страница создания нового курса
+        [HttpGet]
         public IActionResult Index()
         {
-            return View();
+            var login = HttpContext.Session.GetString("Login");
+            if (string.IsNullOrEmpty(login)) return RedirectToAction("Index", "Authorization");
+
+            return View("Index", new CourseModel());
         }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(CourseModel course, IFormFile? imageFile)
+        // 2. Страница редактирования существующего курса
+        [HttpGet]
+        public async Task<IActionResult> Edit(int id)
         {
             var login = HttpContext.Session.GetString("Login");
+            if (string.IsNullOrEmpty(login)) return RedirectToAction("Index", "Authorization");
 
-            if (string.IsNullOrEmpty(login))
+            var course = await _context.Courses.FirstOrDefaultAsync(c => c.Id == id && c.AuthorLogin == login);
+            if (course == null) return NotFound();
+
+            // ЗАЩИТА: Если курс уже опубликован, редактировать метаданные нельзя
+            if (course.IsPublished)
             {
-                // Если логина в сессии нет, значит пользователь не вошел.
-                // Вместо создания курса "от анонима", лучше выдать ошибку.
-                ModelState.AddModelError("", "Вы должны войти в систему, чтобы создать курс.");
-                return View("Index", course);
+                TempData["ErrorMessage"] = "Опубликованный курс нельзя редактировать. Сначала снимите его с публикации.";
+                return RedirectToAction("Index", "MyCourses");
             }
 
-            // Присваиваем реальный логин из сессии
-            course.AuthorLogin = login;
-            // 2. Убираем AuthorLogin из проверки ModelState, 
-            // чтобы сервер не жаловался, что "поле не заполнено в форме"
+            return View("Index", course);
+        }
+
+        // 3. Обработка создания
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(CourseModel course, IFormFile? uploadCover)
+        {
+            return await SaveCourse(course, uploadCover, isNew: true);
+        }
+
+        // 4. Обработка сохранения правок
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(CourseModel course, IFormFile? uploadCover)
+        {
+            // Предварительная проверка статуса в БД перед любыми действиями
+            var existingCourse = await _context.Courses
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == course.Id);
+
+            if (existingCourse == null) return NotFound();
+
+            var login = HttpContext.Session.GetString("Login");
+            if (existingCourse.AuthorLogin != login) return Forbid();
+
+            if (existingCourse.IsPublished)
+            {
+                TempData["ErrorMessage"] = "Изменения не сохранены: опубликованный курс защищен от редактирования.";
+                return RedirectToAction("Index", "MyCourses");
+            }
+
+            return await SaveCourse(course, uploadCover, isNew: false);
+        }
+
+        // Вспомогательный метод сохранения
+        private async Task<IActionResult> SaveCourse(CourseModel course, IFormFile? imageFile, bool isNew)
+        {
+            var login = HttpContext.Session.GetString("Login");
+            if (string.IsNullOrEmpty(login)) return RedirectToAction("Index", "Authorization");
+
+            // Убираем проверку полей, которые заполняются автоматически
             ModelState.Remove("AuthorLogin");
+            ModelState.Remove("CoverImagePath");
 
             if (ModelState.IsValid)
             {
-                // Логика сохранения картинки (ваш текущий код)
+                CourseModel courseToSave;
+
+                if (isNew)
+                {
+                    courseToSave = course;
+                    courseToSave.AuthorLogin = login;
+                    courseToSave.CreatedAt = DateTime.Now;
+                    courseToSave.IsPublished = false; // Новый курс всегда черновик
+                    _context.Courses.Add(courseToSave);
+                }
+                else
+                {
+                    courseToSave = await _context.Courses
+                        .FirstOrDefaultAsync(c => c.Id == course.Id && c.AuthorLogin == login);
+
+                    if (courseToSave == null) return NotFound();
+                    if (courseToSave.IsPublished) return BadRequest("Редактирование опубликованного курса запрещено.");
+
+                    // Обновляем только разрешенные поля
+                    courseToSave.Title = course.Title;
+                    courseToSave.Description = course.Description;
+                    courseToSave.Category = course.Category;
+                }
+
+                // Логика загрузки изображения
                 if (imageFile != null && imageFile.Length > 0)
                 {
                     string wwwRootPath = _hostEnvironment.WebRootPath;
                     string fileName = Guid.NewGuid().ToString() + Path.GetExtension(imageFile.FileName);
-                    string uploadPath = Path.Combine(wwwRootPath, @"images\covers");
+                    string uploadPath = Path.Combine(wwwRootPath, "images", "covers");
 
-                    if (!Directory.Exists(uploadPath)) Directory.CreateDirectory(uploadPath);
+                    if (!Directory.Exists(uploadPath))
+                        Directory.CreateDirectory(uploadPath);
 
-                    using (var fileStream = new FileStream(Path.Combine(uploadPath, fileName), FileMode.Create))
+                    // Если редактируем и есть старая обложка — её можно удалить (опционально)
+                    // if (!isNew && !string.IsNullOrEmpty(courseToSave.CoverImagePath)) { ... }
+
+                    string filePath = Path.Combine(uploadPath, fileName);
+                    using (var fileStream = new FileStream(filePath, FileMode.Create))
                     {
                         await imageFile.CopyToAsync(fileStream);
                     }
-                    course.CoverImagePath = "/images/covers/" + fileName;
+                    courseToSave.CoverImagePath = "/images/covers/" + fileName;
                 }
 
-                // Устанавливаем дату создания
-                course.CreatedAt = DateTime.Now;
-
-                _context.Add(course);
                 await _context.SaveChangesAsync();
-
-                return RedirectToAction("Index", "Home");
+                return RedirectToAction("Index", "MyCourses");
             }
 
-            // Если валидация не прошла, возвращаем ту же вьюху
+            // Если модель невалидна — возвращаемся на форму
             return View("Index", course);
         }
-
     }
 }

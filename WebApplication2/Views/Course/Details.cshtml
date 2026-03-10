@@ -5,6 +5,15 @@
     var tokens = Antiforgery.GetAndStoreTokens(Context);
     bool isEnrolled = ViewData["IsEnrolled"] != null && (bool)ViewData["IsEnrolled"];
     bool hasCompletedCourse = ViewData["HasCompletedCourse"] != null && (bool)ViewData["HasCompletedCourse"];
+
+    // ДИНАМИЧЕСКИЙ РАСЧЕТ АНАЛИТИКИ
+    // Берем данные из ViewData (их должен прислать контроллер) или считаем на месте
+    var recRate = ViewData["RecPercent"] ?? 0;
+    var rank = ViewData["CategoryRank"] ?? "0";
+    var totalInCat = ViewData["TotalInCat"] ?? 0;
+
+    // Форматируем рейтинг: если отзывов нет, пишем 0
+    string displayRating = Model.AverageRating > 0 ? Model.AverageRating.ToString("0.0") : "0";
 }
 
 <!DOCTYPE html>
@@ -16,7 +25,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        /* Общие стили */
         html, body {
             margin: 0;
             padding: 0;
@@ -32,7 +40,6 @@
             padding-bottom: 100px;
         }
 
-        /* Герой-секция */
         .course-hero {
             background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
             padding: 60px 0;
@@ -56,13 +63,26 @@
             flex: 1;
         }
 
-            .hero-image img {
+            .hero-image img, .hero-placeholder {
                 width: 100%;
                 border-radius: 20px;
                 box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
                 border: 1px solid #475569;
                 object-fit: cover;
                 aspect-ratio: 16/9;
+            }
+
+        .hero-placeholder {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+            .hero-placeholder i {
+                font-size: 4rem;
+                color: #475569;
+                opacity: 0.5;
             }
 
         .badge-cat {
@@ -72,10 +92,33 @@
             font-size: 0.85rem;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
         }
 
-        /* Кнопки */
+        .mini-stats {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .stat-item {
+            background: rgba(255,255,255,0.05);
+            padding: 10px 18px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
         .btn-enroll {
             background: #10b981;
             color: white;
@@ -88,25 +131,17 @@
             transition: 0.3s;
             display: inline-block;
             text-decoration: none;
-            text-align: center;
         }
 
             .btn-enroll:hover {
                 background: #059669;
                 transform: translateY(-2px);
-                box-shadow: 0 10px 20px -5px rgba(16, 185, 129, 0.4);
             }
 
         .btn-continue {
             background: #38bdf8;
         }
 
-            .btn-continue:hover {
-                background: #0ea5e9;
-                box-shadow: 0 10px 20px -5px rgba(56, 189, 248, 0.4);
-            }
-
-        /* Вкладки */
         .course-tabs {
             max-width: 1100px;
             margin: 40px auto;
@@ -124,9 +159,8 @@
             padding: 12px 0;
             color: #94a3b8;
             font-weight: 600;
-            border-bottom: 3px solid transparent;
             cursor: pointer;
-            transition: 0.3s;
+            border-bottom: 3px solid transparent;
         }
 
             .tab-link.active {
@@ -143,7 +177,6 @@
                 display: block;
             }
 
-        /* ИСПРАВЛЕНИЕ: Используем @@ для keyframes */
         @@keyframes fadeIn {
             from {
                 opacity: 0;
@@ -154,13 +187,6 @@
                 opacity: 1;
                 transform: translateY(0);
             }
-        }
-
-        /* Отзывы */
-        .rating-stars {
-            color: #fbbf24;
-            display: flex;
-            gap: 2px;
         }
 
         .comment-card {
@@ -177,23 +203,12 @@
             width: 48px;
             height: 48px;
             border-radius: 50%;
-            object-fit: cover;
             border: 2px solid #475569;
-            flex-shrink: 0;
-        }
-
-        .review-form {
-            background: #1e293b;
-            padding: 30px;
-            border-radius: 16px;
-            border: 1px solid #475569;
-            margin-bottom: 40px;
         }
 
         .star-rating {
             display: flex;
             flex-direction: row-reverse;
-            justify-content: flex-end;
             gap: 8px;
             margin: 15px 0;
         }
@@ -203,15 +218,12 @@
             }
 
             .star-rating label {
-                font-size: 2.5rem;
+                font-size: 2rem;
                 color: #334155;
                 cursor: pointer;
-                transition: 0.2s;
             }
 
-                .star-rating label:hover,
-                .star-rating label:hover ~ label,
-                .star-rating input:checked ~ label {
+                .star-rating label:hover, .star-rating label:hover ~ label, .star-rating input:checked ~ label {
                     color: #fbbf24;
                 }
 
@@ -222,24 +234,8 @@
             color: white;
             padding: 15px;
             border-radius: 10px;
-            margin-top: 10px;
             resize: vertical;
             box-sizing: border-box;
-            font-size: 1rem;
-        }
-
-            .review-input:focus {
-                border-color: #38bdf8;
-                outline: none;
-            }
-
-        .lock-overlay {
-            background: rgba(30, 41, 59, 0.4);
-            padding: 40px;
-            border-radius: 16px;
-            border: 2px dashed #334155;
-            text-align: center;
-            color: #94a3b8;
         }
     </style>
 </head>
@@ -250,15 +246,29 @@
             <div class="hero-container">
                 <div class="hero-info">
                     <span class="badge-cat">@Model.Category</span>
-                    <h1 style="font-size: 3.2rem; margin: 20px 0; font-weight: 800; line-height: 1.1;">@Model.Title</h1>
-                    <p style="font-size: 1.25rem; color: #94a3b8; line-height: 1.6; margin-bottom: 35px; max-width: 600px;">@Model.Description</p>
+                    <h1 style="font-size: 3rem; margin: 15px 0; font-weight: 800;">@Model.Title</h1>
 
-                    <div style="display: flex; align-items: center; gap: 25px;">
+                    <div class="mini-stats">
+                        <div class="stat-item">
+                            <div class="stat-label">Рейтинг</div>
+                            <div class="stat-value" style="color: #fbbf24;">⭐ @displayRating</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">В категории</div>
+                            <div class="stat-value" style="color: #38bdf8;">#@rank из @totalInCat</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Рекомендуют</div>
+                            <div class="stat-value" style="color: #10b981;">@recRate%</div>
+                        </div>
+                    </div>
+
+                    <p style="color: #94a3b8; line-height: 1.6; margin-bottom: 30px;">@Model.Description</p>
+
+                    <div style="display: flex; align-items: center; gap: 20px;">
                         @if (isEnrolled)
                         {
-                            <a asp-action="Index" asp-route-courseId="@Model.Id" class="btn-enroll btn-continue">
-                                Продолжить обучение
-                            </a>
+                            <a asp-action="Index" asp-route-courseId="@Model.Id" class="btn-enroll btn-continue">Продолжить обучение</a>
                         }
                         else
                         {
@@ -267,19 +277,18 @@
                                 <button type="submit" class="btn-enroll">Поступить на курс</button>
                             </form>
                         }
-                        <div style="display: flex; flex-direction: column;">
-                            <div class="rating-stars">
-                                @for (int i = 1; i <= 5; i++)
-                                {
-                                    <i class="@(i <= Math.Round(Model.AverageRating) ? "fas fa-star" : "far fa-star")"></i>
-                                }
-                            </div>
-                            <span style="color: #64748b; font-size: 0.95rem; margin-top: 4px;">@Model.AverageRating.ToString("0.0") / 5.0 (@Model.ReviewsCount отзывов)</span>
-                        </div>
                     </div>
                 </div>
+
                 <div class="hero-image">
-                    <img src="@(string.IsNullOrEmpty(Model.CoverImagePath) ? "/images/default-course.jpg" : Model.CoverImagePath)" alt="Cover">
+                    @if (!string.IsNullOrEmpty(Model.CoverImagePath))
+                    {
+                        <img src="@Model.CoverImagePath" alt="@Model.Title">
+                    }
+                    else
+                    {
+                        <div class="hero-placeholder"><i class="fas fa-book-open"></i></div>
+                    }
                 </div>
             </div>
         </section>
@@ -292,17 +301,14 @@
             </nav>
 
             <div id="about" class="tab-pane active">
-                <h3 style="font-size: 1.8rem; margin-bottom: 20px;">О чем этот курс</h3>
-                <div style="color: #cbd5e1; line-height: 1.8; font-size: 1.1rem; white-space: pre-line;">
-                    @Model.Description
-                </div>
+                <div style="color: #cbd5e1; line-height: 1.8; white-space: pre-line;">@Model.Description</div>
             </div>
 
             <div id="reviews" class="tab-pane">
-                <div class="review-form">
-                    @if (hasCompletedCourse)
-                    {
-                        <h3 style="margin-top: 0;">Ваша оценка курса</h3>
+                @if (hasCompletedCourse)
+                {
+                    <div style="background: #1e293b; padding: 25px; border-radius: 16px; border: 1px solid #475569; margin-bottom: 30px;">
+                        <h3 style="margin-top: 0;">Ваш отзыв</h3>
                         <div class="star-rating">
                             <input type="radio" id="star5" name="rating" value="5" /><label for="star5" class="fas fa-star"></label>
                             <input type="radio" id="star4" name="rating" value="4" /><label for="star4" class="fas fa-star"></label>
@@ -310,18 +316,16 @@
                             <input type="radio" id="star2" name="rating" value="2" /><label for="star2" class="fas fa-star"></label>
                             <input type="radio" id="star1" name="rating" value="1" /><label for="star1" class="fas fa-star"></label>
                         </div>
-                        <textarea id="reviewText" class="review-input" rows="4" placeholder="Напишите ваш отзыв здесь..."></textarea>
-                        <button class="btn-enroll" style="margin-top: 20px;" onclick="submitReview()">Опубликовать отзыв</button>
-                    }
-                    else
-                    {
-                        <div class="lock-overlay">
-                            <i class="fas fa-lock" style="font-size: 2rem; margin-bottom: 15px; display: block;"></i>
-                            <h4 style="color: #f8fafc; margin: 0 0 10px 0;">Отзывы доступны после прохождения</h4>
-                            <p>Завершите все уроки курса, чтобы поделиться своим мнением.</p>
+
+                        <div style="margin: 15px 0; display: flex; align-items: center; gap: 10px; color: #cbd5e1;">
+                            <input type="checkbox" id="isRecommended" style="width: 18px; height: 18px; accent-color: #10b981;">
+                            <label for="isRecommended" style="cursor: pointer;">Я рекомендую этот курс другим пользователям</label>
                         </div>
-                    }
-                </div>
+
+                        <textarea id="reviewText" class="review-input" rows="3" placeholder="Что вам понравилось?"></textarea>
+                        <button class="btn-enroll" style="margin-top: 15px;" onclick="submitReview()">Отправить</button>
+                    </div>
+                }
 
                 <div id="reviewsList">
                     @if (Model.Reviews != null && Model.Reviews.Any())
@@ -329,24 +333,19 @@
                         @foreach (var review in Model.Reviews.OrderByDescending(r => r.CreatedAt))
                         {
                             <div class="comment-card">
-                                <img src="@(string.IsNullOrEmpty(review.User?.Avatar) ? Url.Content("~/images/default_avatar.jpg") : review.User.Avatar)"
-                                     class="user-avatar"
-                                     onerror="this.onerror=null; this.src='@Url.Content("~/images/default_avatar.jpg")';" />
-
-                                <div style="flex-grow: 1;">
+                                <img src="@(string.IsNullOrEmpty(review.User?.Avatar) ? "/images/default_avatar.jpg" : review.User.Avatar)" class="user-avatar" />
+                                <div style="flex: 1;">
                                     <div style="display: flex; justify-content: space-between;">
-                                        <div>
-                                            <div style="font-weight: 700; color: #38bdf8;">@@@review.UserLogin</div>
-                                            <div style="font-size: 0.8rem; color: #64748b;">@review.CreatedAt.ToString("dd.MM.yyyy")</div>
-                                        </div>
-                                        <div class="rating-stars">
+                                        <span style="font-weight: 700; color: #38bdf8;">@@@review.UserLogin</span>
+                                        <span style="color: #fbbf24;">
                                             @for (int i = 1; i <= 5; i++)
                                             {
-                                                <i class="@(i <= review.Rating ? "fas fa-star" : "far fa-star")"></i>
+                                                <i class="@(i <= review.Rating ? "fas" : "far") fa-star"></i>
                                             }
-                                        </div>
+                                        </span>
                                     </div>
-                                    <p style="margin-top: 15px; color: #cbd5e1; line-height: 1.6;">@review.Text</p>
+                                    <p style="margin: 10px 0; color: #cbd5e1;">@review.Text</p>
+                                    <small style="color: #64748b;">@review.CreatedAt.ToShortDateString()</small>
                                 </div>
                             </div>
                         }
@@ -359,24 +358,24 @@
             </div>
 
             <div id="curriculum" class="tab-pane">
-                <h3 style="margin-bottom: 25px;">Программа обучения</h3>
-                @foreach (var module in Model.Modules.OrderBy(m => m.Order))
+                @if (Model.Modules != null)
                 {
-                    <div style="margin-bottom: 15px; background: #1e293b; border-radius: 12px; border: 1px solid #334155; overflow: hidden;">
-                        <div style="padding: 18px 25px; background: rgba(56, 189, 248, 0.05); border-bottom: 1px solid #334155;">
-                            <span style="color: #38bdf8; font-size: 0.8rem; font-weight: 800; text-transform: uppercase;">Модуль @module.Order</span>
-                            <h4 style="margin: 5px 0 0 0; font-size: 1.2rem;">@module.Title</h4>
+                    @foreach (var module in Model.Modules.OrderBy(m => m.Order))
+                    {
+                        <div style="margin-bottom: 12px; background: #1e293b; border-radius: 12px; border: 1px solid #334155; overflow: hidden;">
+                            <div style="padding: 15px 20px; background: rgba(56, 189, 248, 0.05);">
+                                <h4 style="margin: 0;">Модуль @module.Order: @module.Title</h4>
+                            </div>
+                            <div style="padding: 10px 20px;">
+                                @foreach (var lesson in module.Lessons.OrderBy(l => l.Order))
+                                {
+                                    <div style="padding: 10px 0; color: #94a3b8; display: flex; gap: 10px; align-items: center;">
+                                        <i class="far fa-play-circle"></i> @lesson.Title
+                                    </div>
+                                }
+                            </div>
                         </div>
-                        <div style="padding: 10px 25px;">
-                            @foreach (var lesson in module.Lessons.OrderBy(l => l.Order))
-                            {
-                                <div style="padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; gap: 15px; color: #94a3b8;">
-                                    <i class="far fa-play-circle"></i>
-                                    <span>@lesson.Title</span>
-                                </div>
-                            }
-                        </div>
-                    </div>
+                    }
                 }
             </div>
         </div>
@@ -386,9 +385,9 @@
         function openTab(evt, tabName) {
             let i, tabPane, tabLinks;
             tabPane = document.getElementsByClassName("tab-pane");
-            for (i = 0; i < tabPane.length; i++) { tabPane[i].classList.remove("active"); }
+            for (i = 0; i < tabPane.length; i++) tabPane[i].classList.remove("active");
             tabLinks = document.getElementsByClassName("tab-link");
-            for (i = 0; i < tabLinks.length; i++) { tabLinks[i].classList.remove("active"); }
+            for (i = 0; i < tabLinks.length; i++) tabLinks[i].classList.remove("active");
             document.getElementById(tabName).classList.add("active");
             evt.currentTarget.classList.add("active");
         }
@@ -396,14 +395,19 @@
         function submitReview() {
             const ratingInput = document.querySelector('input[name="rating"]:checked');
             const text = document.getElementById('reviewText').value;
+            const isRec = document.getElementById('isRecommended').checked;
 
-            if (!ratingInput) { alert("Пожалуйста, выберите оценку."); return; }
-            if (!text.trim()) { alert("Пожалуйста, напишите текст отзыва."); return; }
+            if (!ratingInput || !text.trim()) {
+                alert("Пожалуйста, поставьте оценку и напишите текст отзыва.");
+                return;
+            }
 
             const formData = new URLSearchParams();
             formData.append('courseId', '@Model.Id');
             formData.append('rating', ratingInput.value);
             formData.append('text', text);
+            // Принудительно передаем как строку "true" или "false"
+            formData.append('isRecommended', isRec ? "true" : "false");
 
             fetch('/Course/AddReview', {
                 method: 'POST',
@@ -413,17 +417,20 @@
                 },
                 body: formData
             })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
+                .then(async res => {
+                    const isJson = res.headers.get('content-type')?.includes('application/json');
+                    const data = isJson ? await res.json() : null;
+
+                    if (res.ok && data && data.success) {
                         location.reload();
                     } else {
-                        alert(data.message);
+                        // Если сервер прислал 500 ошибку, выведем сообщение из JSON или общий текст
+                        alert(data ? data.message : "Произошла ошибка на сервере (500). Проверьте консоль Visual Studio.");
                     }
                 })
                 .catch(err => {
-                    console.error(err);
-                    alert("Ошибка при отправке.");
+                    console.error("Ошибка запроса:", err);
+                    alert("Не удалось отправить запрос.");
                 });
         }
     </script>

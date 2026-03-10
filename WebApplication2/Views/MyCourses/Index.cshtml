@@ -1,15 +1,15 @@
 ﻿@{
     ViewData["Title"] = "MyClassroom - Мои курсы";
 }
-@model IEnumerable<CourseCardModel> 
+@model IEnumerable<CourseCardModel>
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="~/css/style_for_main_page.css" rel="stylesheet"/>
-    <link href="~/css/course_card.css" rel="stylesheet"/>
+    <link href="~/css/style_for_main_page.css" rel="stylesheet" />
+    <link href="~/css/course_card.css" rel="stylesheet" />
 </head>
 <body>
 
@@ -20,11 +20,22 @@
             @await Html.PartialAsync("_Header")
 
             <main class="main-content">
+                @* Блок для вывода уведомлений (например, "Опубликованный курс нельзя редактировать") *@
+                @if (TempData["ErrorMessage"] != null)
+                {
+                    <div style="background-color: #f8d7da; color: #721c24; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #f5c6cb;">
+                        @TempData["ErrorMessage"]
+                    </div>
+                }
+
                 <section class="courses-grid">
                     @if (Model != null && Model.Any())
                     {
                         @foreach (var course in Model)
                         {
+                            @* Передаем IsEditable = true, чтобы кнопки управления в принципе были,
+                    но сама карточка внутри решит, показывать кнопки правки или нет, глядя на course.IsPublished
+                    *@
                             @await Html.PartialAsync("_CourseCard", course, new ViewDataDictionary(ViewData) { { "IsEditable", true } })
                         }
                     }
@@ -33,6 +44,7 @@
                         <div class="empty-state">
                             <i class="fa-solid fa-graduation-cap"></i>
                             <p>Курсов пока нет. Станьте первым!</p>
+                            <a href="@Url.Action("Index", "CreateCourse")" class="btn-primary" style="text-decoration: none; margin-top: 10px; display: inline-block;">Создать курс</a>
                         </div>
                     }
                 </section>
@@ -43,18 +55,15 @@
     <script src="~/js/script_for_main_page.js"></script>
     <script>
         async function deleteCourse(courseId) {
-            // 1. Подтверждение удаления
             if (!confirm("Вы уверены, что хотите полностью удалить этот курс? Все модули и уроки внутри него будут стерты.")) {
                 return;
             }
 
-            // 2. Отправка запроса на контроллер
             try {
                 const response = await fetch(`/CourseConstructor/DeleteCourse/${courseId}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
-                        // Если у тебя настроена CSRF защита, здесь нужно будет добавить токен
                     }
                 });
 

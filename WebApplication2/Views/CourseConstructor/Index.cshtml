@@ -34,6 +34,7 @@
             overflow: hidden;
         }
 
+        /* --- Sidebar --- */
         .sidebar {
             width: 320px;
             background: var(--sidebar-bg);
@@ -95,6 +96,7 @@
             opacity: 1;
         }
 
+        /* --- Editor Area --- */
         .editor-area {
             flex-grow: 1;
             display: flex;
@@ -193,25 +195,6 @@
             margin-bottom: 10px;
             align-items: center;
         }
-
-            .quiz-option-row input[type="checkbox"],
-            .quiz-option-row input[type="radio"] {
-                width: 20px;
-                height: 20px;
-                flex-shrink: 0;
-                cursor: pointer;
-            }
-
-        .btn-delete-opt {
-            color: var(--danger);
-            cursor: pointer;
-            transition: 0.2s;
-        }
-
-            .btn-delete-opt.disabled {
-                opacity: 0.2;
-                cursor: not-allowed;
-            }
     </style>
 </head>
 <body>
@@ -252,7 +235,7 @@
         <div id="editorPlaceholder" style="text-align: center; margin-top: 150px; color: var(--text-muted);">
             <i class="bi bi-palette2" style="font-size: 5rem; color: var(--primary); opacity: 0.5;"></i>
             <h2>Мастерская курса</h2>
-            <p>Выберите урок в левой панели</p>
+            <p>Выберите урок в левой панели или создайте новый</p>
         </div>
 
         <div id="editorForm" style="display: none; height: 100%; flex-direction: column;">
@@ -300,15 +283,15 @@
         async function addModule() {
             const title = prompt("Название модуля:");
             if (!title) return;
-            await fetch(`/CourseConstructor/AddModule?courseId=@Model.CourseId&title=${encodeURIComponent(title)}`, { method: 'POST' });
-            location.reload();
+            const response = await fetch(`/CourseConstructor/AddModule?courseId=@Model.CourseId&title=${encodeURIComponent(title)}`, { method: 'POST' });
+            if (response.ok) location.reload();
         }
 
         async function addLesson(moduleId) {
             const title = prompt("Название урока:");
             if (!title) return;
-            await fetch(`/CourseConstructor/AddLesson?moduleId=${moduleId}&title=${encodeURIComponent(title)}`, { method: 'POST' });
-            location.reload();
+            const response = await fetch(`/CourseConstructor/AddLesson?moduleId=${moduleId}&title=${encodeURIComponent(title)}`, { method: 'POST' });
+            if (response.ok) location.reload();
         }
 
         async function deleteLesson(lessonId) {
@@ -335,6 +318,7 @@
         function renderSteps(steps) {
             const container = document.getElementById('stepsContainer');
             container.innerHTML = '';
+            if (!steps) return;
 
             steps.forEach((step) => {
                 const stepDiv = document.createElement('div');
@@ -348,19 +332,15 @@
                             </div>
                             <label>Заголовок шага</label>
                             <input type="text" value="${step.title || ''}" class="step-title" data-id="${step.id}">
-
                             <div style="margin-top:15px;">
                                 ${step.type === 0 ? `<textarea rows="6" class="step-content" data-id="${step.id}">${step.textContent || ''}</textarea>` : ''}
                                 ${step.type === 1 ? `<input type="text" class="step-video" data-id="${step.id}" value="${step.videoUrl || ''}" placeholder="Ссылка на видео">` : ''}
-
                                 ${step.type === 2 ? `
                                     <div class="quiz-editor-box">
                                         <div style="margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid var(--border);">
                                             <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
-                                                <input type="checkbox" class="step-is-multiple" data-id="${step.id}"
-                                                       ${step.isMultipleChoice ? 'checked' : ''}
-                                                       onchange="toggleMultipleChoice(${step.id}, this.checked)">
-                                                <span>Множественный выбор (несколько верных ответов)</span>
+                                                <input type="checkbox" class="step-is-multiple" data-id="${step.id}" ${step.isMultipleChoice ? 'checked' : ''} onchange="toggleMultipleChoice(${step.id}, this.checked)">
+                                                <span>Множественный выбор</span>
                                             </label>
                                         </div>
                                         <div id="quiz-options-${step.id}"></div>
@@ -372,19 +352,13 @@
             });
         }
 
-        async function toggleMultipleChoice(stepId, isMultiple) {
-            await saveCurrentLesson(false);
-            loadQuizOptions(stepId, isMultiple);
-        }
-
         async function saveCurrentLesson(showAlert = false) {
-            if (!currentLessonId) return false;
+            if (!currentLessonId) return true; // Если урок не выбран, считать "успехом", чтобы не блокировать UI
 
             const steps = [];
             document.querySelectorAll('.step-title').forEach(input => {
                 const id = input.dataset.id;
                 const multCheck = document.querySelector(`.step-is-multiple[data-id="${id}"]`);
-
                 steps.push({
                     id: parseInt(id),
                     title: input.value,
@@ -409,15 +383,17 @@
         }
 
         async function addNewStep(type) {
+            if (!currentLessonId) {
+                alert("Сначала выберите урок в списке слева!");
+                return;
+            }
             await saveCurrentLesson(false);
             const response = await fetch(`/CourseConstructor/AddStep?lessonId=${currentLessonId}&type=${type}`, { method: 'POST' });
             if (response.ok) {
-                const newLessonData = await (await fetch(`/CourseConstructor/GetLessonData/${currentLessonId}`)).json();
-                // Если добавили Тест, проверяем наличие опций. Если их 0, добавляем 2 дефолтных
-                const lastStep = newLessonData.steps[newLessonData.steps.length - 1];
-                if (type === 'Quiz' && lastStep) {
-                    await fetch(`/CourseConstructor/AddQuizOption?stepId=${lastStep.id}`, { method: 'POST' });
-                    await fetch(`/CourseConstructor/AddQuizOption?stepId=${lastStep.id}`, { method: 'POST' });
+                const newStep = await response.json();
+                if (type === 'Quiz') {
+                    await fetch(`/CourseConstructor/AddQuizOption?stepId=${newStep.id}`, { method: 'POST' });
+                    await fetch(`/CourseConstructor/AddQuizOption?stepId=${newStep.id}`, { method: 'POST' });
                 }
                 loadLessonEditor(currentLessonId);
             }
@@ -434,26 +410,22 @@
             const response = await fetch(`/CourseConstructor/GetQuizOptions?stepId=${stepId}`);
             const options = await response.json();
             const container = document.getElementById(`quiz-options-${stepId}`);
-            if (container) {
-                const inputType = isMultipleChoice ? "checkbox" : "radio";
-                const isDeleteDisabled = options.length <= 2;
+            if (!container) return;
 
-                container.innerHTML = options.map(opt => `
-                            <div class="quiz-option-row" data-opt-id="${opt.id}">
-                                <input type="${inputType}" name="quiz-${stepId}"
-                                       ${opt.isCorrect ? 'checked' : ''}
-                                       onchange="handleOptionUpdate(${opt.id}, ${stepId}, '${inputType}')">
-                                <input type="text" value="${opt.text || ''}"
-                                       onchange="handleOptionUpdate(${opt.id}, ${stepId}, '${inputType}')" style="margin:0;">
-                                <i class="bi bi-trash btn-delete-opt ${isDeleteDisabled ? 'disabled' : ''}"
-                                   onclick="${isDeleteDisabled ? '' : `deleteOption(${opt.id}, ${stepId})`}"></i>
-                            </div>`).join('');
-            }
+            const inputType = isMultipleChoice ? "checkbox" : "radio";
+            const isDeleteDisabled = options.length <= 2;
+
+            container.innerHTML = options.map(opt => `
+                        <div class="quiz-option-row" data-opt-id="${opt.id}">
+                            <input type="${inputType}" name="quiz-${stepId}" ${opt.isCorrect ? 'checked' : ''} onchange="handleOptionUpdate(${opt.id}, ${stepId}, '${inputType}')">
+                            <input type="text" value="${opt.text || ''}" onchange="handleOptionUpdate(${opt.id}, ${stepId}, '${inputType}')" style="margin:0;">
+                            <i class="bi bi-trash btn-delete-opt ${isDeleteDisabled ? 'disabled' : ''}"
+                               onclick="${isDeleteDisabled ? '' : `deleteOption(${opt.id}, ${stepId})`}"></i>
+                        </div>`).join('');
         }
 
         async function handleOptionUpdate(optId, stepId, inputType) {
             const container = document.getElementById(`quiz-options-${stepId}`);
-
             if (inputType === 'radio') {
                 const rows = container.querySelectorAll('.quiz-option-row');
                 for (const row of rows) {
@@ -477,22 +449,29 @@
         }
 
         async function deleteOption(id, stepId) {
-            // Дополнительная проверка на фронте
             const container = document.getElementById(`quiz-options-${stepId}`);
-            if (container.querySelectorAll('.quiz-option-row').length <= 2) {
-                alert("В тесте должно быть минимум 2 варианта ответа");
-                return;
-            }
-
+            if (container.querySelectorAll('.quiz-option-row').length <= 2) return;
             const multCheck = document.querySelector(`.step-is-multiple[data-id="${stepId}"]`);
             await fetch(`/CourseConstructor/DeleteQuizOption/${id}`, { method: 'POST' });
             loadQuizOptions(stepId, multCheck.checked);
         }
 
+        async function toggleMultipleChoice(stepId, isMultiple) {
+            await saveCurrentLesson(false);
+            loadQuizOptions(stepId, isMultiple);
+        }
+
         async function publishCourse(courseId) {
             if (!confirm("Опубликовать курс?")) return;
+            await saveCurrentLesson(false);
             const response = await fetch(`/CourseConstructor/PublishCourse?id=${courseId}`, { method: 'POST' });
-            if (response.ok) alert("Курс опубликован!");
+            if (response.ok) {
+                alert("Курс успешно опубликован!");
+                window.location.href = '/MyCourses/Index';
+            } else {
+                const errorText = await response.text();
+                alert("Ошибка: " + (errorText || "В курсе должны быть уроки с контентом."));
+            }
         }
     </script>
 </body>

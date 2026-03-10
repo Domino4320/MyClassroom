@@ -14,117 +14,174 @@ namespace WebApplication2.Controllers
             _db = db;
         }
 
-        // 1. Главная страница конструктора
+        // Вспомогательный метод для проверки прав и сессии
+        private async Task<(CourseModel? course, string? error)> GetValidCourse(int courseId, bool checkPublished = true)
+        {
+            var userLogin = HttpContext.Session.GetString("Login");
+
+            if (string.IsNullOrEmpty(userLogin))
+                return (null, "Сессия истекла. Пожалуйста, войдите в аккаунт заново.");
+
+            var course = await _db.Courses.FirstOrDefaultAsync(c => c.Id == courseId);
+            if (course == null) return (null, "Курс не найден в базе данных.");
+
+            if (course.AuthorLogin != userLogin) return (null, "У вас нет прав на редактирование этого курса.");
+
+            if (checkPublished && course.IsPublished)
+                return (null, "Опубликованный курс нельзя редактировать.");
+
+            return (course, null);
+        }
+
         public async Task<IActionResult> Index(int id)
         {
             var course = await _db.Courses
                 .Include(c => c.Modules)
-                    .ThenInclude(m => m.Lessons)
-                        .ThenInclude(l => l.Steps)
+                .ThenInclude(m => m.Lessons)
                 .FirstOrDefaultAsync(c => c.Id == id);
 
             if (course == null) return NotFound();
 
             var userLogin = HttpContext.Session.GetString("Login");
-            if (course.AuthorLogin != userLogin) return Forbid();
+            if (string.IsNullOrEmpty(userLogin) || course.AuthorLogin != userLogin) return Forbid();
+
+            if (course.IsPublished)
+            {
+                TempData["ErrorMessage"] = "Курс опубликован и закрыт для редактирования.";
+                return RedirectToAction("Index", "MyCourses");
+            }
 
             var viewModel = new CourseConstructorViewModel
             {
                 CourseId = course.Id,
                 CourseTitle = course.Title,
-                Modules = course.Modules.OrderBy(m => m.Order).ToList()
+                IsPublished = course.IsPublished,
+                Modules = course.Modules?.OrderBy(m => m.Order).ToList() ?? new List<ModuleModel>()
             };
 
             return View(viewModel);
         }
 
-        // 2. Добавление Модуля
         [HttpPost]
-        public async Task<IActionResult> AddModule(int courseId, string title)
+        public async Task<IActionResult> AddModule([FromQuery] int courseId, [FromQuery] string title)
         {
-            if (string.IsNullOrEmpty(title)) return BadRequest("Название не может быть пустым");
-
-            var orders = await _db.Modules
-                .Where(m => m.CourseId == courseId)
-                .Select(m => m.Order)
-                .ToListAsync();
-
-            int nextOrder = orders.Any() ? orders.Max() + 1 : 1;
-
-            var newModule = new ModuleModel
+            try
             {
-                CourseId = courseId,
-                Title = title,
-                Order = nextOrder
-            };
+                var (course, error) = await GetValidCourse(courseId);
+                if (error != null) return BadRequest(error);
 
-            _db.Modules.Add(newModule);
-            await _db.SaveChangesAsync();
-            return Ok();
+                if (string.IsNullOrWhiteSpace(title)) return BadRequest("Название модуля не может быть пустым.");
+
+                int nextOrder = 1;
+                var lastModule = await _db.Modules
+                    .Where(m => m.CourseId == courseId)
+                    .OrderByDescending(m => m.Order)
+                    .FirstOrDefaultAsync();
+
+                if (lastModule != null) nextOrder = lastModule.Order + 1;
+
+                var newModule = new ModuleModel
+                {
+                    CourseId = courseId,
+                    Title = title,
+                    Order = nextOrder
+                };
+
+                _db.Modules.Add(newModule);
+                await _db.SaveChangesAsync();
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Ошибка AddModule: {ex.Message}");
+                return StatusCode(500, "Ошибка при сохранении модуля.");
+            }
         }
 
-        // 3. Добавление Урока
         [HttpPost]
-        public async Task<IActionResult> AddLesson(int moduleId, string title)
+        public async Task<IActionResult> AddLesson([FromQuery] int moduleId, [FromQuery] string title)
         {
-            if (string.IsNullOrEmpty(title)) return BadRequest("Название не может быть пустым");
-
-            var orders = await _db.Lessons
-                .Where(l => l.ModuleId == moduleId)
-                .Select(l => l.Order)
-                .ToListAsync();
-
-            int nextOrder = orders.Any() ? orders.Max() + 1 : 1;
-
-            var newLesson = new LessonModel
+            try
             {
-                ModuleId = moduleId,
-                Title = title,
-                Order = nextOrder
-            };
+                var module = await _db.Modules.FindAsync(moduleId);
+                if (module == null) return NotFound("Модуль не найден.");
 
-            _db.Lessons.Add(newLesson);
-            await _db.SaveChangesAsync();
-            return Ok();
+                var (course, error) = await GetValidCourse(module.CourseId);
+                if (error != null) return BadRequest(error);
+
+                int nextOrder = 1;
+                var lastLesson = await _db.Lessons
+                    .Where(l => l.ModuleId == moduleId)
+                    .OrderByDescending(l => l.Order)
+                    .FirstOrDefaultAsync();
+
+                if (lastLesson != null) nextOrder = lastLesson.Order + 1;
+
+                var newLesson = new LessonModel
+                {
+                    ModuleId = moduleId,
+                    Title = title,
+                    Order = nextOrder
+                };
+
+                _db.Lessons.Add(newLesson);
+                await _db.SaveChangesAsync();
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
         }
 
-        // 4. Добавление Шага
         [HttpPost]
-        public async Task<IActionResult> AddStep(int lessonId, string type)
+        public async Task<IActionResult> AddStep([FromQuery] int lessonId, [FromQuery] string type)
         {
-            StepType stepType = type switch
+            try
             {
-                "Text" => StepType.Text,
-                "Video" => StepType.Video,
-                "Quiz" => StepType.Quiz,
-                _ => StepType.Text
-            };
+                var lesson = await _db.Lessons.Include(l => l.Module).FirstOrDefaultAsync(l => l.Id == lessonId);
+                if (lesson == null) return NotFound();
 
-            var orders = await _db.Steps
-                .Where(s => s.LessonId == lessonId)
-                .Select(s => s.Order)
-                .ToListAsync();
+                var (course, error) = await GetValidCourse(lesson.Module.CourseId);
+                if (error != null) return BadRequest(error);
 
-            int nextOrder = orders.Any() ? orders.Max() + 1 : 1;
+                StepType stepType = type switch
+                {
+                    "Video" => StepType.Video,
+                    "Quiz" => StepType.Quiz,
+                    _ => StepType.Text
+                };
 
-            var newStep = new StepModel
+                int nextOrder = 1;
+                var lastStep = await _db.Steps
+                    .Where(s => s.LessonId == lessonId)
+                    .OrderByDescending(s => s.Order)
+                    .FirstOrDefaultAsync();
+
+                if (lastStep != null) nextOrder = lastStep.Order + 1;
+
+                var newStep = new StepModel
+                {
+                    LessonId = lessonId,
+                    Type = stepType,
+                    Title = type == "Video" ? "Видео-урок" : type == "Quiz" ? "Тест" : "Новая лекция",
+                    Order = nextOrder,
+                    TextContent = stepType == StepType.Text ? "Введите текст..." : "",
+                    VideoUrl = "",
+                    IsMultipleChoice = false
+                };
+
+                _db.Steps.Add(newStep);
+                await _db.SaveChangesAsync();
+
+                return Ok(new { id = newStep.Id, type = (int)newStep.Type });
+            }
+            catch (Exception ex)
             {
-                LessonId = lessonId,
-                Type = stepType,
-                Title = GetDefaultTitle(stepType),
-                Order = nextOrder,
-                TextContent = stepType == StepType.Text ? "Введите текст лекции..." : "",
-                VideoUrl = "",
-                IsMultipleChoice = false // По умолчанию одиночный выбор
-            };
-
-            _db.Steps.Add(newStep);
-            await _db.SaveChangesAsync();
-
-            return Ok();
+                return StatusCode(500, ex.Message);
+            }
         }
 
-        // 5. Получение данных урока (AJAX) - Исправлено (добавлен isMultipleChoice)
         [HttpGet]
         public async Task<IActionResult> GetLessonData(int id)
         {
@@ -144,35 +201,40 @@ namespace WebApplication2.Controllers
                     type = (int)s.Type,
                     textContent = s.TextContent ?? "",
                     videoUrl = s.VideoUrl ?? "",
-                    isMultipleChoice = s.IsMultipleChoice // Добавлено для фронта
+                    isMultipleChoice = s.IsMultipleChoice
                 })
             });
         }
 
-        // 6. Сохранение урока - Исправлено (сохранение IsMultipleChoice)
         [HttpPost]
         public async Task<IActionResult> SaveLesson([FromBody] LessonUpdateDto model)
         {
-            if (model == null) return BadRequest("Данные не получены");
+            if (model == null) return BadRequest("Нет данных для сохранения");
 
             var lesson = await _db.Lessons
                 .Include(l => l.Steps)
+                .Include(l => l.Module)
                 .FirstOrDefaultAsync(l => l.Id == model.LessonId);
 
             if (lesson == null) return NotFound();
 
+            var (course, error) = await GetValidCourse(lesson.Module.CourseId);
+            if (error != null) return BadRequest(error);
+
             lesson.Title = model.Title;
 
-            foreach (var stepData in model.Steps)
+            if (model.Steps != null)
             {
-                var step = lesson.Steps.FirstOrDefault(s => s.Id == stepData.Id);
-                if (step != null)
+                foreach (var stepData in model.Steps)
                 {
-                    step.Title = stepData.Title ?? step.Title;
-                    step.TextContent = stepData.TextContent;
-                    step.VideoUrl = stepData.VideoUrl;
-                    // Исправление: сохраняем настройку множественного выбора
-                    step.IsMultipleChoice = stepData.IsMultipleChoice;
+                    var step = lesson.Steps.FirstOrDefault(s => s.Id == stepData.Id);
+                    if (step != null)
+                    {
+                        step.Title = stepData.Title ?? step.Title;
+                        step.TextContent = stepData.TextContent;
+                        step.VideoUrl = stepData.VideoUrl;
+                        step.IsMultipleChoice = stepData.IsMultipleChoice;
+                    }
                 }
             }
 
@@ -180,74 +242,50 @@ namespace WebApplication2.Controllers
             return Ok();
         }
 
-        // 7. Удаление шага
         [HttpPost]
-        public async Task<IActionResult> DeleteStep(int id)
-        {
-            var step = await _db.Steps.FindAsync(id);
-            if (step == null) return NotFound();
-
-            _db.Steps.Remove(step);
-            await _db.SaveChangesAsync();
-            return Ok();
-        }
-
-        // 8. Удаление урока
-        [HttpPost]
+        [Route("CourseConstructor/DeleteLesson/{id}")]
         public async Task<IActionResult> DeleteLesson(int id)
         {
-            var lesson = await _db.Lessons
-                .Include(l => l.Steps)
-                .FirstOrDefaultAsync(l => l.Id == id);
-
+            var lesson = await _db.Lessons.Include(l => l.Module).FirstOrDefaultAsync(l => l.Id == id);
             if (lesson == null) return NotFound();
+
+            var (course, error) = await GetValidCourse(lesson.Module.CourseId);
+            if (error != null) return BadRequest(error);
 
             _db.Lessons.Remove(lesson);
             await _db.SaveChangesAsync();
             return Ok();
         }
 
-        // 9. Удаление курса
         [HttpPost]
-        public async Task<IActionResult> DeleteCourse(int id)
+        [Route("CourseConstructor/DeleteStep/{id}")]
+        public async Task<IActionResult> DeleteStep(int id)
         {
-            var course = await _db.Courses.FirstOrDefaultAsync(c => c.Id == id);
-            if (course == null) return NotFound();
+            var step = await _db.Steps.Include(s => s.Lesson).ThenInclude(l => l.Module).FirstOrDefaultAsync(s => s.Id == id);
+            if (step == null) return NotFound();
 
-            var userLogin = HttpContext.Session.GetString("Login");
-            if (course.AuthorLogin != userLogin) return Forbid();
+            var (course, error) = await GetValidCourse(step.Lesson.Module.CourseId);
+            if (error != null) return BadRequest(error);
 
-            _db.Courses.Remove(course);
+            _db.Steps.Remove(step);
             await _db.SaveChangesAsync();
-            return Ok(new { success = true });
+            return Ok();
         }
-
-        private string GetDefaultTitle(StepType type) => type switch
-        {
-            StepType.Text => "Новая лекция",
-            StepType.Video => "Видео-урок",
-            StepType.Quiz => "Тест",
-            _ => "Новый шаг"
-        };
-
-        // --- QUIZ METHODS ---
 
         [HttpGet]
         public async Task<IActionResult> GetQuizOptions(int stepId)
         {
-            var options = await _db.QuizOptions
-                .Where(o => o.StepId == stepId)
-                .ToListAsync();
+            var options = await _db.QuizOptions.Where(o => o.StepId == stepId).ToListAsync();
             return Json(options);
         }
 
         [HttpPost]
-        public async Task<IActionResult> AddQuizOption(int stepId)
+        public async Task<IActionResult> AddQuizOption([FromQuery] int stepId)
         {
             var option = new QuizOptionModel
             {
                 StepId = stepId,
-                Text = "Новый вариант ответа",
+                Text = "Новый вариант",
                 IsCorrect = false
             };
             _db.QuizOptions.Add(option);
@@ -256,10 +294,16 @@ namespace WebApplication2.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> UpdateQuizOption(int id, string text, bool isCorrect)
+        public async Task<IActionResult> UpdateQuizOption([FromQuery] int id, [FromQuery] string text, [FromQuery] bool isCorrect)
         {
-            var option = await _db.QuizOptions.FindAsync(id);
+            var option = await _db.QuizOptions.Include(o => o.Step).FirstOrDefaultAsync(o => o.Id == id);
             if (option == null) return NotFound();
+
+            if (isCorrect && !option.Step.IsMultipleChoice)
+            {
+                var others = await _db.QuizOptions.Where(o => o.StepId == option.StepId && o.Id != id).ToListAsync();
+                foreach (var o in others) o.IsCorrect = false;
+            }
 
             option.Text = text;
             option.IsCorrect = isCorrect;
@@ -268,28 +312,27 @@ namespace WebApplication2.Controllers
         }
 
         [HttpPost]
+        [Route("CourseConstructor/DeleteQuizOption/{id}")]
         public async Task<IActionResult> DeleteQuizOption(int id)
         {
             var option = await _db.QuizOptions.FindAsync(id);
-            if (option == null) return NotFound();
-
-            _db.QuizOptions.Remove(option);
-            await _db.SaveChangesAsync();
+            if (option != null)
+            {
+                _db.QuizOptions.Remove(option);
+                await _db.SaveChangesAsync();
+            }
             return Ok();
         }
 
         [HttpPost]
-        public async Task<IActionResult> PublishCourse(int id)
+        public async Task<IActionResult> PublishCourse([FromQuery] int id)
         {
-            var course = await _db.Courses.FindAsync(id);
-            if (course == null) return NotFound();
-
-            var userLogin = HttpContext.Session.GetString("Login");
-            if (course.AuthorLogin != userLogin) return Forbid();
+            var (course, error) = await GetValidCourse(id, false);
+            if (error != null) return BadRequest(error);
 
             course.IsPublished = true;
             await _db.SaveChangesAsync();
-            return Ok(new { success = true });
+            return Ok();
         }
     }
 }

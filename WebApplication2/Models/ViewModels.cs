@@ -4,6 +4,10 @@
     {
         public int CourseId { get; set; }
         public string CourseTitle { get; set; }
+
+        // Добавьте это свойство, чтобы ушла ошибка CS0117
+        public bool IsPublished { get; set; }
+
         public List<ModuleModel> Modules { get; set; } = new();
     }
 

@@ -13,6 +13,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Обучение - @Model.CurrentStep.Title</title>
     <style>
+        /* Базовые стили сохранены для дизайна, исправлены только функциональные моменты */
         * {
             margin: 0;
             padding: 0;
@@ -34,7 +35,6 @@
             width: 100%;
         }
 
-        /* САЙДБАР */
         .learn-sidebar {
             width: 300px;
             background: #1e293b;
@@ -110,7 +110,6 @@
                 color: #64748b;
             }
 
-        /* ОСНОВНАЯ ОБЛАСТЬ */
         .learn-main {
             flex-grow: 1;
             display: flex;
@@ -167,7 +166,6 @@
             line-height: 1.6;
         }
 
-        /* ТЕСТЫ */
         .quiz-option {
             display: flex;
             align-items: center;
@@ -181,7 +179,7 @@
             user-select: none;
         }
 
-            .quiz-option:hover {
+            .quiz-option:hover:not(.disabled) {
                 border-color: #475569;
             }
 
@@ -250,7 +248,7 @@
             transition: 0.3s;
         }
 
-            .btn-next:hover {
+            .btn-next:hover:not(:disabled) {
                 background: #0284c7;
             }
 
@@ -271,7 +269,6 @@
             border: 1px solid rgba(16, 185, 129, 0.2);
         }
 
-        /* КОММЕНТАРИИ */
         .comments-section {
             max-width: 850px;
             margin: 50px auto 0 auto;
@@ -293,6 +290,7 @@
             border-radius: 50%;
             object-fit: cover;
             border: 1px solid #475569;
+            background: #334155;
         }
 
         .author-badge {
@@ -314,7 +312,12 @@
             border-radius: 8px;
             margin-bottom: 10px;
             resize: none;
+            outline: none;
         }
+
+            .comment-input:focus {
+                border-color: #38bdf8;
+            }
     </style>
 </head>
 <body>
@@ -326,16 +329,19 @@
             </div>
             <div class="sidebar-header">Содержание курса</div>
             <div class="modules-list">
-                @foreach (var module in Model.AllModules)
+                @foreach (var module in Model.AllModules.OrderBy(m => m.Order))
                 {
                     <div class="module-item">
                         <div class="module-title">@module.Title</div>
-                        @foreach (var lesson in module.Lessons)
+                        @foreach (var lesson in module.Lessons.OrderBy(l => l.Order))
                         {
-                            var firstStepId = lesson.Steps.OrderBy(s => s.Order).FirstOrDefault()?.Id;
-                            var isLessonCompleted = Model.CompletedStepIds.Contains(firstStepId ?? 0);
+                            var firstStep = lesson.Steps.OrderBy(s => s.Order).FirstOrDefault();
+                            var firstStepId = firstStep?.Id ?? 0;
+
+                            // Урок доступен, если он текущий или если первый шаг урока пройден
                             var isCurrentLesson = lesson.Id == Model.CurrentStep.LessonId;
-                            var isLocked = !isLessonCompleted && !isCurrentLesson;
+                            var isLessonStarted = Model.CompletedStepIds.Contains(firstStepId);
+                            var isLocked = !isCurrentLesson && !isLessonStarted;
 
                             <a href="@(isLocked ? "javascript:void(0)" : $"?courseId={Model.CourseId}&stepId={firstStepId}")"
                                class="lesson-link @(isCurrentLesson ? "active" : "") @(isLocked ? "locked" : "")">
@@ -370,36 +376,37 @@
                             <div class="video-wrapper">
                                 @{
                                     var videoId = "";
-                                    if (Model.CurrentStep.VideoUrl.Contains("v=")) { videoId = Model.CurrentStep.VideoUrl.Split("v=")[1].Split("&")[0]; }
-                                    else if (Model.CurrentStep.VideoUrl.Contains("youtu.be/")) { videoId = Model.CurrentStep.VideoUrl.Split("be/")[1].Split("?")[0]; }
-                                    var embedUrl = "https://www.youtube.com/embed/" + videoId;
+                                    var url = Model.CurrentStep.VideoUrl;
+                                    if (url.Contains("v=")) { videoId = url.Split("v=")[1].Split("&")[0]; }
+                                    else if (url.Contains("youtu.be/")) { videoId = url.Split("be/")[1].Split("?")[0]; }
+                                    var embedUrl = !string.IsNullOrEmpty(videoId) ? "https://www.youtube.com/embed/" + videoId : "";
                                 }
-                                <iframe src="@embedUrl" frameborder="0" allowfullscreen></iframe>
+                                @if (!string.IsNullOrEmpty(embedUrl))
+                                {
+                                    <iframe src="@embedUrl" frameborder="0" allowfullscreen></iframe>
+                                }
                             </div>
                         }
 
-                        @if (Model.CurrentStep.Type == WebApplication2.Models.StepType.Text)
-                        {
+                        <div class="text-content" style="margin-bottom: 20px;">
                             @Html.Raw(Model.CurrentStep.TextContent)
-                        }
-                        else if (Model.CurrentStep.Type == WebApplication2.Models.StepType.Quiz)
+                        </div>
+
+                        @if (Model.CurrentStep.Type == WebApplication2.Models.StepType.Quiz)
                         {
-                            <p style="margin-bottom: 15px; font-weight: 500;">
-                                @(isStepCompleted ? "Вы успешно прошли этот тест. Правильные ответы отмечены зелёным:" : (Model.CurrentStep.IsMultipleChoice ? "Выберите все верные ответы:" : "Выберите один правильный ответ:"))
+                            <p style="margin-bottom: 15px; font-weight: 500; color: #94a3b8;">
+                                @(isStepCompleted ? "Тест пройден. Правильные ответы:" : (Model.CurrentStep.IsMultipleChoice ? "Выберите все верные ответы:" : "Выберите один правильный ответ:"))
                             </p>
                             <div id="quiz-container">
                                 @foreach (var opt in Model.CurrentStep.QuizOptions)
                                 {
-                                    var highlightClass = (isStepCompleted && opt.IsCorrect) ? "correct" : "";
-                                    <label class="quiz-option @highlightClass @(isStepCompleted ? "disabled" : "")" data-option-id="@opt.Id">
-                                        @if (Model.CurrentStep.IsMultipleChoice)
-                                        {
-                                            <input type="checkbox" name="quiz" value="@opt.Id" @(isStepCompleted ? "disabled" : "") @(isStepCompleted && opt.IsCorrect ? "checked" : "")>
-                                        }
-                                        else
-                                        {
-                                            <input type="radio" name="quiz" value="@opt.Id" @(isStepCompleted ? "disabled" : "") @(isStepCompleted && opt.IsCorrect ? "checked" : "")>
-                                        }
+                                    var isCorrectAndDone = isStepCompleted && opt.IsCorrect;
+                                    <label class="quiz-option @(isCorrectAndDone ? "correct" : "") @(isStepCompleted ? "disabled" : "")" data-option-id="@opt.Id">
+                                        <input type="@(Model.CurrentStep.IsMultipleChoice ? "checkbox" : "radio")"
+                                               name="quiz"
+                                               value="@opt.Id"
+                                        @(isStepCompleted ? "disabled" : "")
+                                        @(isCorrectAndDone ? "checked" : "")>
                                         <span>@opt.Text</span>
                                     </label>
                                 }
@@ -408,43 +415,33 @@
                     </div>
 
                     <div class="step-footer">
-                        @if (Model.CurrentStep.Type == WebApplication2.Models.StepType.Quiz)
+                        @if (Model.IsLastStep && isStepCompleted)
                         {
-                            @if (!isStepCompleted)
-                            {
-                                <button id="action-btn" class="btn-next" onclick="handleQuizSubmit(@Model.CurrentStep.Id)">
-                                    @(Model.IsLastStep ? "Завершить курс" : "Проверить ответ")
-                                </button>
-                            }
-                            else if (Model.IsLastStep)
-                            {
-                                <div class="finish-message">
-                                    <span>🎉</span> Курс завершен! &nbsp; <a href="/Course/Details/@Model.CourseId" style="color:#38bdf8; text-decoration:none;">Оставить отзыв</a>
-                                </div>
-                            }
-                            else
-                            {
-                                <button id="action-btn" class="btn-next" onclick="goToNextDirectly()">Продолжить</button>
-                            }
+                            <div class="finish-message">
+                                <span>🎉</span> Курс завершен! &nbsp; <a href="/Course/Details/@Model.CourseId" style="color:#38bdf8; text-decoration:none;">К описанию курса</a>
+                            </div>
                         }
-                        else // Шаг типа Текст или Видео
+                        else
                         {
-                            @if (!isStepCompleted)
-                            {
-                                <button id="action-btn" class="btn-next" onclick="nextStep(@Model.CurrentStep.Id)">
-                                    @(Model.IsLastStep ? "Завершить обучение" : "Продолжить")
-                                </button>
-                            }
-                            else if (Model.IsLastStep)
-                            {
-                                <div class="finish-message">
-                                    <span>🎉</span> Курс завершен! &nbsp; <a href="/Course/Details/@Model.CourseId" style="color:#38bdf8; text-decoration:none;">Оставить отзыв</a>
-                                </div>
-                            }
-                            else
-                            {
-                                <button id="action-btn" class="btn-next" onclick="goToNextDirectly()">Продолжить</button>
-                            }
+                            <button id="action-btn" class="btn-next"
+                                    onclick="@(Model.CurrentStep.Type == WebApplication2.Models.StepType.Quiz && !isStepCompleted ? $"handleQuizSubmit({Model.CurrentStep.Id})" : $"nextStep({Model.CurrentStep.Id})")">
+                                @if (isStepCompleted)
+                                {
+                                    <span>Продолжить</span>
+                                }
+                                else if (Model.IsLastStep)
+                                {
+                                    <span>Завершить обучение</span>
+                                }
+                                else if (Model.CurrentStep.Type == WebApplication2.Models.StepType.Quiz)
+                                {
+                                    <span>Проверить ответ</span>
+                                }
+                                else
+                                {
+                                    <span>Продолжить</span>
+                                }
+                            </button>
                         }
                     </div>
                 </div>
@@ -454,21 +451,21 @@
                 <h3 style="margin-bottom: 20px;">Обсуждения</h3>
                 <textarea id="commentText" class="comment-input" rows="3" placeholder="Напишите ваш комментарий..."></textarea>
                 <div style="display: flex; justify-content: flex-end;">
-                    <button class="btn-next" style="padding: 8px 20px; font-size: 0.9rem;" onclick="sendComment()">Отправить</button>
+                    <button id="send-comment-btn" class="btn-next" style="padding: 8px 20px; font-size: 0.9rem;" onclick="sendComment()">Отправить</button>
                 </div>
                 <div id="commentsList" style="margin-top: 30px;">
-                    @foreach (var comment in Model.Comments)
+                    @foreach (var comment in Model.Comments.OrderByDescending(c => c.CreatedAt))
                     {
                         <div class="comment-card">
                             <div style="display: flex; gap: 12px; align-items: flex-start;">
                                 <img src="@(string.IsNullOrEmpty(comment.User?.Avatar) ? Url.Content("~/images/default_avatar.jpg") : comment.User.Avatar)"
                                      class="comment-avatar"
-                                     onerror="this.onerror=null; this.src='@Url.Content("~/images/default_avatar.jpg")';" />
+                                     onerror="this.src='@Url.Content("~/images/default_avatar.jpg")';" />
 
                                 <div style="flex-grow: 1;">
                                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
                                         <div style="display: flex; align-items: center; gap: 8px;">
-                                            <span style="color: #38bdf8; font-weight: bold; font-size: 0.95rem;">@("@" + comment.UserLogin)</span>
+                                            <span style="color: #38bdf8; font-weight: bold; font-size: 0.95rem;">@@@comment.UserLogin</span>
                                             @if (comment.UserLogin == Model.CurrentStep.Lesson.Module.Course.AuthorLogin)
                                             {
                                                 <span class="author-badge">Автор</span>
@@ -489,41 +486,47 @@
     <script>
         const antiForgeryToken = '@tokens.RequestToken';
 
+        // Подсветка выбранных вариантов в тесте
         document.addEventListener('change', function (e) {
             if (e.target.name === 'quiz' && !e.target.disabled) {
+                const container = e.target.closest('#quiz-container');
                 const label = e.target.closest('.quiz-option');
+
                 if (e.target.type === 'radio') {
-                    const container = e.target.closest('#quiz-container');
                     container.querySelectorAll('.quiz-option').forEach(el => el.classList.remove('active-selection'));
                 }
+
                 if (e.target.checked) label.classList.add('active-selection');
                 else label.classList.remove('active-selection');
             }
         });
 
-        function goToNextDirectly() {
-            const nextStepDot = document.querySelector('.step-dot.active + .step-dot');
-            if (nextStepDot) window.location.href = nextStepDot.href;
-            else location.reload();
-        }
-
         function handleQuizSubmit(stepId) {
             const selectedInputs = document.querySelectorAll('input[name="quiz"]:checked');
             if (selectedInputs.length === 0) {
-                alert("Пожалуйста, выберите хотя бы один ответ.");
+                alert("Пожалуйста, выберите ответ.");
                 return;
             }
-            const selectedOptionIds = Array.from(selectedInputs).map(input => parseInt(input.value));
-            saveProgressAndContinue(stepId, selectedOptionIds);
+            const ids = Array.from(selectedInputs).map(i => parseInt(i.value));
+            saveProgress(stepId, ids);
         }
 
         function nextStep(stepId) {
-            saveProgressAndContinue(stepId, []);
+            // Если шаг уже пройден, просто идем дальше по точкам навигации
+            if (@isStepCompleted.ToString().ToLower()) {
+                const nextDot = document.querySelector('.step-dot.active + .step-dot');
+                if (nextDot) {
+                    window.location.href = nextDot.href;
+                    return;
+                }
+            }
+            saveProgress(stepId, []);
         }
 
-        function saveProgressAndContinue(stepId, selectedOptionIds = []) {
-            const btn = document.querySelector('#action-btn');
-            if (btn) btn.disabled = true;
+        function saveProgress(stepId, selectedOptionIds) {
+            const btn = document.getElementById('action-btn');
+            btn.disabled = true;
+            btn.innerText = "Загрузка...";
 
             const formData = new URLSearchParams();
             formData.append('stepId', stepId);
@@ -543,24 +546,28 @@
                         if (data.nextStepId) {
                             window.location.href = `?courseId=@Model.CourseId&stepId=${data.nextStepId}`;
                         } else {
-                            // Это был последний шаг курса
-                            location.reload();
+                            location.reload(); // Перезагрузка для показа сообщения о финише
                         }
                     } else {
-                        alert(data.message || "Ошибка при сохранении прогресса.");
-                        if (btn) btn.disabled = false;
+                        alert(data.message || "Ошибка. Возможно, вы выбрали неверные ответы.");
+                        btn.disabled = false;
+                        btn.innerText = "Проверить еще раз";
                     }
                 })
                 .catch(err => {
                     console.error(err);
-                    if (btn) btn.disabled = false;
+                    btn.disabled = false;
                 });
         }
 
         function sendComment() {
-            const text = document.getElementById('commentText').value;
-            if (!text.trim()) return;
+            const textEl = document.getElementById('commentText');
+            const btn = document.getElementById('send-comment-btn');
+            const text = textEl.value.trim();
 
+            if (!text) return;
+
+            btn.disabled = true;
             const formData = new URLSearchParams();
             formData.append('stepId', '@Model.CurrentStep.Id');
             formData.append('text', text);
@@ -574,7 +581,13 @@
                 body: formData
             })
                 .then(res => res.json())
-                .then(data => { if (data.success) location.reload(); });
+                .then(data => {
+                    if (data.success) location.reload();
+                    else {
+                        alert("Ошибка при отправке");
+                        btn.disabled = false;
+                    }
+                });
         }
     </script>
 </body>
