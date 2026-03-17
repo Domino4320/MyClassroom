@@ -1,290 +1,78 @@
-﻿@model WebApplication2.Models.CourseModel
-@inject WebApplication2.Data.ApplicationDBContext _context
+﻿@model IEnumerable<CourseCardModel>
 @inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
-@using Microsoft.EntityFrameworkCore
 @{
-    Layout = null;
+    ViewData["Title"] = "MyClassroom - Мои курсы";
+    // Генерируем токены для безопасности AJAX-запросов
     var tokens = Antiforgery.GetAndStoreTokens(Context);
-    bool isEnrolled = ViewData["IsEnrolled"] != null && (bool)ViewData["IsEnrolled"];
-    bool hasCompletedCourse = ViewData["HasCompletedCourse"] != null && (bool)ViewData["HasCompletedCourse"];
-
-    var recRate = ViewData["RecPercent"] ?? 0;
-    var rank = ViewData["CategoryRank"] ?? "0";
-    var totalInCat = ViewData["TotalInCat"] ?? 0;
-
-    string displayRating = Model.AverageRating > 0 ? Model.AverageRating.ToString("0.0") : "0";
-
-    // Получаем текущего пользователя для проверки дубликатов
-    var currentUserLogin = User.Identity.Name;
-    
-    // ПРОВЕРКА: Оставлял ли пользователь отзыв ранее
-    bool hasAlreadyReviewed = Model.Reviews != null && 
-                               !string.IsNullOrEmpty(currentUserLogin) && 
-                               Model.Reviews.Any(r => r.UserLogin == currentUserLogin);
-
-    // Поиск аватара автора
-    string authorAvatar = null;
-    if (Model.Author != null)
-    {
-        var authorUser = _context.Users.FirstOrDefault(u => u.Login == Model.Author.UserLogin);
-        authorAvatar = authorUser?.Avatar;
-    }
 }
 
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@Model.Title - Детали курса</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="~/css/style_for_main_page.css" rel="stylesheet" />
+    <link href="~/css/course_card.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        html, body {
-            margin: 0; padding: 0; width: 100%;
-            background: #0f172a; color: #f8fafc;
-            font-family: 'Inter', sans-serif; scroll-behavior: smooth;
-        }
-        .course-details-bg { min-height: 100vh; padding-bottom: 100px; }
-        .course-hero {
-            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
-            padding: 60px 0; border-bottom: 1px solid #334155; position: relative;
-        }
-        .back-link {
-            display: inline-flex; align-items: center; gap: 8px;
-            color: #94a3b8; text-decoration: none; font-weight: 600;
-            margin-bottom: 20px; transition: 0.2s;
-        }
-        .back-link:hover { color: #38bdf8; }
-        .hero-container { max-width: 1100px; margin: 0 auto; display: flex; gap: 50px; padding: 0 20px; align-items: flex-start; }
-        .hero-info { flex: 2; }
-        .hero-aside { flex: 1; display: flex; flex-direction: column; gap: 20px; }
-        .hero-image img, .hero-placeholder {
-            width: 100%; border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            border: 1px solid #475569; object-fit: cover; aspect-ratio: 16/9;
-        }
-        .hero-placeholder {
-            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-            display: flex; align-items: center; justify-content: center;
-        }
-        .hero-placeholder i { font-size: 4rem; color: #475569; opacity: 0.5; }
-        .author-mini-card {
-            background: rgba(30, 41, 59, 0.7); border: 1px solid #334155;
-            border-radius: 16px; padding: 20px; display: flex; align-items: center; gap: 15px; backdrop-filter: blur(10px);
-        }
-        .author-avatar-img { width: 50px; height: 50px; border-radius: 12px; object-fit: cover; border: 1px solid #475569; }
-        .badge-cat { background: #0ea5e9; padding: 6px 14px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; }
-        .mini-stats { display: flex; gap: 15px; margin-bottom: 25px; flex-wrap: wrap; }
-        .stat-item { background: rgba(255,255,255,0.05); padding: 10px 18px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); }
-        .stat-label { font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
-        .stat-value { font-size: 1.1rem; font-weight: 700; }
-        .btn-enroll {
-            background: #10b981; color: white; border: none; padding: 16px 40px;
-            border-radius: 12px; font-size: 1.1rem; font-weight: 700; cursor: pointer;
-            transition: 0.3s; display: inline-block; text-decoration: none; text-align: center;
-        }
-        .btn-enroll:hover { background: #059669; transform: translateY(-2px); }
-        .btn-continue { background: #38bdf8; }
-        .course-tabs { max-width: 1100px; margin: 40px auto; padding: 0 20px; }
-        .tab-nav { display: flex; gap: 30px; border-bottom: 1px solid #334155; margin-bottom: 30px; }
-        .tab-link { padding: 12px 0; color: #94a3b8; font-weight: 600; cursor: pointer; border-bottom: 3px solid transparent; }
-        .tab-link.active { color: #38bdf8; border-color: #38bdf8; }
-        .tab-pane { display: none; animation: fadeIn 0.4s ease; }
-        .tab-pane.active { display: block; }
-        @@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .comment-card { background: #1e293b; padding: 24px; border-radius: 16px; margin-bottom: 20px; border: 1px solid #334155; display: flex; gap: 16px; }
-        .user-avatar { width: 48px; height: 48px; border-radius: 50%; border: 2px solid #475569; background: #334155; display: flex; align-items: center; justify-content: center; }
-        .star-rating { display: flex; flex-direction: row-reverse; gap: 8px; margin: 15px 0; }
-        .star-rating input { display: none; }
-        .star-rating label { font-size: 2rem; color: #334155; cursor: pointer; }
-        .star-rating label:hover, .star-rating label:hover ~ label, .star-rating input:checked ~ label { color: #fbbf24; }
-        .review-input { width: 100%; background: #0f172a; border: 1px solid #334155; color: white; padding: 15px; border-radius: 10px; resize: vertical; box-sizing: border-box; }
-        .author-full-profile { background: #1e293b; border-radius: 20px; padding: 30px; border: 1px solid #334155; display: flex; gap: 30px; margin-top: 20px; flex-wrap: wrap; }
-    </style>
 </head>
 <body>
 
-    <div class="course-details-bg">
-        <section class="course-hero">
-            <div class="hero-container">
-                <div class="hero-info">
-                    <a href="/" class="back-link"><i class="fas fa-arrow-left"></i> На главную</a>
-                    <br />
-                    <span class="badge-cat">@Model.Category</span>
-                    <h1 style="font-size: 3rem; margin: 15px 0; font-weight: 800; line-height: 1.1;">@Model.Title</h1>
+    <div class="main-layout">
+        @await Html.PartialAsync("_Sidebar")
 
-                    <div class="mini-stats">
-                        <div class="stat-item">
-                            <div class="stat-label">Рейтинг</div>
-                            <div class="stat-value" style="color: #fbbf24;">⭐ @displayRating</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-label">В категории</div>
-                            <div class="stat-value" style="color: #38bdf8;">#@rank из @totalInCat</div>
-                        </div>
-                    </div>
+        <div class="content-area">
+            @await Html.PartialAsync("_Header")
 
-                    <p style="color: #94a3b8; font-size: 1.1rem; line-height: 1.6; margin-bottom: 35px; max-width: 600px;">@Model.Description</p>
-
-                    <div style="display: flex; align-items: center; gap: 20px;">
-                        @if (isEnrolled) {
-                            <a asp-action="Index" asp-route-courseId="@Model.Id" class="btn-enroll btn-continue">
-                                <i class="fas fa-play" style="margin-right: 10px;"></i> Продолжить обучение
-                            </a>
-                        } else {
-                            <form asp-action="Enroll" method="post">
-                                <input type="hidden" name="courseId" value="@Model.Id" />
-                                <button type="submit" class="btn-enroll">Начать обучение</button>
-                            </form>
-                        }
-                    </div>
-                </div>
-
-                <div class="hero-aside">
-                    <div class="hero-image">
-                        @if (!string.IsNullOrEmpty(Model.CoverImagePath)) {
-                            <img src="@Model.CoverImagePath" alt="@Model.Title">
-                        } else {
-                            <div class="hero-placeholder"><i class="fas fa-book-open"></i></div>
-                        }
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <div class="course-tabs">
-            <nav class="tab-nav">
-                <div class="tab-link active" onclick="openTab(event, 'about')">Описание</div>
-                <div class="tab-link" onclick="openTab(event, 'curriculum')">Программа</div>
-                <div class="tab-link" onclick="openTab(event, 'reviews')">Отзывы (@Model.ReviewsCount)</div>
-            </nav>
-
-            <div id="about" class="tab-pane active">
-                <div style="max-width: 900px;">
-                    <h3 style="color: #38bdf8;">О курсе</h3>
-                    <div style="color: #cbd5e1; line-height: 1.8; white-space: pre-line;">@Model.Description</div>
-                </div>
-            </div>
-
-            <div id="curriculum" class="tab-pane">
-                <p style="color: #94a3b8;">Учебная программа модуля доступна в личном кабинете после регистрации на курс.</p>
-            </div>
-
-            <div id="reviews" class="tab-pane">
-                @if (hasCompletedCourse)
-                {
-                    <div id="reviewFormContainer" style="background: #1e293b; padding: 25px; border-radius: 16px; border: 1px solid #38bdf8; margin-bottom: 30px;">
-                        <h3 style="margin-top: 0;">Ваш отзыв</h3>
-                        
-                        @if (hasAlreadyReviewed)
-                        {
-                            <div style="color: #fbbf24; background: rgba(251, 191, 36, 0.1); padding: 15px; border-radius: 12px; border: 1px solid #fbbf24; display: flex; align-items: center; gap: 12px;">
-                                <i class="fas fa-exclamation-triangle fa-lg"></i>
-                                <span>Вы уже поделились своим мнением о данном курсе. Повторная отправка невозможна.</span>
-                            </div>
-                        }
-                        else
-                        {
-                            <div class="star-rating">
-                                <input type="radio" id="star5" name="rating" value="5" /><label for="star5" class="fas fa-star"></label>
-                                <input type="radio" id="star4" name="rating" value="4" /><label for="star4" class="fas fa-star"></label>
-                                <input type="radio" id="star3" name="rating" value="3" /><label for="star3" class="fas fa-star"></label>
-                                <input type="radio" id="star2" name="rating" value="2" /><label for="star2" class="fas fa-star"></label>
-                                <input type="radio" id="star1" name="rating" value="1" /><label for="star1" class="fas fa-star"></label>
-                            </div>
-                            <div style="margin: 15px 0; display: flex; align-items: center; gap: 10px; color: #cbd5e1;">
-                                <input type="checkbox" id="isRecommended" style="width: 18px; height: 18px; accent-color: #10b981;">
-                                <label for="isRecommended" style="cursor: pointer;">Рекомендую этот курс</label>
-                            </div>
-                            <textarea id="reviewText" class="review-input" rows="3" placeholder="Расскажите о своих впечатлениях..."></textarea>
-                            <button class="btn-enroll" style="margin-top: 15px;" onclick="submitReview()">Отправить отзыв</button>
-                        }
-                    </div>
-                }
-
-                <div id="reviewsList">
-                    @if (Model.Reviews != null && Model.Reviews.Any())
+            <main class="main-content">
+                <section class="courses-grid">
+                    @if (Model != null && Model.Any())
                     {
-                        @foreach (var review in Model.Reviews.OrderByDescending(r => r.CreatedAt))
+                        @foreach (var course in Model)
                         {
-                            <div class="comment-card">
-                                <div class="user-avatar"><i class="fas fa-user" style="color: #94a3b8;"></i></div>
-                                <div style="flex: 1;">
-                                    <div style="display: flex; justify-content: space-between;">
-                                        <span style="font-weight: 700; color: #38bdf8;">@review.UserLogin</span>
-                                        <span style="color: #fbbf24;">
-                                            @for (int i = 1; i <= 5; i++) {
-                                                <i class="@(i <= review.Rating ? "fas" : "far") fa-star"></i>
-                                            }
-                                        </span>
-                                    </div>
-                                    <p style="margin: 10px 0; color: #cbd5e1;">@review.Text</p>
-                                    <small style="color: #64748b;">@review.CreatedAt.ToShortDateString()</small>
-                                </div>
-                            </div>
+                            @await Html.PartialAsync("_CourseCard", course, new ViewDataDictionary(ViewData) { { "IsEditable", true } })
                         }
                     }
-                </div>
-            </div>
+                    else
+                    {
+                        <div class="empty-state" style="text-align: center; padding: 50px; color: #94a3b8;">
+                            <i class="fa-solid fa-graduation-cap" style="font-size: 3rem; margin-bottom: 15px; display: block;"></i>
+                            <p>Курсов пока нет. Станьте первым!</p>
+                        </div>
+                    }
+                </section>
+            </main>
         </div>
     </div>
 
+    <script src="~/js/script_for_main_page.js"></script>
     <script>
-        // Инициализация состояния из Razor в JS
-        const userHasAlreadyReviewed = @(hasAlreadyReviewed ? "true" : "false");
-
-        function openTab(evt, tabName) {
-            let i, tabPane, tabLinks;
-            tabPane = document.getElementsByClassName("tab-pane");
-            for (i = 0; i < tabPane.length; i++) tabPane[i].classList.remove("active");
-            tabLinks = document.getElementsByClassName("tab-link");
-            for (i = 0; i < tabLinks.length; i++) tabLinks[i].classList.remove("active");
-            document.getElementById(tabName).classList.add("active");
-            evt.currentTarget.classList.add("active");
-        }
-
-        async function submitReview() {
-            // ФИНАЛЬНАЯ ПРОВЕРКА ПЕРЕД ОТПРАВКОЙ
-            if (userHasAlreadyReviewed) {
-                alert("Ошибка: Вы уже оставляли отзыв к этому курсу ранее.");
+        async function deleteCourse(courseId) {
+            if (!confirm("Вы уверены, что хотите полностью удалить этот курс? Все модули и уроки внутри него будут стерты.")) {
                 return;
             }
-
-            const ratingInput = document.querySelector('input[name="rating"]:checked');
-            const textInput = document.getElementById('reviewText');
-            const isRec = document.getElementById('isRecommended').checked;
-
-            if (!ratingInput || !textInput.value.trim()) {
-                alert("Пожалуйста, укажите оценку и напишите текст отзыва.");
-                return;
-            }
-
-            const formData = new URLSearchParams();
-            formData.append('courseId', '@Model.Id');
-            formData.append('rating', ratingInput.value);
-            formData.append('text', textInput.value);
-            formData.append('isRecommended', isRec ? "true" : "false");
 
             try {
-                const response = await fetch('/Course/AddReview', {
+                // МЫ ПОМЕНЯЛИ ПУТЬ НА MyCourses, так как ваш контроллер называется MyCoursesController
+                const response = await fetch(`/MyCourses/DeleteCourse/${courseId}`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'Content-Type': 'application/json',
                         'RequestVerificationToken': '@tokens.RequestToken'
-                    },
-                    body: formData
+                    }
                 });
 
                 if (response.ok) {
-                    location.reload();
+                    window.location.reload();
                 } else {
-                    // Если сервер вернул ошибку (например, 400 из-за дубликата в БД)
-                    alert("Не удалось отправить отзыв. Возможно, вы уже оставляли его ранее.");
+                    const errorData = await response.text();
+                    alert("Ошибка при удалении: " + (errorData || "Сервер вернул ошибку " + response.status));
                 }
             } catch (error) {
-                alert("Произошла ошибка сети. Попробуйте позже.");
+                console.error("Ошибка запроса:", error);
+                alert("Не удалось отправить запрос на удаление.");
             }
         }
     </script>
+
 </body>
 </html>
