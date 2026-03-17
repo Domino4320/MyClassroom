@@ -61,7 +61,7 @@ function editField(fieldName) {
     } else if (fieldName === 'PortfolioUrl') {
         const link = document.getElementById('portfolioUrl');
         currentValue = link ? link.getAttribute('href') : "";
-        container.innerHTML = `<input type="text" id="editValue" value="${currentValue}">`;
+        container.innerHTML = `<input type="text" id="editValue" placeholder="https://github.com/..." value="${currentValue}">`;
     }
 
     modal.classList.add('active');
@@ -75,35 +75,59 @@ function closeModal() {
 async function saveChanges() {
     const fieldName = document.getElementById('editFieldName').value;
     const inputElement = document.getElementById('editValue');
-    const newValue = inputElement.value;
+    const newValue = inputElement.value.trim();
     const errorDiv = document.getElementById('fieldError');
     const saveBtn = document.getElementById('saveBtn');
 
+    // 1. Сброс состояния
     errorDiv.style.display = 'none';
     inputElement.style.borderColor = '';
+
+    // 2. ЖЕСТКАЯ ВАЛИДАЦИЯ ПОРТФОЛИО
+    if (fieldName === 'PortfolioUrl' && newValue !== "") {
+        const urlToCheck = newValue.toLowerCase();
+        const isGithub = urlToCheck.includes("github.com");
+        const isLinkedin = urlToCheck.includes("linkedin.com");
+
+        if (!isGithub && !isLinkedin) {
+            const errorMsg = "Ошибка! Допускаются только ссылки на GitHub или LinkedIn.";
+
+            // Выводим alert для надежности
+            alert(errorMsg);
+
+            // Выводим ошибку в модальное окно
+            errorDiv.innerText = errorMsg;
+            errorDiv.style.display = 'block';
+            inputElement.style.borderColor = '#ff4d4d';
+
+            return; // СТРОГАЯ ОСТАНОВКА. Код дальше не пойдет.
+        }
+    }
+
+    // 3. Если проверка прошла, пробуем сохранить
     saveBtn.disabled = true;
     saveBtn.innerText = 'Сохранение...';
 
     try {
         const response = await fetch('/TeacherAccount/UpdateProfile', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json'
+            },
             body: JSON.stringify({ fieldName: fieldName, value: newValue })
         });
 
         if (response.ok) {
             location.reload();
         } else {
-            const errorMessage = await response.text();
-            errorDiv.innerText = errorMessage || "Ошибка при сохранении";
-            errorDiv.style.display = 'block';
-            inputElement.style.borderColor = '#ff4d4d';
+            const serverError = await response.text();
+            throw new Error(serverError || "Ошибка сервера");
         }
     } catch (err) {
-        errorDiv.innerText = "Ошибка сети.";
+        errorDiv.innerText = err.message || "Ошибка при сохранении";
         errorDiv.style.display = 'block';
-    } finally {
+        inputElement.style.borderColor = '#ff4d4d';
         saveBtn.disabled = false;
         saveBtn.innerText = 'Сохранить';
     }
-} 
+}

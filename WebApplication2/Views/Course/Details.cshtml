@@ -1,19 +1,34 @@
 ﻿@model WebApplication2.Models.CourseModel
+@inject WebApplication2.Data.ApplicationDBContext _context
 @inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Http
 @{
     Layout = null;
     var tokens = Antiforgery.GetAndStoreTokens(Context);
+
+    // СИНХРОНИЗАЦИЯ: Получаем логин так же, как в контроллере
+    var currentUserLogin = Context.Session.GetString("Login");
+
     bool isEnrolled = ViewData["IsEnrolled"] != null && (bool)ViewData["IsEnrolled"];
     bool hasCompletedCourse = ViewData["HasCompletedCourse"] != null && (bool)ViewData["HasCompletedCourse"];
 
-    // ДИНАМИЧЕСКИЙ РАСЧЕТ АНАЛИТИКИ
-    // Берем данные из ViewData (их должен прислать контроллер) или считаем на месте
-    var recRate = ViewData["RecPercent"] ?? 0;
     var rank = ViewData["CategoryRank"] ?? "0";
     var totalInCat = ViewData["TotalInCat"] ?? 0;
-
-    // Форматируем рейтинг: если отзывов нет, пишем 0
     string displayRating = Model.AverageRating > 0 ? Model.AverageRating.ToString("0.0") : "0";
+
+    // ПРОВЕРКА: Оставлял ли пользователь отзыв ранее
+    bool hasAlreadyReviewed = Model.Reviews != null &&
+                               !string.IsNullOrEmpty(currentUserLogin) &&
+                               Model.Reviews.Any(r => r.UserLogin == currentUserLogin);
+
+    // Поиск аватара автора
+    string authorAvatar = null;
+    if (Model.Author != null)
+    {
+        var authorUser = _context.Users.FirstOrDefault(u => u.Login == Model.Author.UserLogin);
+        authorAvatar = authorUser?.Avatar;
+    }
 }
 
 <!DOCTYPE html>
@@ -44,7 +59,23 @@
             background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
             padding: 60px 0;
             border-bottom: 1px solid #334155;
+            position: relative;
         }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #94a3b8;
+            text-decoration: none;
+            font-weight: 600;
+            margin-bottom: 20px;
+            transition: 0.2s;
+        }
+
+            .back-link:hover {
+                color: #38bdf8;
+            }
 
         .hero-container {
             max-width: 1100px;
@@ -52,25 +83,28 @@
             display: flex;
             gap: 50px;
             padding: 0 20px;
-            align-items: center;
+            align-items: flex-start;
         }
 
         .hero-info {
             flex: 2;
         }
 
-        .hero-image {
+        .hero-aside {
             flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
         }
 
-            .hero-image img, .hero-placeholder {
-                width: 100%;
-                border-radius: 20px;
-                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-                border: 1px solid #475569;
-                object-fit: cover;
-                aspect-ratio: 16/9;
-            }
+        .hero-image img, .hero-placeholder {
+            width: 100%;
+            border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            border: 1px solid #475569;
+            object-fit: cover;
+            aspect-ratio: 16/9;
+        }
 
         .hero-placeholder {
             background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
@@ -98,6 +132,7 @@
             display: flex;
             gap: 15px;
             margin-bottom: 25px;
+            flex-wrap: wrap;
         }
 
         .stat-item {
@@ -131,6 +166,7 @@
             transition: 0.3s;
             display: inline-block;
             text-decoration: none;
+            text-align: center;
         }
 
             .btn-enroll:hover {
@@ -204,6 +240,10 @@
             height: 48px;
             border-radius: 50%;
             border: 2px solid #475569;
+            background: #334155;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .star-rating {
@@ -211,6 +251,7 @@
             flex-direction: row-reverse;
             gap: 8px;
             margin: 15px 0;
+            justify-content: flex-end;
         }
 
             .star-rating input {
@@ -245,8 +286,10 @@
         <section class="course-hero">
             <div class="hero-container">
                 <div class="hero-info">
+                    <a href="/" class="back-link"><i class="fas fa-arrow-left"></i> На главную</a>
+                    <br />
                     <span class="badge-cat">@Model.Category</span>
-                    <h1 style="font-size: 3rem; margin: 15px 0; font-weight: 800;">@Model.Title</h1>
+                    <h1 style="font-size: 3rem; margin: 15px 0; font-weight: 800; line-height: 1.1;">@Model.Title</h1>
 
                     <div class="mini-stats">
                         <div class="stat-item">
@@ -257,38 +300,38 @@
                             <div class="stat-label">В категории</div>
                             <div class="stat-value" style="color: #38bdf8;">#@rank из @totalInCat</div>
                         </div>
-                        <div class="stat-item">
-                            <div class="stat-label">Рекомендуют</div>
-                            <div class="stat-value" style="color: #10b981;">@recRate%</div>
-                        </div>
                     </div>
 
-                    <p style="color: #94a3b8; line-height: 1.6; margin-bottom: 30px;">@Model.Description</p>
+                    <p style="color: #94a3b8; font-size: 1.1rem; line-height: 1.6; margin-bottom: 35px; max-width: 600px;">@Model.Description</p>
 
                     <div style="display: flex; align-items: center; gap: 20px;">
                         @if (isEnrolled)
                         {
-                            <a asp-action="Index" asp-route-courseId="@Model.Id" class="btn-enroll btn-continue">Продолжить обучение</a>
+                            <a asp-action="Index" asp-route-courseId="@Model.Id" class="btn-enroll btn-continue">
+                                <i class="fas fa-play" style="margin-right: 10px;"></i> Продолжить обучение
+                            </a>
                         }
                         else
                         {
                             <form asp-action="Enroll" method="post">
                                 <input type="hidden" name="courseId" value="@Model.Id" />
-                                <button type="submit" class="btn-enroll">Поступить на курс</button>
+                                <button type="submit" class="btn-enroll">Начать обучение</button>
                             </form>
                         }
                     </div>
                 </div>
 
-                <div class="hero-image">
-                    @if (!string.IsNullOrEmpty(Model.CoverImagePath))
-                    {
-                        <img src="@Model.CoverImagePath" alt="@Model.Title">
-                    }
-                    else
-                    {
-                        <div class="hero-placeholder"><i class="fas fa-book-open"></i></div>
-                    }
+                <div class="hero-aside">
+                    <div class="hero-image">
+                        @if (!string.IsNullOrEmpty(Model.CoverImagePath))
+                        {
+                            <img src="@Model.CoverImagePath" alt="@Model.Title">
+                        }
+                        else
+                        {
+                            <div class="hero-placeholder"><i class="fas fa-book-open"></i></div>
+                        }
+                    </div>
                 </div>
             </div>
         </section>
@@ -296,34 +339,50 @@
         <div class="course-tabs">
             <nav class="tab-nav">
                 <div class="tab-link active" onclick="openTab(event, 'about')">Описание</div>
-                <div class="tab-link" onclick="openTab(event, 'reviews')">Отзывы (@Model.ReviewsCount)</div>
                 <div class="tab-link" onclick="openTab(event, 'curriculum')">Программа</div>
+                <div class="tab-link" onclick="openTab(event, 'reviews')">Отзывы (@Model.ReviewsCount)</div>
             </nav>
 
             <div id="about" class="tab-pane active">
-                <div style="color: #cbd5e1; line-height: 1.8; white-space: pre-line;">@Model.Description</div>
+                <div style="max-width: 900px;">
+                    <h3 style="color: #38bdf8;">О курсе</h3>
+                    <div style="color: #cbd5e1; line-height: 1.8; white-space: pre-line;">@Model.Description</div>
+                </div>
+            </div>
+
+            <div id="curriculum" class="tab-pane">
+                <p style="color: #94a3b8;">Учебная программа модуля доступна в личном кабинете после регистрации на курс.</p>
             </div>
 
             <div id="reviews" class="tab-pane">
                 @if (hasCompletedCourse)
                 {
-                    <div style="background: #1e293b; padding: 25px; border-radius: 16px; border: 1px solid #475569; margin-bottom: 30px;">
+                    <div id="reviewFormContainer" style="background: #1e293b; padding: 25px; border-radius: 16px; border: 1px solid #38bdf8; margin-bottom: 30px;">
                         <h3 style="margin-top: 0;">Ваш отзыв</h3>
-                        <div class="star-rating">
-                            <input type="radio" id="star5" name="rating" value="5" /><label for="star5" class="fas fa-star"></label>
-                            <input type="radio" id="star4" name="rating" value="4" /><label for="star4" class="fas fa-star"></label>
-                            <input type="radio" id="star3" name="rating" value="3" /><label for="star3" class="fas fa-star"></label>
-                            <input type="radio" id="star2" name="rating" value="2" /><label for="star2" class="fas fa-star"></label>
-                            <input type="radio" id="star1" name="rating" value="1" /><label for="star1" class="fas fa-star"></label>
-                        </div>
 
-                        <div style="margin: 15px 0; display: flex; align-items: center; gap: 10px; color: #cbd5e1;">
-                            <input type="checkbox" id="isRecommended" style="width: 18px; height: 18px; accent-color: #10b981;">
-                            <label for="isRecommended" style="cursor: pointer;">Я рекомендую этот курс другим пользователям</label>
-                        </div>
-
-                        <textarea id="reviewText" class="review-input" rows="3" placeholder="Что вам понравилось?"></textarea>
-                        <button class="btn-enroll" style="margin-top: 15px;" onclick="submitReview()">Отправить</button>
+                        @if (hasAlreadyReviewed)
+                        {
+                            <div style="color: #fbbf24; background: rgba(251, 191, 36, 0.1); padding: 15px; border-radius: 12px; border: 1px solid #fbbf24; display: flex; align-items: center; gap: 12px;">
+                                <i class="fas fa-check-circle fa-lg"></i>
+                                <span>Вы уже оставили отзыв. Благодарим за ваше мнение!</span>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="star-rating">
+                                <input type="radio" id="star5" name="rating" value="5" /><label for="star5" class="fas fa-star"></label>
+                                <input type="radio" id="star4" name="rating" value="4" /><label for="star4" class="fas fa-star"></label>
+                                <input type="radio" id="star3" name="rating" value="3" /><label for="star3" class="fas fa-star"></label>
+                                <input type="radio" id="star2" name="rating" value="2" /><label for="star2" class="fas fa-star"></label>
+                                <input type="radio" id="star1" name="rating" value="1" /><label for="star1" class="fas fa-star"></label>
+                            </div>
+                            <div style="margin: 15px 0; display: flex; align-items: center; gap: 10px; color: #cbd5e1;">
+                                <input type="checkbox" id="isRecommended" style="width: 18px; height: 18px; accent-color: #10b981;">
+                                <label for="isRecommended" style="cursor: pointer;">Рекомендую этот курс</label>
+                            </div>
+                            <textarea id="reviewText" class="review-input" rows="3" placeholder="Расскажите о своих впечатлениях..."></textarea>
+                            <button class="btn-enroll" style="margin-top: 15px;" onclick="submitReview()">Отправить отзыв</button>
+                        }
                     </div>
                 }
 
@@ -333,10 +392,10 @@
                         @foreach (var review in Model.Reviews.OrderByDescending(r => r.CreatedAt))
                         {
                             <div class="comment-card">
-                                <img src="@(string.IsNullOrEmpty(review.User?.Avatar) ? "/images/default_avatar.jpg" : review.User.Avatar)" class="user-avatar" />
+                                <div class="user-avatar"><i class="fas fa-user" style="color: #94a3b8;"></i></div>
                                 <div style="flex: 1;">
                                     <div style="display: flex; justify-content: space-between;">
-                                        <span style="font-weight: 700; color: #38bdf8;">@@@review.UserLogin</span>
+                                        <span class="reviewer-name" style="font-weight: 700; color: #38bdf8;">@review.UserLogin</span>
                                         <span style="color: #fbbf24;">
                                             @for (int i = 1; i <= 5; i++)
                                             {
@@ -350,33 +409,7 @@
                             </div>
                         }
                     }
-                    else
-                    {
-                        <p style="text-align: center; color: #64748b;">Отзывов пока нет.</p>
-                    }
                 </div>
-            </div>
-
-            <div id="curriculum" class="tab-pane">
-                @if (Model.Modules != null)
-                {
-                    @foreach (var module in Model.Modules.OrderBy(m => m.Order))
-                    {
-                        <div style="margin-bottom: 12px; background: #1e293b; border-radius: 12px; border: 1px solid #334155; overflow: hidden;">
-                            <div style="padding: 15px 20px; background: rgba(56, 189, 248, 0.05);">
-                                <h4 style="margin: 0;">Модуль @module.Order: @module.Title</h4>
-                            </div>
-                            <div style="padding: 10px 20px;">
-                                @foreach (var lesson in module.Lessons.OrderBy(l => l.Order))
-                                {
-                                    <div style="padding: 10px 0; color: #94a3b8; display: flex; gap: 10px; align-items: center;">
-                                        <i class="far fa-play-circle"></i> @lesson.Title
-                                    </div>
-                                }
-                            </div>
-                        </div>
-                    }
-                }
             </div>
         </div>
     </div>
@@ -392,46 +425,54 @@
             evt.currentTarget.classList.add("active");
         }
 
-        function submitReview() {
-            const ratingInput = document.querySelector('input[name="rating"]:checked');
-            const text = document.getElementById('reviewText').value;
-            const isRec = document.getElementById('isRecommended').checked;
+        async function submitReview() {
+            // "Живая" проверка перед отправкой по списку на странице
+            const currentLogin = "@currentUserLogin";
+            const existingReviews = document.querySelectorAll('.reviewer-name');
+            for (let res of existingReviews) {
+                if (res.innerText.trim() === currentLogin) {
+                    alert("Вы уже оставили отзыв к этому курсу.");
+                    return;
+                }
+            }
 
-            if (!ratingInput || !text.trim()) {
-                alert("Пожалуйста, поставьте оценку и напишите текст отзыва.");
+            const ratingInput = document.querySelector('input[name="rating"]:checked');
+            const textInput = document.getElementById('reviewText');
+            const isRecCheckbox = document.getElementById('isRecommended');
+
+            if (!ratingInput || !textInput.value.trim()) {
+                alert("Пожалуйста, укажите оценку и напишите текст.");
                 return;
             }
 
             const formData = new URLSearchParams();
             formData.append('courseId', '@Model.Id');
             formData.append('rating', ratingInput.value);
-            formData.append('text', text);
-            // Принудительно передаем как строку "true" или "false"
-            formData.append('isRecommended', isRec ? "true" : "false");
+            formData.append('text', textInput.value);
+            formData.append('isRecommended', isRecCheckbox.checked);
 
-            fetch('/Course/AddReview', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'RequestVerificationToken': '@tokens.RequestToken'
-                },
-                body: formData
-            })
-                .then(async res => {
-                    const isJson = res.headers.get('content-type')?.includes('application/json');
-                    const data = isJson ? await res.json() : null;
-
-                    if (res.ok && data && data.success) {
-                        location.reload();
-                    } else {
-                        // Если сервер прислал 500 ошибку, выведем сообщение из JSON или общий текст
-                        alert(data ? data.message : "Произошла ошибка на сервере (500). Проверьте консоль Visual Studio.");
-                    }
-                })
-                .catch(err => {
-                    console.error("Ошибка запроса:", err);
-                    alert("Не удалось отправить запрос.");
+            try {
+                const response = await fetch('/Course/AddReview', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'RequestVerificationToken': '@tokens.RequestToken'
+                    },
+                    body: formData
                 });
+
+                // ТАК КАК КОНТРОЛЛЕР ВОЗВРАЩАЕТ JSON:
+                const result = await response.json();
+
+                if (result.success) {
+                    location.reload();
+                } else {
+                    // Выводим сообщение об ошибке (например, "Вы уже оставили отзыв")
+                    alert(result.message);
+                }
+            } catch (error) {
+                alert("Ошибка соединения с сервером.");
+            }
         }
     </script>
 </body>

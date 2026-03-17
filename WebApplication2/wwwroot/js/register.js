@@ -28,7 +28,6 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 // === Обработка сабмита формы на клиенте ===
-// === Обработка сабмита формы на клиенте ===
 form.addEventListener('submit', function (e) {
     e.preventDefault();
 
@@ -46,7 +45,8 @@ form.addEventListener('submit', function (e) {
     const cyrillicPattern = /[а-яё]/i;
 
     // === Проверки на длину ===
-    if (username.value.length < 8) {
+    // Для имени пользователя используем .trim(), чтобы не считать пробелы по краям как значащие символы
+    if (username.value.trim().length < 8) {
         showError(username, 'Длина имени пользователя должна быть не менее 8 символов');
         hasError = true;
     }
@@ -79,7 +79,7 @@ form.addEventListener('submit', function (e) {
         hasError = true;
     }
 
-    // === Проверка на пробелы ===
+    // === Проверка на пробелы (ТОЛЬКО для логина и пароля) ===
     if (login.value.includes(" ")) {
         showError(login, "Логин содержит пробелы");
         hasError = true;
@@ -90,10 +90,7 @@ form.addEventListener('submit', function (e) {
         hasError = true;
     }
 
-    if (username.value.includes(" ")) {
-        showError(username, "Имя пользователя содержит пробелы");
-        hasError = true;
-    }
+    // Блок проверки пробелов в username удален, чтобы разрешить ФИО или ники с пробелами
 
     if (hasError) {
         const card = document.querySelector('.register-card');

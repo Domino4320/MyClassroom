@@ -17,27 +17,34 @@ namespace WebApplication2.Controllers
         // 1. Страница "Библиотека курсов" (Общий список)
         public async Task<IActionResult> Index()
         {
-            // Берем только опубликованные курсы для общей библиотеки
-            var courses = await _context.Courses
-                .Where(c => c.IsPublished)
-                .Select(c => new CourseCardModel
-                {
-                    Id = c.Id,
-                    Title = c.Title,
-                    Description = c.Description ?? "Описание отсутствует",
-                    Category = c.Category,
-                    CoverImagePath = c.CoverImagePath ?? "/images/default-course.jpg",
-                    CreatedAt = c.CreatedAt,
-                    IsPublished = c.IsPublished, // Теперь передаем это свойство
+            // Соединяем курсы с пользователями по логину
+            var query = from course in _context.Courses
+                        where course.IsPublished
+                        join user in _context.Users on course.AuthorLogin equals user.Login into userJoin
+                        from author in userJoin.DefaultIfEmpty()
+                        select new CourseCardModel
+                        {
+                            Id = course.Id,
+                            Title = course.Title,
+                            Description = course.Description ?? "Описание отсутствует",
+                            Category = course.Category,
+                            CoverImagePath = course.CoverImagePath ?? "/images/default-course.jpg",
+                            CreatedAt = course.CreatedAt,
+                            IsPublished = course.IsPublished,
 
-                    // Мапим AuthorLogin из БД в AuthorUsername модели представления
-                    AuthorUsername = c.AuthorLogin ?? "Аноним",
-                    AuthorAvatar = "/images/default_avatar.jpg"
-                })
-                .ToListAsync();
+                            // Берем Username из UserModel, если нашли, иначе AuthorLogin
+                            AuthorUsername = author != null ? author.Username : (course.AuthorLogin ?? "Аноним"),
+
+                            // Берем Avatar из UserModel (поле называется Avatar, а не AvatarPath)
+                            AuthorAvatar = (author != null && !string.IsNullOrEmpty(author.Avatar))
+                                           ? author.Avatar
+                                           : "/images/default_avatar.jpg"
+                        };
+
+            var model = await query.ToListAsync();
 
             ViewData["Title"] = "Библиотека курсов";
-            return View(courses);
+            return View(model);
         }
 
         // 2. Страница "Мои курсы" (Личные курсы автора)

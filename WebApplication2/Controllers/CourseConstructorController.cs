@@ -325,10 +325,25 @@ namespace WebApplication2.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> PublishCourse([FromQuery] int id)
+
+        public async Task<IActionResult> PublishCourse(int id)
         {
-            var (course, error) = await GetValidCourse(id, false);
-            if (error != null) return BadRequest(error);
+            var course = await _db.Courses
+                .Include(c => c.Modules)
+                .ThenInclude(m => m.Lessons)
+                .ThenInclude(l => l.Steps)
+                .FirstOrDefaultAsync(c => c.Id == id);
+
+            if (course == null) return NotFound();
+
+            // Проверка: есть ли хоть один урок
+            var allLessons = course.Modules.SelectMany(m => m.Lessons).ToList();
+            if (!allLessons.Any())
+                return BadRequest("В курсе должен быть хотя бы один урок.");
+
+            // Проверка: есть ли в каждом уроке хотя бы один шаг
+            if (allLessons.Any(l => !l.Steps.Any()))
+                return BadRequest("Все созданные уроки должны содержать хотя бы один шаг (текст, видео или тест).");
 
             course.IsPublished = true;
             await _db.SaveChangesAsync();

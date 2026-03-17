@@ -32,6 +32,9 @@ namespace WebApplication2.Models
         [Required]
         public string? AuthorLogin { get; set; }
 
+        [ForeignKey("AuthorLogin")]
+        public TeacherProfile? Author { get; set; }
+
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public List<ModuleModel> Modules { get; set; } = new();

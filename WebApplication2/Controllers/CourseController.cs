@@ -18,13 +18,13 @@ namespace WebApplication2.Controllers
         // --- СТРАНИЦА ОПИСАНИЯ КУРСА (DETAILS) ---
         public async Task<IActionResult> Details(int id)
         {
+            // ДОБАВЛЕНО: .Include(c => c.Author) для вывода профиля преподавателя
             var course = await _db.Courses
-                .Include(c => c.Reviews)
-                    .ThenInclude(r => r.User)
-                .Include(c => c.Modules)
-                    .ThenInclude(m => m.Lessons)
-                        .ThenInclude(l => l.Steps)
-                .FirstOrDefaultAsync(c => c.Id == id);
+        .Include(c => c.Modules)
+            .ThenInclude(m => m.Lessons)
+        .Include(c => c.Reviews)
+        .Include(c => c.Author) // ВАЖНО: Подгружаем данные преподавателя по логину
+        .FirstOrDefaultAsync(c => c.Id == id);
 
             if (course == null) return NotFound();
 
@@ -39,14 +39,21 @@ namespace WebApplication2.Controllers
                 recPercent = (double)recommendedCount / totalReviews * 100;
             }
 
-            // 2. Место в категории и общее кол-во курсов в категории
+            // 2. Место в категории и общее кол-во курсов в категории (ТОЛЬКО ОПУБЛИКОВАННЫЕ)
             var allInCat = await _db.Courses
-                .Where(c => c.Category == course.Category)
+                .Where(c => c.Category == course.Category && c.IsPublished) // Добавили фильтр IsPublished
                 .Include(c => c.Reviews)
                 .ToListAsync();
 
+            // Если текущий курс еще не опубликован, он может не попасть в список allInCat.
+            // Чтобы аналитика не ломалась для автора черновика, добавим его в список для расчета, если его там нет
+            if (!allInCat.Any(c => c.Id == id))
+            {
+                allInCat.Add(course);
+            }
+
             var rankedList = allInCat
-                .OrderByDescending(c => c.Reviews.Any() ? c.Reviews.Average(r => r.Rating) : 0)
+                .OrderByDescending(c => c.Reviews != null && c.Reviews.Any() ? c.Reviews.Average(r => r.Rating) : 0)
                 .ToList();
 
             int categoryRank = rankedList.FindIndex(c => c.Id == id) + 1;
@@ -54,7 +61,7 @@ namespace WebApplication2.Controllers
             // Передаем данные во View
             ViewData["RecPercent"] = Math.Round(recPercent, 0);
             ViewData["CategoryRank"] = categoryRank == 0 ? "-" : categoryRank.ToString();
-            ViewData["TotalInCat"] = allInCat.Count;
+            ViewData["TotalInCat"] = allInCat.Count(c => c.IsPublished); // Показываем только кол-во публичных курсов
 
             // --- ПРОВЕРКА ЗАПИСИ И ПРОГРЕССА ---
             var login = HttpContext.Session.GetString("Login");
@@ -126,7 +133,7 @@ namespace WebApplication2.Controllers
                 UserLogin = login,
                 Rating = rating,
                 Text = text,
-                IsRecommended = isRecommended, // Теперь сохраняем реальное значение
+                IsRecommended = isRecommended,
                 CreatedAt = DateTime.Now
             };
 
@@ -321,7 +328,6 @@ namespace WebApplication2.Controllers
 
             if (course == null) return NotFound();
 
-            // Проверка на авторство (чтобы никто не мог править чужой курс через URL)
             if (course.AuthorLogin != login) return Forbid();
 
             return View(course);
@@ -339,13 +345,11 @@ namespace WebApplication2.Controllers
             if (courseInDb == null) return NotFound();
             if (courseInDb.AuthorLogin != login) return Forbid();
 
-            // Обновляем только основные поля
             courseInDb.Title = model.Title;
             courseInDb.Description = model.Description;
             courseInDb.Category = model.Category;
             courseInDb.IsPublished = model.IsPublished;
 
-            // Обработка новой обложки, если она загружена
             if (uploadCover != null && uploadCover.Length > 0)
             {
                 var fileName = Guid.NewGuid().ToString() + Path.GetExtension(uploadCover.FileName);
@@ -362,7 +366,6 @@ namespace WebApplication2.Controllers
             _db.Courses.Update(courseInDb);
             await _db.SaveChangesAsync();
 
-            // Возвращаем в личный кабинет (замени на свой Action, например "MyCourses")
             return RedirectToAction("Details", new { id = courseInDb.Id });
         }
     }

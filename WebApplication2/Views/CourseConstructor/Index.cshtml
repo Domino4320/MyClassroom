@@ -170,6 +170,7 @@
             border-radius: 15px;
             padding: 20px;
             margin-bottom: 25px;
+            transition: border-color 0.3s;
         }
 
         .badge-type {
@@ -195,6 +196,18 @@
             margin-bottom: 10px;
             align-items: center;
         }
+
+        .btn-delete-opt.disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .quiz-error-msg {
+            color: var(--danger);
+            font-size: 0.85rem;
+            margin-top: 10px;
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -204,7 +217,7 @@
             <a href="/MyCourses/Index" style="color: var(--primary); text-decoration: none; font-size: 0.9rem;">
                 <i class="bi bi-arrow-left"></i> К моим курсам
             </a>
-            <h3>@Model.CourseTitle</h3>
+            <h3 style="margin-top:10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@Model.CourseTitle</h3>
             <button class="btn btn-outline" style="width: 100%; justify-content: center;" onclick="addModule()">
                 <i class="bi bi-folder-plus"></i> Добавить модуль
             </button>
@@ -212,7 +225,7 @@
         <div class="module-list" id="moduleContainer">
             @foreach (var m in Model.Modules.OrderBy(x => x.Order))
             {
-                <div class="module-item">
+                <div class="module-item" data-module-id="@m.Id">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <strong style="color: var(--primary)">@m.Title</strong>
                         <i class="bi bi-plus-square-dotted" style="cursor:pointer; font-size: 1.2rem;" onclick="addLesson(@m.Id)"></i>
@@ -220,7 +233,7 @@
                     <div class="lessons">
                         @foreach (var l in m.Lessons.OrderBy(x => x.Order))
                         {
-                            <div class="lesson-item" onclick="loadLessonEditor(@l.Id, this)">
+                            <div class="lesson-item" onclick="loadLessonEditor(@l.Id, this)" data-lesson-id="@l.Id">
                                 <span><i class="bi bi-file-earmark-text"></i> @l.Title</span>
                                 <i class="bi bi-trash delete-lesson-btn" onclick="event.stopPropagation(); deleteLesson(@l.Id)"></i>
                             </div>
@@ -248,7 +261,7 @@
                     <button class="btn btn-outline" onclick="publishCourse(@Model.CourseId)" style="border-color: #4caf50; color: #4caf50;">
                         <i class="bi bi-send"></i> Опубликовать
                     </button>
-                    <button class="btn btn-primary" onclick="saveCurrentLesson(true)">
+                    <button class="btn btn-primary" onclick="saveCurrentLesson(true, true)">
                         <i class="bi bi-cloud-check"></i> Сохранить урок
                     </button>
                 </div>
@@ -318,43 +331,79 @@
         function renderSteps(steps) {
             const container = document.getElementById('stepsContainer');
             container.innerHTML = '';
-            if (!steps) return;
+
+            if (!steps || steps.length === 0) {
+                container.innerHTML = '<div style="text-align:center; padding: 20px; color: var(--danger); border: 1px dashed var(--danger); border-radius: 12px;">В этом уроке еще нет ни одного шага. Добавьте контент ниже.</div>';
+                return;
+            }
 
             steps.forEach((step) => {
                 const stepDiv = document.createElement('div');
                 stepDiv.className = 'step-card';
+                stepDiv.setAttribute('data-step-id', step.id);
+                stepDiv.setAttribute('data-step-type', step.type);
                 const typeLabel = step.type === 0 ? "Текст" : step.type === 1 ? "Видео" : "Тест";
 
                 stepDiv.innerHTML = `
-                            <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
-                                <span class="badge-type">${typeLabel}</span>
-                                <i class="bi bi-x-circle" style="cursor:pointer; color:var(--danger);" onclick="deleteStep(${step.id})"></i>
-                            </div>
-                            <label>Заголовок шага</label>
-                            <input type="text" value="${step.title || ''}" class="step-title" data-id="${step.id}">
-                            <div style="margin-top:15px;">
-                                ${step.type === 0 ? `<textarea rows="6" class="step-content" data-id="${step.id}">${step.textContent || ''}</textarea>` : ''}
-                                ${step.type === 1 ? `<input type="text" class="step-video" data-id="${step.id}" value="${step.videoUrl || ''}" placeholder="Ссылка на видео">` : ''}
-                                ${step.type === 2 ? `
-                                    <div class="quiz-editor-box">
-                                        <div style="margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid var(--border);">
-                                            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
-                                                <input type="checkbox" class="step-is-multiple" data-id="${step.id}" ${step.isMultipleChoice ? 'checked' : ''} onchange="toggleMultipleChoice(${step.id}, this.checked)">
-                                                <span>Множественный выбор</span>
-                                            </label>
-                                        </div>
-                                        <div id="quiz-options-${step.id}"></div>
-                                        <button class="btn btn-outline" style="width:100%; margin-top:10px;" onclick="addOption(${step.id})">+ Добавить вариант</button>
-                                    </div>` : ''}
-                            </div>`;
+                                    <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
+                                        <span class="badge-type">${typeLabel}</span>
+                                        <i class="bi bi-x-circle" style="cursor:pointer; color:var(--danger);" onclick="deleteStep(${step.id})"></i>
+                                    </div>
+                                    <label>Заголовок шага</label>
+                                    <input type="text" value="${step.title || ''}" class="step-title" data-id="${step.id}">
+                                    <div style="margin-top:15px;">
+                                        ${step.type === 0 ? `<textarea rows="6" class="step-content" data-id="${step.id}">${step.textContent || ''}</textarea>` : ''}
+                                        ${step.type === 1 ? `<input type="text" class="step-video" data-id="${step.id}" value="${step.videoUrl || ''}" placeholder="Ссылка на видео (YouTube/Vimeo)">` : ''}
+                                        ${step.type === 2 ? `
+                                            <div class="quiz-editor-box">
+                                                <div style="margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid var(--border);">
+                                                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                                                        <input type="checkbox" class="step-is-multiple" data-id="${step.id}" ${step.isMultipleChoice ? 'checked' : ''} onchange="toggleMultipleChoice(${step.id}, this.checked)">
+                                                        <span>Множественный выбор</span>
+                                                    </label>
+                                                </div>
+                                                <div id="quiz-options-${step.id}"></div>
+                                                <button class="btn btn-outline" style="width:100%; margin-top:10px;" onclick="addOption(${step.id})">+ Добавить вариант</button>
+                                                <span id="quiz-error-${step.id}" class="quiz-error-msg" style="display:none;"><i class="bi bi-exclamation-triangle"></i> Выберите хотя бы один верный ответ!</span>
+                                            </div>` : ''}
+                                    </div>`;
                 container.appendChild(stepDiv);
                 if (step.type === 2) loadQuizOptions(step.id, step.isMultipleChoice);
             });
         }
 
-        async function saveCurrentLesson(showAlert = false) {
-            if (!currentLessonId) return true; // Если урок не выбран, считать "успехом", чтобы не блокировать UI
+        async function saveCurrentLesson(showAlert = false, runValidation = false) {
+            if (!currentLessonId) return true;
 
+            // --- Валидация тестов (только если runValidation === true) ---
+            if (runValidation) {
+                let isValid = true;
+                const quizSteps = document.querySelectorAll('.step-card[data-step-type="2"]');
+
+                quizSteps.forEach(stepCard => {
+                    const stepId = stepCard.getAttribute('data-step-id');
+                    const container = document.getElementById(`quiz-options-${stepId}`);
+                    const errorSpan = document.getElementById(`quiz-error-${stepId}`);
+
+                    const correctCount = container.querySelectorAll('input[type="radio"]:checked, input[type="checkbox"]:checked').length;
+
+                    if (correctCount === 0) {
+                        isValid = false;
+                        stepCard.style.borderColor = 'var(--danger)';
+                        if (errorSpan) errorSpan.style.display = 'block';
+                    } else {
+                        stepCard.style.borderColor = 'var(--border)';
+                        if (errorSpan) errorSpan.style.display = 'none';
+                    }
+                });
+
+                if (!isValid) {
+                    alert("Невозможно сохранить урок: в каждом тесте должен быть выбран хотя бы один правильный ответ!");
+                    return false;
+                }
+            }
+
+            // --- Сбор данных для сохранения ---
             const steps = [];
             document.querySelectorAll('.step-title').forEach(input => {
                 const id = input.dataset.id;
@@ -387,7 +436,9 @@
                 alert("Сначала выберите урок в списке слева!");
                 return;
             }
-            await saveCurrentLesson(false);
+            // Фоновое сохранение без валидации
+            await saveCurrentLesson(false, false);
+
             const response = await fetch(`/CourseConstructor/AddStep?lessonId=${currentLessonId}&type=${type}`, { method: 'POST' });
             if (response.ok) {
                 const newStep = await response.json();
@@ -401,7 +452,6 @@
 
         async function deleteStep(stepId) {
             if (!confirm("Удалить шаг?")) return;
-            await saveCurrentLesson(false);
             const response = await fetch(`/CourseConstructor/DeleteStep/${stepId}`, { method: 'POST' });
             if (response.ok) loadLessonEditor(currentLessonId);
         }
@@ -416,16 +466,22 @@
             const isDeleteDisabled = options.length <= 2;
 
             container.innerHTML = options.map(opt => `
-                        <div class="quiz-option-row" data-opt-id="${opt.id}">
-                            <input type="${inputType}" name="quiz-${stepId}" ${opt.isCorrect ? 'checked' : ''} onchange="handleOptionUpdate(${opt.id}, ${stepId}, '${inputType}')">
-                            <input type="text" value="${opt.text || ''}" onchange="handleOptionUpdate(${opt.id}, ${stepId}, '${inputType}')" style="margin:0;">
-                            <i class="bi bi-trash btn-delete-opt ${isDeleteDisabled ? 'disabled' : ''}"
-                               onclick="${isDeleteDisabled ? '' : `deleteOption(${opt.id}, ${stepId})`}"></i>
-                        </div>`).join('');
+                                <div class="quiz-option-row" data-opt-id="${opt.id}">
+                                    <input type="${inputType}" name="quiz-${stepId}" ${opt.isCorrect ? 'checked' : ''} onchange="handleOptionUpdate(${opt.id}, ${stepId}, '${inputType}')">
+                                    <input type="text" value="${opt.text || ''}" onchange="handleOptionUpdate(${opt.id}, ${stepId}, '${inputType}')" style="margin:0;">
+                                    <i class="bi bi-trash btn-delete-opt ${isDeleteDisabled ? 'disabled' : ''}"
+                                       onclick="${isDeleteDisabled ? '' : `deleteOption(${opt.id}, ${stepId})`}"></i>
+                                </div>`).join('');
         }
 
         async function handleOptionUpdate(optId, stepId, inputType) {
             const container = document.getElementById(`quiz-options-${stepId}`);
+            // Сбрасываем визуальную ошибку, если пользователь начал взаимодействовать
+            const stepCard = container.closest('.step-card');
+            const errorSpan = document.getElementById(`quiz-error-${stepId}`);
+            if (stepCard) stepCard.style.borderColor = 'var(--border)';
+            if (errorSpan) errorSpan.style.display = 'none';
+
             if (inputType === 'radio') {
                 const rows = container.querySelectorAll('.quiz-option-row');
                 for (const row of rows) {
@@ -457,20 +513,32 @@
         }
 
         async function toggleMultipleChoice(stepId, isMultiple) {
-            await saveCurrentLesson(false);
+            // Сохраняем в фоновом режиме БЕЗ валидации
+            await saveCurrentLesson(false, false);
             loadQuizOptions(stepId, isMultiple);
         }
 
         async function publishCourse(courseId) {
-            if (!confirm("Опубликовать курс?")) return;
-            await saveCurrentLesson(false);
+            const lessonItems = document.querySelectorAll('.lesson-item');
+            if (lessonItems.length === 0) {
+                alert("Ошибка: Нельзя опубликовать пустой курс. Создайте хотя бы один модуль и урок.");
+                return;
+            }
+
+            // ПРИ ПУБЛИКАЦИИ ВАЛИДАЦИЯ ОБЯЗАТЕЛЬНА
+            const saved = await saveCurrentLesson(false, true);
+            if (!saved) return;
+
+            if (!confirm("Вы уверены, что хотите опубликовать курс? После публикации он станет доступен студентам.")) return;
+
             const response = await fetch(`/CourseConstructor/PublishCourse?id=${courseId}`, { method: 'POST' });
+
             if (response.ok) {
                 alert("Курс успешно опубликован!");
                 window.location.href = '/MyCourses/Index';
             } else {
                 const errorText = await response.text();
-                alert("Ошибка: " + (errorText || "В курсе должны быть уроки с контентом."));
+                alert("Ошибка публикации: " + (errorText || "Убедитесь, что во всех уроках есть контент (шаги)."));
             }
         }
     </script>

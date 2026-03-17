@@ -6,11 +6,12 @@
 }
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="~/css/style_for_main_page.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <title>@ViewData["Title"]</title>
 
     <style>
@@ -42,7 +43,7 @@
             box-sizing: border-box;
         }
 
-        /* Стили заголовка страницы (как в Активных курсах) */
+        /* Стили заголовка страницы */
         .page-header {
             margin-bottom: 30px;
             border-bottom: 2px solid #e2e8f0;
@@ -84,7 +85,7 @@
                 box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
             }
 
-        /* СЕТКА - Решение проблемы сплющивания */
+        /* СЕТКА */
         .courses-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -135,6 +136,16 @@
                 margin-bottom: 20px;
                 display: block;
             }
+
+        /* Стили для аватара автора внутри карточки (на случай, если их нет в CSS) */
+        .author-avatar {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #38bdf8;
+            background-color: #e2e8f0;
+        }
     </style>
 </head>
 <body>
@@ -165,6 +176,9 @@
                     {
                         @foreach (var course in Model)
                         {
+                            @* Важно: Убедитесь, что в CourseCardModel данные автора подгружены.
+                    Если аватар пуст, мы можем передать стандартную заглушку.
+                    *@
                             <div class="course-item" data-title="@course.Title.ToLower()">
                                 @await Html.PartialAsync("_CourseCard", course)
                             </div>
@@ -178,7 +192,7 @@
                         </div>
                     }
 
-                    @* Сообщение о поиске *@
+                    @* Сообщение о пустом результате поиска *@
                     <div id="noResults" class="no-search-results">
                         <i class="fa-solid fa-magnifying-glass" style="font-size: 2rem; margin-bottom: 10px; display: block;"></i>
                         <p>По вашему запросу ничего не найдено. Попробуйте другое название.</p>
