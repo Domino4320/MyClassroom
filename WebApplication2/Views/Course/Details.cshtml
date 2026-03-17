@@ -7,28 +7,30 @@
     Layout = null;
     var tokens = Antiforgery.GetAndStoreTokens(Context);
 
-    // СИНХРОНИЗАЦИЯ: Получаем логин так же, как в контроллере
+    // Данные текущего пользователя из сессии
     var currentUserLogin = Context.Session.GetString("Login");
 
     bool isEnrolled = ViewData["IsEnrolled"] != null && (bool)ViewData["IsEnrolled"];
     bool hasCompletedCourse = ViewData["HasCompletedCourse"] != null && (bool)ViewData["HasCompletedCourse"];
 
+    // Аналитика из контроллера
     var rank = ViewData["CategoryRank"] ?? "0";
     var totalInCat = ViewData["TotalInCat"] ?? 0;
+    var recPercent = ViewData["RecPercent"] ?? 0;
     string displayRating = Model.AverageRating > 0 ? Model.AverageRating.ToString("0.0") : "0";
 
-    // ПРОВЕРКА: Оставлял ли пользователь отзыв ранее
     bool hasAlreadyReviewed = Model.Reviews != null &&
                                !string.IsNullOrEmpty(currentUserLogin) &&
                                Model.Reviews.Any(r => r.UserLogin == currentUserLogin);
 
-    // Поиск аватара автора
-    string authorAvatar = null;
-    if (Model.Author != null)
-    {
-        var authorUser = _context.Users.FirstOrDefault(u => u.Login == Model.Author.UserLogin);
-        authorAvatar = authorUser?.Avatar;
-    }
+    // ПОЛУЧЕНИЕ ДАННЫХ ПРЕПОДАВАТЕЛЯ
+    // Подгружаем профиль учителя (Experience, Specialization и т.д.)
+    var teacherProfile = Model.Author;
+    // Подгружаем аккаунт пользователя (Username, Avatar)
+    var userAccount = _context.Users.FirstOrDefault(u => u.Login == Model.AuthorLogin);
+
+    // Отображаемое имя: берем Username, если нет - Login
+    string displayName = userAccount?.Username ?? Model.AuthorLogin;
 }
 
 <!DOCTYPE html>
@@ -37,171 +39,279 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@Model.Title - Детали курса</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
+        :root {
+            --bg-dark: #0f172a;
+            --card-bg: #1e293b;
+            --accent: #38bdf8;
+            --success: #10b981;
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            --border: #334155;
+        }
+
         html, body {
             margin: 0;
             padding: 0;
             width: 100%;
-            background: #0f172a;
-            color: #f8fafc;
+            background: var(--bg-dark);
+            color: var(--text-main);
             font-family: 'Inter', sans-serif;
             scroll-behavior: smooth;
         }
 
-        .course-details-bg {
-            min-height: 100vh;
-            padding-bottom: 100px;
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
         }
 
-        .course-hero {
+        /* HERO SECTION */
+        .hero {
             background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
             padding: 60px 0;
-            border-bottom: 1px solid #334155;
-            position: relative;
+            border-bottom: 1px solid var(--border);
         }
 
-        .back-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            color: #94a3b8;
-            text-decoration: none;
-            font-weight: 600;
-            margin-bottom: 20px;
-            transition: 0.2s;
-        }
-
-            .back-link:hover {
-                color: #38bdf8;
-            }
-
-        .hero-container {
-            max-width: 1100px;
-            margin: 0 auto;
+        .hero-layout {
             display: flex;
             gap: 50px;
-            padding: 0 20px;
             align-items: flex-start;
         }
 
-        .hero-info {
+        .hero-main {
             flex: 2;
         }
 
-        .hero-aside {
+        .hero-side {
             flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
+            position: sticky;
+            top: 20px;
         }
 
-        .hero-image img, .hero-placeholder {
-            width: 100%;
-            border-radius: 20px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            border: 1px solid #475569;
-            object-fit: cover;
-            aspect-ratio: 16/9;
-        }
-
-        .hero-placeholder {
-            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-            display: flex;
+        .back-btn {
+            display: inline-flex;
             align-items: center;
-            justify-content: center;
+            gap: 8px;
+            color: var(--text-dim);
+            text-decoration: none;
+            font-weight: 600;
+            margin-bottom: 25px;
+            transition: 0.2s;
         }
 
-            .hero-placeholder i {
-                font-size: 4rem;
-                color: #475569;
-                opacity: 0.5;
+            .back-btn:hover {
+                color: var(--accent);
             }
 
-        .badge-cat {
-            background: #0ea5e9;
+        .cat-badge {
+            background: var(--accent);
+            color: #fff;
             padding: 6px 14px;
             border-radius: 8px;
-            font-size: 0.85rem;
-            font-weight: 700;
+            font-size: 0.8rem;
+            font-weight: 800;
             text-transform: uppercase;
         }
 
-        .mini-stats {
+        .title {
+            font-size: 3.5rem;
+            margin: 15px 0;
+            font-weight: 800;
+            line-height: 1.1;
+            letter-spacing: -1px;
+        }
+
+        .stats-row {
             display: flex;
-            gap: 15px;
-            margin-bottom: 25px;
+            gap: 12px;
+            margin: 30px 0;
             flex-wrap: wrap;
         }
 
-        .stat-item {
-            background: rgba(255,255,255,0.05);
-            padding: 10px 18px;
-            border-radius: 12px;
-            border: 1px solid rgba(255,255,255,0.1);
+        .stat-box {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            padding: 12px 20px;
+            border-radius: 14px;
         }
 
         .stat-label {
-            font-size: 0.7rem;
-            color: #94a3b8;
+            font-size: 0.65rem;
+            color: var(--text-dim);
             text-transform: uppercase;
-            letter-spacing: 1px;
+            margin-bottom: 4px;
         }
 
-        .stat-value {
-            font-size: 1.1rem;
+        .stat-val {
+            font-size: 1.2rem;
             font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
-        .btn-enroll {
-            background: #10b981;
+        .description-short {
+            color: var(--text-dim);
+            font-size: 1.2rem;
+            line-height: 1.6;
+            margin-bottom: 40px;
+        }
+
+        .btn-action {
+            background: var(--success);
             color: white;
             border: none;
-            padding: 16px 40px;
-            border-radius: 12px;
+            padding: 18px 45px;
+            border-radius: 14px;
             font-size: 1.1rem;
             font-weight: 700;
             cursor: pointer;
             transition: 0.3s;
-            display: inline-block;
             text-decoration: none;
-            text-align: center;
+            display: inline-block;
         }
 
-            .btn-enroll:hover {
+            .btn-action:hover {
                 background: #059669;
-                transform: translateY(-2px);
+                transform: translateY(-3px);
+                box-shadow: 0 10px 20px rgba(16, 185, 129, 0.3);
             }
 
-        .btn-continue {
-            background: #38bdf8;
+        .btn-blue {
+            background: var(--accent);
         }
 
-        .course-tabs {
-            max-width: 1100px;
-            margin: 40px auto;
-            padding: 0 20px;
+        /* COVER */
+        .course-cover img {
+            width: 100%;
+            border-radius: 24px;
+            border: 1px solid var(--border);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+            aspect-ratio: 16/9;
+            object-fit: cover;
         }
 
-        .tab-nav {
+        /* TEACHER PROFILE CARD */
+        .teacher-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 25px;
+            margin-top: 30px;
+        }
+
+        .t-header {
             display: flex;
-            gap: 30px;
-            border-bottom: 1px solid #334155;
-            margin-bottom: 30px;
+            gap: 15px;
+            align-items: center;
+            margin-bottom: 20px;
         }
 
-        .tab-link {
-            padding: 12px 0;
-            color: #94a3b8;
+        .t-avatar {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--accent);
+            background: var(--bg-dark);
+        }
+
+        .t-names h3 {
+            margin: 0;
+            font-size: 1.3rem;
+            color: #fff;
+        }
+
+        .t-names span {
+            color: var(--accent);
+            font-size: 0.9rem;
             font-weight: 600;
+        }
+
+        .t-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .t-detail-item {
+            background: var(--bg-dark);
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+        }
+
+        .t-detail-label {
+            font-size: 0.6rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            display: block;
+        }
+
+        .t-detail-val {
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: var(--text-main);
+        }
+
+        .t-tags-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 15px;
+        }
+
+        .t-tag-pill {
+            background: rgba(56, 189, 248, 0.1);
+            color: var(--accent);
+            padding: 3px 10px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .t-bio-title {
+            font-weight: 800;
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            margin: 15px 0 8px;
+            display: block;
+            border-top: 1px solid var(--border);
+            padding-top: 15px;
+        }
+
+        .t-bio-content {
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: #cbd5e1;
+        }
+
+        /* TABS */
+        .tabs-nav {
+            display: flex;
+            gap: 40px;
+            border-bottom: 1px solid var(--border);
+            margin: 50px 0 30px;
+        }
+
+        .tab-item {
+            padding: 15px 0;
+            color: var(--text-dim);
+            font-weight: 700;
+            font-size: 1.1rem;
             cursor: pointer;
             border-bottom: 3px solid transparent;
+            transition: 0.2s;
         }
 
-            .tab-link.active {
-                color: #38bdf8;
-                border-color: #38bdf8;
+            .tab-item.active {
+                color: var(--accent);
+                border-color: var(--accent);
             }
 
         .tab-pane {
@@ -225,186 +335,287 @@
             }
         }
 
-        .comment-card {
-            background: #1e293b;
-            padding: 24px;
+        /* CURRICULUM */
+        .mod-box {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
             border-radius: 16px;
-            margin-bottom: 20px;
-            border: 1px solid #334155;
-            display: flex;
-            gap: 16px;
+            margin-bottom: 12px;
+            overflow: hidden;
         }
 
-        .user-avatar {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            border: 2px solid #475569;
-            background: #334155;
+        .mod-header {
+            padding: 18px 20px;
+            background: rgba(255,255,255,0.02);
             display: flex;
             align-items: center;
-            justify-content: center;
+            gap: 12px;
+            font-weight: 700;
         }
 
-        .star-rating {
+        .les-item {
+            padding: 12px 20px 12px 50px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #cbd5e1;
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .les-steps {
+            margin-left: auto;
+            font-size: 0.7rem;
+            color: var(--text-dim);
+        }
+
+        /* REVIEWS */
+        .rev-item {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            margin-bottom: 15px;
+        }
+
+        .rev-user {
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .rev-stars {
+            color: #fbbf24;
+            font-size: 0.9rem;
+        }
+
+        .form-review {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 20px;
+            border: 1px solid var(--accent);
+            margin-bottom: 30px;
+        }
+
+        .stars-rate {
             display: flex;
             flex-direction: row-reverse;
-            gap: 8px;
-            margin: 15px 0;
+            gap: 10px;
+            margin-bottom: 15px;
             justify-content: flex-end;
         }
 
-            .star-rating input {
+            .stars-rate input {
                 display: none;
             }
 
-            .star-rating label {
+            .stars-rate label {
                 font-size: 2rem;
-                color: #334155;
+                color: var(--border);
                 cursor: pointer;
             }
 
-                .star-rating label:hover, .star-rating label:hover ~ label, .star-rating input:checked ~ label {
+                .stars-rate label:hover, .stars-rate label:hover ~ label, .stars-rate input:checked ~ label {
                     color: #fbbf24;
                 }
-
-        .review-input {
-            width: 100%;
-            background: #0f172a;
-            border: 1px solid #334155;
-            color: white;
-            padding: 15px;
-            border-radius: 10px;
-            resize: vertical;
-            box-sizing: border-box;
-        }
     </style>
 </head>
 <body>
 
-    <div class="course-details-bg">
-        <section class="course-hero">
-            <div class="hero-container">
-                <div class="hero-info">
-                    <a href="/" class="back-link"><i class="fas fa-arrow-left"></i> На главную</a>
+    <section class="hero">
+        <div class="container">
+            <div class="hero-layout">
+                <div class="hero-main">
+                    <a href="/" class="back-btn"><i class="fas fa-chevron-left"></i> На главную</a>
                     <br />
-                    <span class="badge-cat">@Model.Category</span>
-                    <h1 style="font-size: 3rem; margin: 15px 0; font-weight: 800; line-height: 1.1;">@Model.Title</h1>
+                    <span class="cat-badge">@Model.Category</span>
+                    <h1 class="title">@Model.Title</h1>
 
-                    <div class="mini-stats">
-                        <div class="stat-item">
+                    <div class="stats-row">
+                        <div class="stat-box">
                             <div class="stat-label">Рейтинг</div>
-                            <div class="stat-value" style="color: #fbbf24;">⭐ @displayRating</div>
+                            <div class="stat-val" style="color:#fbbf24;">⭐ @displayRating</div>
                         </div>
-                        <div class="stat-item">
+                        <div class="stat-box">
+                            <div class="stat-label">Рекомендуют</div>
+                            <div class="stat-val" style="color:var(--success);"><i class="fas fa-thumbs-up"></i> @recPercent%</div>
+                        </div>
+                        <div class="stat-box">
                             <div class="stat-label">В категории</div>
-                            <div class="stat-value" style="color: #38bdf8;">#@rank из @totalInCat</div>
+                            <div class="stat-val" style="color:var(--accent);">#@rank из @totalInCat</div>
                         </div>
                     </div>
 
-                    <p style="color: #94a3b8; font-size: 1.1rem; line-height: 1.6; margin-bottom: 35px; max-width: 600px;">@Model.Description</p>
+                    <p class="description-short">@Model.Description</p>
 
-                    <div style="display: flex; align-items: center; gap: 20px;">
-                        @if (isEnrolled)
-                        {
-                            <a asp-action="Index" asp-route-courseId="@Model.Id" class="btn-enroll btn-continue">
-                                <i class="fas fa-play" style="margin-right: 10px;"></i> Продолжить обучение
-                            </a>
-                        }
-                        else
-                        {
-                            <form asp-action="Enroll" method="post">
-                                <input type="hidden" name="courseId" value="@Model.Id" />
-                                <button type="submit" class="btn-enroll">Начать обучение</button>
-                            </form>
-                        }
-                    </div>
+                    @if (isEnrolled)
+                    {
+                        <a asp-action="Index" asp-route-courseId="@Model.Id" class="btn-action btn-blue">
+                            <i class="fas fa-play" style="margin-right:10px;"></i> Продолжить обучение
+                        </a>
+                    }
+                    else
+                    {
+                        <form asp-action="Enroll" method="post">
+                            <input type="hidden" name="courseId" value="@Model.Id" />
+                            <button type="submit" class="btn-action">Записаться на курс</button>
+                        </form>
+                    }
                 </div>
 
-                <div class="hero-aside">
-                    <div class="hero-image">
+                <div class="hero-side">
+                    <div class="course-cover">
                         @if (!string.IsNullOrEmpty(Model.CoverImagePath))
                         {
-                            <img src="@Model.CoverImagePath" alt="@Model.Title">
+                            <img src="@Model.CoverImagePath" alt="">
                         }
                         else
                         {
-                            <div class="hero-placeholder"><i class="fas fa-book-open"></i></div>
+                            <div style="height:200px; background:var(--card-bg); border-radius:24px;"></div>
                         }
                     </div>
+
+                    @if (teacherProfile != null)
+                    {
+                        <div class="teacher-card">
+                            <div class="t-header">
+                                @if (!string.IsNullOrEmpty(userAccount?.Avatar))
+                                {
+                                    <img src="@userAccount.Avatar" class="t-avatar" alt="">
+                                }
+                                else
+                                {
+                                    <div class="t-avatar" style="display:flex; align-items:center; justify-content:center;"><i class="fas fa-user-tie fa-2x"></i></div>
+                                }
+                                <div class="t-names">
+                                    <h3>@displayName</h3>
+                                    <span>@teacherProfile.CurrentJob</span>
+                                </div>
+                            </div>
+
+                            <div class="t-details">
+                                <div class="t-detail-item">
+                                    <span class="t-detail-label">Категория</span>
+                                    <span class="t-detail-val">@teacherProfile.SpecializationCategory</span>
+                                </div>
+                                <div class="t-detail-item">
+                                    <span class="t-detail-label">Опыт</span>
+                                    <span class="t-detail-val">@teacherProfile.Experience лет</span>
+                                </div>
+                            </div>
+
+                            @if (!string.IsNullOrEmpty(teacherProfile.TeacherTags))
+                            {
+                                <div class="t-tags-list">
+                                    @foreach (var tag in teacherProfile.TeacherTags.Split(','))
+                                    {
+                                        <span class="t-tag-pill">#@tag.Trim()</span>
+                                    }
+                                </div>
+                            }
+
+                            <span class="t-bio-title">О преподавателе</span>
+                            <div class="t-bio-content">@teacherProfile.About</div>
+
+                            @if (!string.IsNullOrEmpty(teacherProfile.PortfolioUrl))
+                            {
+                                <a href="@teacherProfile.PortfolioUrl" target="_blank" style="color:var(--accent); text-decoration:none; font-size:0.85rem; font-weight:700; display:block; margin-top:15px;">
+                                    <i class="fas fa-link"></i> Портфолио автора
+                                </a>
+                            }
+                        </div>
+                    }
                 </div>
             </div>
-        </section>
+        </div>
+    </section>
 
-        <div class="course-tabs">
-            <nav class="tab-nav">
-                <div class="tab-link active" onclick="openTab(event, 'about')">Описание</div>
-                <div class="tab-link" onclick="openTab(event, 'curriculum')">Программа</div>
-                <div class="tab-link" onclick="openTab(event, 'reviews')">Отзывы (@Model.ReviewsCount)</div>
-            </nav>
+    <div class="container">
+        <nav class="tabs-nav">
+            <div class="tab-item active" onclick="showTab(event, 'info')">Описание</div>
+            <div class="tab-item" onclick="showTab(event, 'plan')">Программа</div>
+            <div class="tab-item" onclick="showTab(event, 'feed')">Отзывы (@Model.ReviewsCount)</div>
+        </nav>
 
-            <div id="about" class="tab-pane active">
-                <div style="max-width: 900px;">
-                    <h3 style="color: #38bdf8;">О курсе</h3>
-                    <div style="color: #cbd5e1; line-height: 1.8; white-space: pre-line;">@Model.Description</div>
-                </div>
+        <div id="info" class="tab-pane active">
+            <div style="max-width:850px; line-height:1.8; color:#cbd5e1; font-size:1.1rem; white-space:pre-line;">
+                @Model.Description
             </div>
+        </div>
 
-            <div id="curriculum" class="tab-pane">
-                <p style="color: #94a3b8;">Учебная программа модуля доступна в личном кабинете после регистрации на курс.</p>
+        <div id="plan" class="tab-pane">
+            <div style="max-width:850px;">
+                @if (Model.Modules != null && Model.Modules.Any())
+                {
+                    @foreach (var m in Model.Modules.OrderBy(x => x.Order))
+                    {
+                        <div class="mod-box">
+                            <div class="mod-header"><i class="fas fa-book" style="color:var(--accent)"></i> @m.Title</div>
+                            @if (m.Lessons != null)
+                            {
+                                @foreach (var l in m.Lessons.OrderBy(x => x.Order))
+                                {
+                                    <div class="les-item">
+                                        <i class="far fa-play-circle" style="color:var(--success)"></i> @l.Title
+                                        <span class="les-steps">@(l.Steps?.Count ?? 0) шагов</span>
+                                    </div>
+                                }
+                            }
+                        </div>
+                    }
+                }
             </div>
+        </div>
 
-            <div id="reviews" class="tab-pane">
+        <div id="feed" class="tab-pane">
+            <div style="max-width:850px;">
                 @if (hasCompletedCourse)
                 {
-                    <div id="reviewFormContainer" style="background: #1e293b; padding: 25px; border-radius: 16px; border: 1px solid #38bdf8; margin-bottom: 30px;">
-                        <h3 style="margin-top: 0;">Ваш отзыв</h3>
-
+                    <div class="form-review">
+                        <h3 style="margin-top:0;">Оставить отзыв</h3>
                         @if (hasAlreadyReviewed)
                         {
-                            <div style="color: #fbbf24; background: rgba(251, 191, 36, 0.1); padding: 15px; border-radius: 12px; border: 1px solid #fbbf24; display: flex; align-items: center; gap: 12px;">
-                                <i class="fas fa-check-circle fa-lg"></i>
-                                <span>Вы уже оставили отзыв. Благодарим за ваше мнение!</span>
-                            </div>
+                            <p style="color:var(--success); font-weight:700;">Ваш отзыв уже принят!</p>
                         }
                         else
                         {
-                            <div class="star-rating">
-                                <input type="radio" id="star5" name="rating" value="5" /><label for="star5" class="fas fa-star"></label>
-                                <input type="radio" id="star4" name="rating" value="4" /><label for="star4" class="fas fa-star"></label>
-                                <input type="radio" id="star3" name="rating" value="3" /><label for="star3" class="fas fa-star"></label>
-                                <input type="radio" id="star2" name="rating" value="2" /><label for="star2" class="fas fa-star"></label>
-                                <input type="radio" id="star1" name="rating" value="1" /><label for="star1" class="fas fa-star"></label>
+                            <div class="stars-rate">
+                                @for (int i = 5; i >= 1; i--)
+                                {
+                                    <input type="radio" id="rt-@i" name="rating" value="@i" />
+
+                                    <label for="rt-@i" class="fas fa-star"></label>
+                                }
                             </div>
-                            <div style="margin: 15px 0; display: flex; align-items: center; gap: 10px; color: #cbd5e1;">
-                                <input type="checkbox" id="isRecommended" style="width: 18px; height: 18px; accent-color: #10b981;">
-                                <label for="isRecommended" style="cursor: pointer;">Рекомендую этот курс</label>
-                            </div>
-                            <textarea id="reviewText" class="review-input" rows="3" placeholder="Расскажите о своих впечатлениях..."></textarea>
-                            <button class="btn-enroll" style="margin-top: 15px;" onclick="submitReview()">Отправить отзыв</button>
+                            <label style="display:flex; align-items:center; gap:8px; margin-bottom:15px; cursor:pointer;">
+                                <input type="checkbox" id="recom" style="accent-color:var(--success); width:18px; height:18px;"> Рекомендую этот курс
+                            </label>
+                            <textarea id="revMsg" style="width:100%; height:100px; background:var(--bg-dark); border:1px solid var(--border); color:white; padding:15px; border-radius:12px; margin-bottom:15px;" placeholder="Что вам понравилось?"></textarea>
+                            <button class="btn-action" onclick="submitReview()">Отправить</button>
                         }
                     </div>
                 }
 
-                <div id="reviewsList">
+                <div id="reviews-container">
                     @if (Model.Reviews != null && Model.Reviews.Any())
                     {
-                        @foreach (var review in Model.Reviews.OrderByDescending(r => r.CreatedAt))
+                        @foreach (var r in Model.Reviews.OrderByDescending(x => x.CreatedAt))
                         {
-                            <div class="comment-card">
-                                <div class="user-avatar"><i class="fas fa-user" style="color: #94a3b8;"></i></div>
-                                <div style="flex: 1;">
-                                    <div style="display: flex; justify-content: space-between;">
-                                        <span class="reviewer-name" style="font-weight: 700; color: #38bdf8;">@review.UserLogin</span>
-                                        <span style="color: #fbbf24;">
-                                            @for (int i = 1; i <= 5; i++)
-                                            {
-                                                <i class="@(i <= review.Rating ? "fas" : "far") fa-star"></i>
-                                            }
-                                        </span>
-                                    </div>
-                                    <p style="margin: 10px 0; color: #cbd5e1;">@review.Text</p>
-                                    <small style="color: #64748b;">@review.CreatedAt.ToShortDateString()</small>
+                            <div class="rev-item">
+                                <div style="display:flex; justify-content:space-between;">
+                                    <span class="rev-user">@r.UserLogin</span>
+                                    <span class="rev-stars">@for (int i = 0; i < r.Rating; i++)
+                                        {
+                                            <i class="fas fa-star"></i>
+                                        }</span>
+                                </div>
+                                <p style="color:#cbd5e1; margin:10px 0;">@r.Text</p>
+                                <div style="display:flex; justify-content:space-between; align-items:center;">
+                                    @if (r.IsRecommended)
+                                    {
+                                        <small style="color:var(--success); font-weight:700;"><i class="fas fa-check"></i> Рекомендует</small>
+                                    }
+                                    <small style="color:var(--text-dim)">@r.CreatedAt.ToString("dd.MM.yyyy")</small>
                                 </div>
                             </div>
                         }
@@ -415,64 +626,33 @@
     </div>
 
     <script>
-        function openTab(evt, tabName) {
-            let i, tabPane, tabLinks;
-            tabPane = document.getElementsByClassName("tab-pane");
-            for (i = 0; i < tabPane.length; i++) tabPane[i].classList.remove("active");
-            tabLinks = document.getElementsByClassName("tab-link");
-            for (i = 0; i < tabLinks.length; i++) tabLinks[i].classList.remove("active");
-            document.getElementById(tabName).classList.add("active");
-            evt.currentTarget.classList.add("active");
+        function showTab(e, id) {
+            document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+            e.currentTarget.classList.add('active');
+            document.getElementById(id).classList.add('active');
         }
 
         async function submitReview() {
-            // "Живая" проверка перед отправкой по списку на странице
-            const currentLogin = "@currentUserLogin";
-            const existingReviews = document.querySelectorAll('.reviewer-name');
-            for (let res of existingReviews) {
-                if (res.innerText.trim() === currentLogin) {
-                    alert("Вы уже оставили отзыв к этому курсу.");
-                    return;
-                }
-            }
+            const rate = document.querySelector('input[name="rating"]:checked');
+            const msg = document.getElementById('revMsg').value;
+            const isRec = document.getElementById('recom').checked;
 
-            const ratingInput = document.querySelector('input[name="rating"]:checked');
-            const textInput = document.getElementById('reviewText');
-            const isRecCheckbox = document.getElementById('isRecommended');
+            if (!rate || !msg.trim()) { alert("Заполните оценку и текст"); return; }
 
-            if (!ratingInput || !textInput.value.trim()) {
-                alert("Пожалуйста, укажите оценку и напишите текст.");
-                return;
-            }
+            const data = new URLSearchParams();
+            data.append('courseId', '@Model.Id');
+            data.append('rating', rate.value);
+            data.append('text', msg);
+            data.append('isRecommended', isRec);
 
-            const formData = new URLSearchParams();
-            formData.append('courseId', '@Model.Id');
-            formData.append('rating', ratingInput.value);
-            formData.append('text', textInput.value);
-            formData.append('isRecommended', isRecCheckbox.checked);
+            const res = await fetch('/Course/AddReview', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': '@tokens.RequestToken' },
+                body: data
+            });
 
-            try {
-                const response = await fetch('/Course/AddReview', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                        'RequestVerificationToken': '@tokens.RequestToken'
-                    },
-                    body: formData
-                });
-
-                // ТАК КАК КОНТРОЛЛЕР ВОЗВРАЩАЕТ JSON:
-                const result = await response.json();
-
-                if (result.success) {
-                    location.reload();
-                } else {
-                    // Выводим сообщение об ошибке (например, "Вы уже оставили отзыв")
-                    alert(result.message);
-                }
-            } catch (error) {
-                alert("Ошибка соединения с сервером.");
-            }
+            if ((await res.json()).success) location.reload();
         }
     </script>
 </body>
