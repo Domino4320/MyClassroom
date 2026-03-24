@@ -21,30 +21,110 @@ namespace WebApplication2.Controllers
 
         public async Task<IActionResult> Index()
         {
-            var query = from course in _db.Courses
-                        where course.IsPublished == true
-                        join user in _db.Users on course.AuthorLogin equals user.Login
-                        select new CourseCardModel
-                        {
-                            Id = course.Id,
-                            Title = course.Title,
-                            Description = course.Description,
-                            Category = course.Category,
-                            CoverImagePath = string.IsNullOrEmpty(course.CoverImagePath)
-                                ? "/images/default-course.png"
-                                : (course.CoverImagePath.StartsWith("/") ? course.CoverImagePath : "/" + course.CoverImagePath),
-                            CreatedAt = course.CreatedAt,
-                            AuthorUsername = user.Username,
-                            // РСЃРїСЂР°РІР»СЏРµРј: РіР°СЂР°РЅС‚РёСЂСѓРµРј РЅР°Р»РёС‡РёРµ СЃР»РµС€Р° РІ РЅР°С‡Р°Р»Рµ
-                            AuthorAvatar = string.IsNullOrEmpty(user.Avatar)
-                                ? "/images/default_avatar.jpg"
-                                : (user.Avatar.StartsWith("/") ? user.Avatar : "/" + user.Avatar)
-                        };
+            // 1. Извлекаем логин пользователя из сессии
+            var userLogin = HttpContext.Session.GetString("Login");
 
-            var list = await query.ToListAsync();
-            return View(list);
+            // 2. Если пользователь НЕ авторизован — ставим флаг гостя и прерываем выполнение
+            if (string.IsNullOrEmpty(userLogin))
+            {
+                ViewBag.IsGuest = true;
+                return View();
+            }
+
+            // Пользователь авторизован
+            ViewBag.IsGuest = false;
+
+            // 3. Получаем список ID курсов, на которые пользователь уже записан (чтобы не предлагать их)
+            var enrolledData = await _db.Enrollments
+                .Where(e => e.UserLogin == userLogin)
+                .Select(e => new { e.CourseId, e.Course.Category })
+                .ToListAsync();
+
+            var enrolledIds = enrolledData.Select(x => x.CourseId).ToList();
+            var userCategories = enrolledData.Select(x => x.Category).Distinct().ToList();
+
+            // 4. ОПРЕДЕЛЯЕМ БАЗОВЫЙ ЗАПРОС (Base Query)
+            // Условия: Опубликован + Не куплен + Не мой (я не автор)
+            var baseQuery = _db.Courses
+                .Where(c => c.IsPublished)
+                .Where(c => !enrolledIds.Contains(c.Id))
+                .Where(c => c.AuthorLogin != userLogin)
+                .Select(c => new CourseCardModel
+                {
+                    Id = c.Id,
+                    Title = c.Title,
+                    Category = c.Category,
+                    CoverImagePath = c.CoverImagePath,
+                    // Подтягиваем данные автора напрямую из таблицы пользователей
+                    AuthorUsername = _db.Users
+                        .Where(u => u.Login == c.AuthorLogin)
+                        .Select(u => u.Username)
+                        .FirstOrDefault() ?? "Автор",
+                    AuthorAvatar = _db.Users
+                        .Where(u => u.Login == c.AuthorLogin)
+                        .Select(u => u.Avatar)
+                        .FirstOrDefault() ?? "/images/default_avatar.jpg",
+                    // Считаем рейтинг и процент рекомендаций
+                    AverageRating = c.Reviews.Any() ? Math.Round(c.Reviews.Average(r => r.Rating), 1) : 0,
+                    RecPercent = c.Reviews.Any()
+                        ? (int)((double)c.Reviews.Count(r => r.Rating >= 4) / c.Reviews.Count() * 100)
+                        : 0
+                });
+
+            // 5. ФОРМИРУЕМ СПИСКИ ДЛЯ ВЬЮ (по 8 курсов максимум)
+
+            // Блок 1: Продолжайте обучение (по категориям пользователя)
+            var categoryRecs = new List<CourseCardModel>();
+            if (userCategories.Any())
+            {
+                categoryRecs = await baseQuery
+                    .Where(c => userCategories.Contains(c.Category))
+                    .OrderByDescending(c => c.AverageRating)
+                    .Take(8)
+                    .ToListAsync();
+            }
+
+            // Блок 2: Высшая оценка (Рейтинг от 4.0)
+            var topRated = await baseQuery
+                .Where(c => c.AverageRating >= 4.0)
+                .OrderByDescending(c => c.AverageRating)
+                .Take(8)
+                .ToListAsync();
+
+            // Блок 3: Хиты платформы (Сортировка по количеству записей в Enrollments)
+            // Здесь мы делаем отдельную выборку, так как нужно считать данные из другой таблицы
+            var popular = await _db.Courses
+                .Where(c => c.IsPublished && !enrolledIds.Contains(c.Id) && c.AuthorLogin != userLogin)
+                .OrderByDescending(c => _db.Enrollments.Count(e => e.CourseId == c.Id))
+                .Select(c => new CourseCardModel
+                {
+                    Id = c.Id,
+                    Title = c.Title,
+                    Category = c.Category,
+                    CoverImagePath = c.CoverImagePath,
+                    AuthorUsername = _db.Users.Where(u => u.Login == c.AuthorLogin).Select(u => u.Username).FirstOrDefault() ?? "Автор",
+                    AuthorAvatar = _db.Users.Where(u => u.Login == c.AuthorLogin).Select(u => u.Avatar).FirstOrDefault() ?? "/images/default_avatar.jpg",
+                    AverageRating = c.Reviews.Any() ? Math.Round(c.Reviews.Average(r => r.Rating), 1) : 0,
+                    RecPercent = c.Reviews.Any() ? (int)((double)c.Reviews.Count(r => r.Rating >= 4) / c.Reviews.Count() * 100) : 0
+                })
+                .Take(8)
+                .ToListAsync();
+
+            // Блок 4: Студенты рекомендуют (Высокий процент рекомендаций)
+            var highRec = await baseQuery
+                .Where(c => c.RecPercent >= 70)
+                .OrderByDescending(c => c.RecPercent)
+                .Take(8)
+                .ToListAsync();
+
+            // Передаем всё во View через ViewBag
+            ViewBag.CategoryRecs = categoryRecs;
+            ViewBag.TopRated = topRated;
+            ViewBag.Popular = popular;
+            ViewBag.HighRec = highRec;
+
+            return View();
         }
-
         [HttpPost]
         public async Task<IActionResult> UploadAvatar(IFormFile Avatar)
         {

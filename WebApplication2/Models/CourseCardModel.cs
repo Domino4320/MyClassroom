@@ -13,5 +13,7 @@
         // Обязательные поля для связи с твоей CourseModel
         public DateTime CreatedAt { get; set; }
         public bool IsPublished { get; set; }
+        public double AverageRating { get; set; }
+        public int RecPercent { get; set; }
     }
 }

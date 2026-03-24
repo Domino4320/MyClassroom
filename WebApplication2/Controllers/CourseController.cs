@@ -20,11 +20,12 @@ namespace WebApplication2.Controllers
         {
             // ДОБАВЛЕНО: .Include(c => c.Author) для вывода профиля преподавателя
             var course = await _db.Courses
+        .Include(c => c.Author)
         .Include(c => c.Modules)
             .ThenInclude(m => m.Lessons)
+                .ThenInclude(l => l.Steps) // <-- ОБЯЗАТЕЛЬНО ДОБАВИТЬ ЭТУ СТРОКУ
         .Include(c => c.Reviews)
-        .Include(c => c.Author) // ВАЖНО: Подгружаем данные преподавателя по логину
-        .FirstOrDefaultAsync(c => c.Id == id);
+        .FirstOrDefaultAsync(m => m.Id == id);
 
             if (course == null) return NotFound();
 
