@@ -78,6 +78,10 @@
             background: rgba(3, 169, 244, 0.6);
         }
 
+        .btn-admin-tool.grading {
+            background: rgba(255, 193, 7, 0.6); /* Янтарный цвет для проверки */
+        }
+
         .btn-admin-tool.delete {
             background: rgba(244, 67, 54, 0.6);
         }
@@ -144,11 +148,10 @@
         display: block;
     }
 
-    /* ФУТЕР С СОХРАНЕНИЕМ МЕСТА */
     .card-action-footer {
         padding: 20px 24px 24px 24px;
         border-top: 1px solid rgba(255, 255, 255, 0.05);
-        min-height: 92px; /* Высота кнопки + паддинги */
+        min-height: 92px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -183,7 +186,6 @@
         ? "/images/default_avatar.jpg" : Model.AuthorAvatar;
     }
 
-    @* Баннер: клик заблокирован для автора *@
     <div class="card-banner"
          style="background-image: url('@bannerImg'); @(!isEditable ? "cursor:pointer;" : "cursor:default;")"
     @if (!isEditable)
@@ -200,6 +202,16 @@
                 </span>
 
                 <div class="card-admin-overlay">
+                @* Кнопка проверки тестов - доступна всегда для автора *@
+                    <a asp-controller="Teacher" asp-action="GradeCourse" asp-route-id="@Model.Id"
+                       class="btn-admin-tool grading" title="Проверить ответы студентов"
+                       onclick="event.stopPropagation();">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 11l3 3L22 4" />
+                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+                        </svg>
+                    </a>
+
                 @if (!Model.IsPublished)
                 {
                             <a asp-controller="CreateCourse" asp-action="Edit" asp-route-id="@Model.Id"
@@ -220,6 +232,7 @@
                                 </svg>
                             </a>
                 }
+
                     <button onclick="deleteCourse(@Model.Id); event.stopPropagation();" class="btn-admin-tool delete" title="Удалить курс">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M3 6H5H21" /><path d="M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z" /><path d="M10 11V17" /><path d="M14 11V17" />
@@ -229,7 +242,6 @@
         }
     </div>
 
-    @* Контент *@
     <div class="card-main-content">
         <span class="cat-badge">@Model.Category</span>
         <h3 class="card-course-title">@Model.Title</h3>
@@ -239,7 +251,6 @@
         </p>
     </div>
 
-    @* Футер: сохраняет высоту, но пустой для преподавателя *@
     <div class="card-action-footer">
         @if (!isEditable)
         {

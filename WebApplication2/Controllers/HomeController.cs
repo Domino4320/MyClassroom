@@ -152,7 +152,6 @@ namespace WebApplication2.Controllers
                 await Avatar.CopyToAsync(stream);
             }
 
-            // 2. Обновление БД
             var user = await _db.Users.FirstOrDefaultAsync(u => u.Login == login);
             if (user != null)
             {
@@ -160,10 +159,7 @@ namespace WebApplication2.Controllers
                 user.Avatar = newAvatarPath;
 
                 await _db.SaveChangesAsync();
-
-                // 3. ОБНОВЛЕНИЕ СЕССИИ + ПРИНУДИТЕЛЬНЫЙ COMMIT
                 HttpContext.Session.SetString("Avatar", newAvatarPath);
-                // Это гарантирует, что сессия запишется в хранилище ДО того, как вернется JSON ответ
                 await HttpContext.Session.CommitAsync();
 
                 return Json(new { avatar = newAvatarPath });

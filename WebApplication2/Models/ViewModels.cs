@@ -27,15 +27,18 @@
     {
         public int LessonId { get; set; }
         public string Title { get; set; }
-        public List<StepUpdateDto> Steps { get; set; } = new();
+        public List<StepUpdateDto> Steps { get; set; }
     }
 
     public class StepUpdateDto
     {
         public int Id { get; set; }
-        public string Title { get; set; }
+        public string? Title { get; set; }
         public string? TextContent { get; set; }
         public string? VideoUrl { get; set; }
         public bool IsMultipleChoice { get; set; }
+        public bool IsManualCheck { get; set; }
+        public string? CorrectTextAnswer { get; set; }
+        public int MaxPoints { get; set; }
     }
 }

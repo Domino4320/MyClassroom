@@ -3,7 +3,14 @@
 @{
     Layout = null;
     var tokens = Antiforgery.GetAndStoreTokens(Context);
+
+    // Состояние текущего шага
     var isStepCompleted = Model.CompletedStepIds.Contains(Model.CurrentStep.Id);
+    var isQuiz = Model.CurrentStep.Type == WebApplication2.Models.StepType.Quiz;
+
+    // ПРИНУДИТЕЛЬНОЕ РАЗДЕЛЕНИЕ:
+    // Если в БД стоит флаг IsManualCheck, мы ИГНОРИРУЕМ наличие вариантов и показываем текстовое поле.
+    var isManualInput = isQuiz && Model.CurrentStep.IsManualCheck;
 }
 
 <!DOCTYPE html>
@@ -11,217 +18,178 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Обучение - @Model.CurrentStep.Title</title>
+    <title>@Model.CurrentStep.Title | Обучение</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
     <style>
-        /* Базовые стили сохранены для дизайна, исправлены только функциональные моменты */
+        :root {
+            --bg-dark: #0f172a;
+            --bg-sidebar: #1e293b;
+            --accent-blue: #38bdf8;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
-        html, body {
-            height: 100%;
-            width: 100%;
-            overflow: hidden;
-            background-color: #0f172a;
-            color: #e2e8f0;
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
             font-family: 'Inter', sans-serif;
-        }
-
-        .learn-container {
-            display: flex;
             height: 100vh;
-            width: 100%;
+            display: flex;
+            overflow: hidden;
         }
 
+
+        /* --- Sidebar --- */
         .learn-sidebar {
-            width: 300px;
-            background: #1e293b;
-            border-right: 1px solid #334155;
+            width: 320px;
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border-color);
             display: flex;
             flex-direction: column;
             flex-shrink: 0;
         }
 
-        .back-to-main {
-            padding: 15px 20px;
-            border-bottom: 1px solid #334155;
+        .back-area {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
         }
 
         .btn-back {
-            color: #94a3b8;
+            color: var(--text-muted);
             text-decoration: none;
-            font-size: 0.9rem;
             display: flex;
             align-items: center;
             gap: 8px;
-            transition: 0.2s;
+            font-size: 0.9rem;
+            transition: var(--transition);
         }
 
             .btn-back:hover {
-                color: #38bdf8;
+                color: var(--accent-blue);
             }
 
-        .sidebar-header {
-            padding: 20px;
-            font-weight: bold;
-            border-bottom: 1px solid #334155;
-            color: #38bdf8;
-        }
-
-        .modules-list {
+        .modules-container {
             overflow-y: auto;
             flex-grow: 1;
+            padding: 20px 0;
         }
 
-        .module-item {
-            padding: 10px 0;
+        .module-group {
+            margin-bottom: 25px;
         }
 
-        .module-title {
-            padding: 8px 20px;
-            font-size: 0.85rem;
+        .module-label {
+            padding: 0 20px 10px;
+            font-size: 0.75rem;
+            font-weight: 700;
             text-transform: uppercase;
-            color: #94a3b8;
+            color: #64748b;
+            letter-spacing: 0.05em;
         }
 
-        .lesson-link {
+        .lesson-item {
             display: block;
-            padding: 10px 20px;
+            padding: 12px 20px;
             color: #cbd5e1;
             text-decoration: none;
-            transition: 0.2s;
             font-size: 0.95rem;
+            border-left: 3px solid transparent;
+            transition: var(--transition);
         }
 
-            .lesson-link:hover:not(.locked) {
-                background: #334155;
+            .lesson-item:hover {
+                background: rgba(255,255,255,0.05);
             }
 
-            .lesson-link.active {
-                background: #0ea5e9;
-                color: white;
+            .lesson-item.active {
+                background: rgba(56, 189, 248, 0.1);
+                color: var(--accent-blue);
+                border-left-color: var(--accent-blue);
+                font-weight: 600;
             }
 
-            .lesson-link.locked {
-                opacity: 0.5;
-                cursor: not-allowed;
-                color: #64748b;
-            }
 
-        .learn-main {
+        /* --- Main Content --- */
+        .learn-content {
             flex-grow: 1;
+            overflow-y: auto;
             display: flex;
             flex-direction: column;
-            height: 100%;
-            overflow-y: auto;
-            background-color: #0f172a;
+            position: relative;
         }
 
-        .steps-top-nav {
+        .top-nav {
             position: sticky;
             top: 0;
-            z-index: 10;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 20px;
             display: flex;
             justify-content: center;
             gap: 12px;
-            padding: 15px;
-            background: #1e293b;
-            border-bottom: 1px solid #334155;
+            border-bottom: 1px solid var(--border-color);
+            z-index: 10;
         }
 
         .step-dot {
-            width: 14px;
-            height: 14px;
-            border-radius: 4px;
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
             background: #475569;
-            transition: 0.3s;
-            border: 2px solid transparent;
-            text-decoration: none;
+            transition: var(--transition);
         }
 
             .step-dot.active {
-                border-color: #38bdf8;
-                background: #38bdf8;
-                transform: scale(1.2);
+                background: var(--accent-blue);
+                transform: scale(1.3);
             }
 
             .step-dot.completed {
-                background: #10b981;
+                background: var(--accent-green);
             }
 
-        .step-content-area {
-            max-width: 850px;
-            margin: 40px auto 0 auto;
-            padding: 0 20px;
+        .main-scroll-area {
+            max-width: 900px;
             width: 100%;
+            margin: 0 auto;
+            padding: 60px 30px;
         }
 
-        .step-body {
-            background: #1e293b;
-            padding: 30px;
-            border-radius: 12px;
-            border: 1px solid #334155;
-            line-height: 1.6;
+        .content-card {
+            background: var(--bg-sidebar);
+            border-radius: 24px;
+            padding: 45px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         }
 
-        .quiz-option {
-            display: flex;
-            align-items: center;
-            background: #0f172a;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 10px;
-            cursor: pointer;
-            border: 1px solid #334155;
-            transition: 0.2s;
-            user-select: none;
-        }
 
-            .quiz-option:hover:not(.disabled) {
-                border-color: #475569;
-            }
-
-            .quiz-option input {
-                margin-right: 12px;
-                width: 18px;
-                height: 18px;
-                cursor: pointer;
-            }
-
-            .quiz-option.active-selection {
-                border-color: #38bdf8;
-                background: rgba(56, 189, 248, 0.1);
-            }
-
-            .quiz-option.correct {
-                border-color: #10b981 !important;
-                background: rgba(16, 185, 129, 0.1);
-            }
-
-            .quiz-option.wrong {
-                border-color: #ef4444 !important;
-                background: rgba(239, 68, 68, 0.1);
-            }
-
-            .quiz-option.disabled {
-                cursor: default;
-                pointer-events: none;
-                opacity: 0.9;
-            }
-
-        .video-wrapper {
+        /* Video Area */
+        .video-container {
             position: relative;
             padding-bottom: 56.25%;
             height: 0;
-            margin-bottom: 25px;
+            border-radius: 16px;
             overflow: hidden;
-            border-radius: 12px;
+            margin-bottom: 35px;
             background: #000;
         }
 
-            .video-wrapper iframe {
+            .video-container iframe {
                 position: absolute;
                 top: 0;
                 left: 0;
@@ -229,369 +197,333 @@
                 height: 100%;
             }
 
-        .step-footer {
-            margin-top: 30px;
+        .step-title {
+            font-size: 2.2rem;
+            font-weight: 800;
+            margin-bottom: 25px;
+            color: #f8fafc;
+        }
+
+        .html-text {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: #cbd5e1;
+            margin-bottom: 40px;
+        }
+
+
+        /* Quiz Styles */
+        .quiz-wrapper {
+            margin-top: 40px;
+            padding-top: 40px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .quiz-option {
             display: flex;
-            justify-content: flex-end;
-            min-height: 50px;
             align-items: center;
-        }
-
-        .btn-next {
-            background: #0ea5e9;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-weight: 600;
+            padding: 18px 24px;
+            background: var(--bg-dark);
+            border: 2px solid var(--border-color);
+            border-radius: 14px;
+            margin-bottom: 12px;
             cursor: pointer;
-            transition: 0.3s;
+            transition: var(--transition);
         }
 
-            .btn-next:hover:not(:disabled) {
-                background: #0284c7;
+            .quiz-option:hover:not(.disabled) {
+                border-color: #475569;
+                transform: translateX(4px);
             }
 
-            .btn-next:disabled {
-                opacity: 0.6;
+            .quiz-option.selected {
+                border-color: var(--accent-blue);
+                background: rgba(56, 189, 248, 0.05);
+            }
+
+            .quiz-option.correct {
+                border-color: var(--accent-green);
+                background: rgba(16, 185, 129, 0.1);
+            }
+
+            .quiz-option.wrong {
+                border-color: var(--accent-red);
+                background: rgba(239, 68, 68, 0.1);
+            }
+
+            .quiz-option input {
+                margin-right: 15px;
+                width: 18px;
+                height: 18px;
+                accent-color: var(--accent-blue);
+            }
+
+
+        /* Manual Input Area */
+        .manual-textarea {
+            width: 100%;
+            min-height: 200px;
+            background: var(--bg-dark);
+            border: 2px solid var(--border-color);
+            border-radius: 16px;
+            color: #fff;
+            padding: 20px;
+            font-family: inherit;
+            font-size: 1rem;
+            resize: vertical;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+            .manual-textarea:focus {
+                border-color: var(--accent-blue);
+            }
+
+            .manual-textarea:disabled {
+                opacity: 0.7;
                 cursor: not-allowed;
             }
 
-        .finish-message {
-            color: #10b981;
-            font-weight: bold;
+        .action-footer {
+            margin-top: 40px;
             display: flex;
+            justify-content: flex-end;
             align-items: center;
-            gap: 10px;
-            background: rgba(16, 185, 129, 0.1);
-            padding: 15px 25px;
-            border-radius: 8px;
-            border: 1px solid rgba(16, 185, 129, 0.2);
+            gap: 20px;
         }
 
-        .comments-section {
-            max-width: 850px;
-            margin: 50px auto 0 auto;
-            width: 100%;
-            padding: 0 20px 60px 20px;
-        }
-
-        .comment-card {
-            background: #1e293b;
-            border: 1px solid #334155;
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 15px;
-        }
-
-        .comment-avatar {
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 1px solid #475569;
-            background: #334155;
-        }
-
-        .author-badge {
-            background: #0ea5e9;
+        .btn-primary {
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
             color: white;
-            font-size: 0.65rem;
-            padding: 2px 6px;
-            border-radius: 4px;
-            text-transform: uppercase;
-            font-weight: 800;
+            border: none;
+            padding: 14px 32px;
+            border-radius: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition);
         }
 
-        .comment-input {
-            width: 100%;
-            background: #0f172a;
-            border: 1px solid #334155;
-            color: white;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 10px;
-            resize: none;
-            outline: none;
-        }
-
-            .comment-input:focus {
-                border-color: #38bdf8;
+            .btn-primary:hover:not(:disabled) {
+                transform: translateY(-2px);
+                box-shadow: 0 10px 20px rgba(2, 132, 199, 0.3);
             }
+
+            .btn-primary:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
+
+        #feedback-msg {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 8px;
+            display: none;
+            font-weight: 500;
+        }
+
+            #feedback-msg.error {
+                background: rgba(239, 68, 68, 0.1);
+                color: var(--accent-red);
+            }
+
     </style>
 </head>
 <body>
 
-    <div class="learn-container">
-        <aside class="learn-sidebar">
-            <div class="back-to-main">
-                <a href="/" class="btn-back"><span>←</span> На главную</a>
-            </div>
-            <div class="sidebar-header">Содержание курса</div>
-            <div class="modules-list">
-                @foreach (var module in Model.AllModules.OrderBy(m => m.Order))
+    <aside class="learn-sidebar">
+        <div class="back-area">
+            <a href="/Course/Details/@Model.CourseId" class="btn-back">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
+                Вернуться к курсу
+            </a>
+        </div>
+        <div class="modules-container">
+            @foreach (var module in Model.AllModules.OrderBy(m => m.Order))
+            {
+                <div class="module-group">
+                    <div class="module-label">@module.Title</div>
+                    @foreach (var lesson in module.Lessons.OrderBy(l => l.Order))
+                    {
+                        var firstStepId = lesson.Steps.OrderBy(s => s.Order).FirstOrDefault()?.Id ?? 0;
+                        <a href="?courseId=@Model.CourseId&stepId=@firstStepId"  
+                           class="lesson-item @(lesson.Id == Model.CurrentStep.LessonId ? "active" : "")">
+                            @lesson.Title
+                        </a>
+                    }
+                </div>
+            }
+        </div>
+    </aside>
+
+    <main class="learn-content">
+        <nav class="top-nav">
+            @foreach (var step in Model.CurrentStep.Lesson.Steps.OrderBy(s => s.Order))
+            {
+                <a href="?courseId=@Model.CourseId&stepId=@step.Id"  
+                   class="step-dot @(step.Id == Model.CurrentStep.Id ? "active" : "") @(Model.CompletedStepIds.Contains(step.Id) ? "completed" : "")"
+                   title="@step.Title"></a>
+            }
+        </nav>
+
+        <div class="main-scroll-area">
+            <div class="content-card">
+                <h1 class="step-title">@Model.CurrentStep.Title</h1>
+
+                @if (!string.IsNullOrEmpty(Model.CurrentStep.VideoUrl))
                 {
-                    <div class="module-item">
-                        <div class="module-title">@module.Title</div>
-                        @foreach (var lesson in module.Lessons.OrderBy(l => l.Order))
-                        {
-                            var firstStep = lesson.Steps.OrderBy(s => s.Order).FirstOrDefault();
-                            var firstStepId = firstStep?.Id ?? 0;
-
-                            // Урок доступен, если он текущий или если первый шаг урока пройден
-                            var isCurrentLesson = lesson.Id == Model.CurrentStep.LessonId;
-                            var isLessonStarted = Model.CompletedStepIds.Contains(firstStepId);
-                            var isLocked = !isCurrentLesson && !isLessonStarted;
-
-                            <a href="@(isLocked ? "javascript:void(0)" : $"?courseId={Model.CourseId}&stepId={firstStepId}")"
-                               class="lesson-link @(isCurrentLesson ? "active" : "") @(isLocked ? "locked" : "")">
-                                @lesson.Title @(isLocked ? "🔒" : "")
-                            </a>
+                    <div class="video-container">
+                        @{
+                            var vidId = "";
+                            var url = Model.CurrentStep.VideoUrl;
+                            if (url.Contains("v=")) vidId = url.Split("v=")[1].Split("&")[0];
+                            else if (url.Contains("youtu.be/")) vidId = url.Split("be/")[1].Split("?")[0];
                         }
+                        <iframe src="https://www.youtube.com/embed/@vidId" frameborder="0" allowfullscreen></iframe>
                     </div>
                 }
-            </div>
-        </aside>
 
-        <main class="learn-main">
-            <nav class="steps-top-nav">
-                @foreach (var step in Model.CurrentStep.Lesson.Steps.OrderBy(s => s.Order))
+                <div class="html-text">@Html.Raw(Model.CurrentStep.TextContent)</div>
+
+                @if (isQuiz)
                 {
-                    var isDone = Model.CompletedStepIds.Contains(step.Id);
-                    var isCurrent = step.Id == Model.CurrentStep.Id;
-                    <a href="?courseId=@Model.CourseId&stepId=@step.Id"
-                       class="step-dot @(isCurrent ? "active" : "") @(isDone ? "completed" : "")"
-                       title="@step.Title"></a>
-                }
-            </nav>
+                    <div class="quiz-wrapper">
+                        <h3 style="margin-bottom: 20px; color: var(--accent-blue);">Практическое задание</h3>
 
-            <div class="step-content-area">
-                <div class="step-body">
-                    <h2 style="margin-bottom: 15px;">@Model.CurrentStep.Title</h2>
-                    <div style="height: 1px; background: #334155; margin-bottom: 25px;"></div>
-
-                    <div class="content-render">
-                        @if (!string.IsNullOrEmpty(Model.CurrentStep.VideoUrl))
+                        @if (isManualInput)
                         {
-                            <div class="video-wrapper">
-                                @{
-                                    var videoId = "";
-                                    var url = Model.CurrentStep.VideoUrl;
-                                    if (url.Contains("v=")) { videoId = url.Split("v=")[1].Split("&")[0]; }
-                                    else if (url.Contains("youtu.be/")) { videoId = url.Split("be/")[1].Split("?")[0]; }
-                                    var embedUrl = !string.IsNullOrEmpty(videoId) ? "https://www.youtube.com/embed/" + videoId : "";
-                                }
-                                @if (!string.IsNullOrEmpty(embedUrl))
-                                {
-                                    <iframe src="@embedUrl" frameborder="0" allowfullscreen></iframe>
-                                }
+                            <div class="manual-block">
+                                <p style="margin-bottom: 15px;">Введите ваш ответ ниже. Преподаватель проверит его в ближайшее время.</p>
+                                <textarea id="manualAnswer" class="manual-textarea"  
+                                          placeholder="Напишите здесь ваше решение или ответ..."  
+                                @(isStepCompleted ? "disabled" : "")></textarea>
                             </div>
                         }
-
-                        <div class="text-content" style="margin-bottom: 20px;">
-                            @Html.Raw(Model.CurrentStep.TextContent)
-                        </div>
-
-                        @if (Model.CurrentStep.Type == WebApplication2.Models.StepType.Quiz)
+                        else
                         {
-                            <p style="margin-bottom: 15px; font-weight: 500; color: #94a3b8;">
-                                @(isStepCompleted ? "Тест пройден. Правильные ответы:" : (Model.CurrentStep.IsMultipleChoice ? "Выберите все верные ответы:" : "Выберите один правильный ответ:"))
-                            </p>
-                            <div id="quiz-container">
-                                @foreach (var opt in Model.CurrentStep.QuizOptions)
+                            <p style="margin-bottom: 20px;">@(Model.CurrentStep.IsMultipleChoice ? "Выберите все правильные варианты:" : "Выберите один правильный вариант:")</p>
+                            <div id="options-list">
+                                @foreach (var opt in Model.CurrentStep.QuizOptions ?? new List<WebApplication2.Models.QuizOptionModel>())
                                 {
-                                    var isCorrectAndDone = isStepCompleted && opt.IsCorrect;
-                                    <label class="quiz-option @(isCorrectAndDone ? "correct" : "") @(isStepCompleted ? "disabled" : "")" data-option-id="@opt.Id">
-                                        <input type="@(Model.CurrentStep.IsMultipleChoice ? "checkbox" : "radio")"
-                                               name="quiz"
-                                               value="@opt.Id"
-                                        @(isStepCompleted ? "disabled" : "")
-                                        @(isCorrectAndDone ? "checked" : "")>
+                                    <label class="quiz-option @(isStepCompleted && opt.IsCorrect ? "correct" : "") @(isStepCompleted ? "disabled" : "")">
+                                        <input type="@(Model.CurrentStep.IsMultipleChoice ? "checkbox" : "radio")"  
+                                               name="quiz-opt" value="@opt.Id"  
+                                        @(isStepCompleted ? "disabled" : "") 
+                                        @(isStepCompleted && opt.IsCorrect ? "checked" : "")>
                                         <span>@opt.Text</span>
                                     </label>
                                 }
                             </div>
                         }
+                        <div id="feedback-msg"></div>
                     </div>
-
-                    <div class="step-footer">
-                        @if (Model.IsLastStep && isStepCompleted)
-                        {
-                            <div class="finish-message">
-                                <span>🎉</span> Курс завершен! &nbsp; <a href="/Course/Details/@Model.CourseId" style="color:#38bdf8; text-decoration:none;">К описанию курса</a>
-                            </div>
-                        }
-                        else
-                        {
-                            <button id="action-btn" class="btn-next"
-                                    onclick="@(Model.CurrentStep.Type == WebApplication2.Models.StepType.Quiz && !isStepCompleted ? $"handleQuizSubmit({Model.CurrentStep.Id})" : $"nextStep({Model.CurrentStep.Id})")">
-                                @if (isStepCompleted)
-                                {
-                                    <span>Продолжить</span>
-                                }
-                                else if (Model.IsLastStep)
-                                {
-                                    <span>Завершить обучение</span>
-                                }
-                                else if (Model.CurrentStep.Type == WebApplication2.Models.StepType.Quiz)
-                                {
-                                    <span>Проверить ответ</span>
-                                }
-                                else
-                                {
-                                    <span>Продолжить</span>
-                                }
-                            </button>
-                        }
-                    </div>
-                </div>
-            </div>
-
-            <section class="comments-section">
-                <h3 style="margin-bottom: 20px;">Обсуждения</h3>
-                <textarea id="commentText" class="comment-input" rows="3" placeholder="Напишите ваш комментарий..."></textarea>
-                <div style="display: flex; justify-content: flex-end;">
-                    <button id="send-comment-btn" class="btn-next" style="padding: 8px 20px; font-size: 0.9rem;" onclick="sendComment()">Отправить</button>
-                </div>
-                <div id="commentsList" style="margin-top: 30px;">
-                    @foreach (var comment in Model.Comments.OrderByDescending(c => c.CreatedAt))
-                    {
-                        <div class="comment-card">
-                            <div style="display: flex; gap: 12px; align-items: flex-start;">
-                                @* Исправлен вывод аватара: используем поле Avatar из вашей модели UserModel *@
-                                <img src="@(string.IsNullOrEmpty(comment.User?.Avatar) ? Url.Content("~/images/default_avatar.jpg") : comment.User.Avatar)"
-                                     class="comment-avatar"
-                                     alt="avatar"
-                                     onerror="this.src='/images/default_avatar.jpg';" />
-
-                                <div style="flex-grow: 1;">
-                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                                        <div style="display: flex; align-items: center; gap: 8px;">
-                                            @* Исправлено: один символ @ вместо трех *@
-                                            <span style="color: #38bdf8; font-weight: bold; font-size: 0.95rem;">@comment.UserLogin</span>
-
-                                            @if (comment.UserLogin == Model.CurrentStep.Lesson.Module.Course.AuthorLogin)
-                                            {
-                                                <span class="author-badge">Автор</span>
-                                            }
-                                        </div>
-                                        <span style="color: #64748b; font-size: 0.8rem;">@comment.CreatedAt.ToString("g")</span>
-                                    </div>
-                                    <div style="color: #cbd5e1; font-size: 0.95rem; line-height: 1.5;">@comment.Text</div>
-                                </div>
-                            </div>
-                        </div>
-                    }
-                </div>
-            </section>
-        </main>
-    </div>
-
-    <script>
-        const antiForgeryToken = '@tokens.RequestToken';
-
-        // Подсветка выбранных вариантов в тесте
-        document.addEventListener('change', function (e) {
-            if (e.target.name === 'quiz' && !e.target.disabled) {
-                const container = e.target.closest('#quiz-container');
-                const label = e.target.closest('.quiz-option');
-
-                if (e.target.type === 'radio') {
-                    container.querySelectorAll('.quiz-option').forEach(el => el.classList.remove('active-selection'));
                 }
 
-                if (e.target.checked) label.classList.add('active-selection');
-                else label.classList.remove('active-selection');
+                <div class="action-footer">
+                    @if (Model.IsLastStep && isStepCompleted)
+                    {
+                        <div style="font-weight: 700; color: var(--accent-green);">🎉 Молодцы! Курс завершен.</div>
+                    }
+                    else
+                    {
+                        <button id="main-btn" class="btn-primary" onclick="processStep()">
+                            @if (isStepCompleted)
+                            {
+                                <span>Следующий шаг</span>
+                            }
+                            else if (isQuiz)
+                            {
+                                <span>Проверить</span>
+                            }
+                            else
+                            {
+                                <span>Завершить шаг</span>
+                            }
+                        </button>
+                    }
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const STEP_DATA = {
+            id: @Model.CurrentStep.Id,
+            courseId: @Model.CourseId,
+            isQuiz: @isQuiz.ToString().ToLower(),
+            isManual: @isManualInput.ToString().ToLower(),
+            isCompleted: @isStepCompleted.ToString().ToLower(),
+            token: '@tokens.RequestToken'
+        };
+
+        // Подсветка выбранных вариантов
+        document.addEventListener('change', (e) => {
+            if (e.target.name === 'quiz-opt') {
+                const parent = e.target.closest('.quiz-option');
+                if (e.target.type === 'radio') {
+                    document.querySelectorAll('.quiz-option').forEach(el => el.classList.remove('selected'));
+                }
+                parent.classList.toggle('selected', e.target.checked);
             }
         });
 
-        function handleQuizSubmit(stepId) {
-            const selectedInputs = document.querySelectorAll('input[name="quiz"]:checked');
-            if (selectedInputs.length === 0) {
-                alert("Пожалуйста, выберите ответ.");
+        async function processStep() {
+            const btn = document.getElementById('main-btn');
+
+            // 1. Если шаг уже пройден — просто переходим дальше
+            if (STEP_DATA.isCompleted) {
+                const nextStep = document.querySelector('.step-dot.active + .step-dot');
+                if (nextStep) {
+                    location.href = nextStep.href;
+                } else {
+                    location.href = "/Course/Details/" + STEP_DATA.courseId;
+                }
                 return;
             }
-            const ids = Array.from(selectedInputs).map(i => parseInt(i.value));
-            saveProgress(stepId, ids);
-        }
 
-        function nextStep(stepId) {
-            // Если шаг уже пройден, просто идем дальше по точкам навигации
-            if (@isStepCompleted.ToString().ToLower()) {
-                const nextDot = document.querySelector('.step-dot.active + .step-dot');
-                if (nextDot) {
-                    window.location.href = nextDot.href;
-                    return;
+            // 2. Сбор данных
+            const params = new URLSearchParams();
+            params.append('stepId', STEP_DATA.id);
+
+            if (STEP_DATA.isQuiz) {
+                if (STEP_DATA.isManual) {
+                    const text = document.getElementById('manualAnswer').value.trim();
+                    if (!text) return alert("Пожалуйста, введите ответ перед отправкой.");
+                    params.append('manualAnswer', text);
+                } else {
+                    const selected = document.querySelectorAll('input[name="quiz-opt"]:checked');
+                    if (selected.length === 0) return alert("Выберите хотя бы один вариант ответа.");
+                    selected.forEach(s => params.append('selectedOptionIds', s.value));
                 }
             }
-            saveProgress(stepId, []);
-        }
 
-        function saveProgress(stepId, selectedOptionIds) {
-            const btn = document.getElementById('action-btn');
+            // 3. Отправка
             btn.disabled = true;
-            btn.innerText = "Загрузка...";
+            try {
+                const response = await fetch('/Course/CompleteStep', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'RequestVerificationToken': STEP_DATA.token
+                    },
+                    body: params
+                });
 
-            const formData = new URLSearchParams();
-            formData.append('stepId', stepId);
-            selectedOptionIds.forEach(id => formData.append('selectedOptionIds', id));
+                const result = await response.json();
 
-            fetch('/Course/CompleteStep', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'RequestVerificationToken': antiForgeryToken
-                },
-                body: formData
-            })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        if (data.nextStepId) {
-                            window.location.href = `?courseId=@Model.CourseId&stepId=${data.nextStepId}`;
-                        } else {
-                            location.reload(); // Перезагрузка для показа сообщения о финише
-                        }
-                    } else {
-                        alert(data.message || "Ошибка. Возможно, вы выбрали неверные ответы.");
-                        btn.disabled = false;
-                        btn.innerText = "Проверить еще раз";
-                    }
-                })
-                .catch(err => {
-                    console.error(err);
+                if (result.success) {
+                    location.reload();
+                } else {
+                    const fb = document.getElementById('feedback-msg');
+                    fb.className = 'error';
+                    fb.innerText = result.message || "Неверный ответ. Попробуйте еще раз!";
+                    fb.style.display = 'block';
                     btn.disabled = false;
-                });
-        }
-
-        function sendComment() {
-            const textEl = document.getElementById('commentText');
-            const btn = document.getElementById('send-comment-btn');
-            const text = textEl.value.trim();
-
-            if (!text) return;
-
-            btn.disabled = true;
-            const formData = new URLSearchParams();
-            formData.append('stepId', '@Model.CurrentStep.Id');
-            formData.append('text', text);
-
-            fetch('/Course/AddComment', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'RequestVerificationToken': antiForgeryToken
-                },
-                body: formData
-            })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) location.reload();
-                    else {
-                        alert("Ошибка при отправке");
-                        btn.disabled = false;
-                    }
-                });
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Ошибка при отправке данных.");
+                btn.disabled = false;
+            }
         }
     </script>
 </body>

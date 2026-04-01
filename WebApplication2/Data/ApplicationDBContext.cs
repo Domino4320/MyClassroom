@@ -22,6 +22,7 @@ namespace WebApplication2.Data
         public DbSet<CommentModel> Comments { get; set; }
         public DbSet<UserProgressModel> Progress { get; set; }
         public DbSet<CourseReviewModel> CourseReviews { get; set; }
+        public DbSet<StepSubmissionModel> StepSubmissions { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

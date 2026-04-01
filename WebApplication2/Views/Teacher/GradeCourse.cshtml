@@ -1,0 +1,247 @@
+﻿@model IEnumerable<WebApplication2.Controllers.GradingViewModel>
+
+@{
+    ViewData["Title"] = "Проверка работ";
+}
+
+<style>
+    body {
+        background-color: #0a0f1a;
+        color: #e3f2fd;
+        font-family: 'Segoe UI', sans-serif;
+    }
+
+    .grading-header {
+        padding: 40px 0;
+        background: linear-gradient(180deg, #162031 0%, #0a0f1a 100%);
+        border-bottom: 1px solid rgba(79, 195, 247, 0.1);
+        margin-bottom: 30px;
+    }
+
+    .submission-card {
+        background: #162031;
+        border-radius: 20px;
+        border: 1px solid rgba(79, 195, 247, 0.15);
+        padding: 25px;
+        margin-bottom: 25px;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+
+        .submission-card:hover {
+            border-color: rgba(79, 195, 247, 0.4);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+    .student-info {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+
+    .avatar-placeholder {
+        width: 45px;
+        height: 45px;
+        background: #1e293b;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #4fc3f7;
+        font-weight: bold;
+        border: 1px solid rgba(79, 195, 247, 0.3);
+    }
+
+    .badge-step {
+        background: rgba(79, 195, 247, 0.1);
+        color: #4fc3f7;
+        font-size: 0.75rem;
+        padding: 4px 12px;
+        border-radius: 20px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .answer-box {
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 12px;
+        padding: 20px;
+        margin: 15px 0;
+        border-left: 4px solid #4fc3f7;
+        line-height: 1.6;
+    }
+
+    .reference-box {
+        background: rgba(16, 185, 129, 0.05);
+        border-radius: 12px;
+        padding: 15px;
+        margin-bottom: 20px;
+        border: 1px dashed rgba(16, 185, 129, 0.3);
+        font-size: 0.9rem;
+    }
+
+    .grading-controls {
+        display: grid;
+        grid-template-columns: 120px 1fr auto;
+        gap: 15px;
+        align-items: flex-end;
+        margin-top: 25px;
+        padding-top: 20px;
+        border-top: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .input-dark {
+        background: #0f172a;
+        border: 1px solid rgba(79, 195, 247, 0.2);
+        color: white;
+        padding: 10px 15px;
+        border-radius: 10px;
+        width: 100%;
+        transition: 0.3s;
+    }
+
+        .input-dark:focus {
+            border-color: #4fc3f7;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(79, 195, 247, 0.1);
+        }
+
+    .btn-submit-grade {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        border: none;
+        padding: 10px 25px;
+        border-radius: 10px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: 0.3s;
+    }
+
+        .btn-submit-grade:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(16, 185, 129, 0.4);
+        }
+
+    .empty-state {
+        text-align: center;
+        padding: 100px 0;
+        color: #90a4ae;
+    }
+</style>
+
+<div class="grading-header">
+    <div class="container">
+        <a href="javascript:history.back()" class="text-decoration-none" style="color: #4fc3f7; font-size: 0.9rem;">
+            <i class="bi bi-arrow-left"></i> Вернуться назад
+        </a>
+        <h1 class="mt-3">Проверка работ: @ViewBag.CourseTitle</h1>
+        <p class="text-muted">Всего ответов, ожидающих проверки: <span class="text-white">@Model.Count()</span></p>
+    </div>
+</div>
+
+<div class="container pb-5">
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 20px; opacity: 0.5;">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+            <h3>Все чисто!</h3>
+            <p>На текущий момент нет ответов, требующих ручной проверки.</p>
+        </div>
+    }
+    else
+    {
+        @foreach (var item in Model)
+        {
+            <div class="submission-card" id="submission-@item.SubmissionId">
+                <div class="student-info">
+                    <div class="avatar-placeholder">
+                        @item.StudentLogin.Substring(0, 1).ToUpper()
+                    </div>
+                    <div>
+                        <div style="font-weight: 600; font-size: 1.1rem;">@@@item.StudentLogin</div>
+                        <div class="text-muted" style="font-size: 0.85rem;">Прислано: @item.SubmittedAt.ToString("g")</div>
+                    </div>
+                    <div class="ms-auto">
+                        <span class="badge-step">@item.LessonTitle / @item.StepTitle</span>
+                    </div>
+                </div>
+
+                <div class="answer-label" style="font-size: 0.8rem; color: #90a4ae; margin-left: 5px;">ОТВЕТ СТУДЕНТА:</div>
+                <div class="answer-box">
+                    @item.UserAnswer
+                </div>
+
+                @if (!string.IsNullOrEmpty(item.ReferenceAnswer))
+                {
+                    <div class="reference-box">
+                        <strong style="color: #10b981; font-size: 0.8rem; display: block; margin-bottom: 5px;">ЭТАЛОННЫЙ ОТВЕТ:</strong>
+                        @item.ReferenceAnswer
+                    </div>
+                }
+
+                <div class="grading-controls">
+                    <div>
+                        <label style="font-size: 0.8rem; color: #90a4ae; display: block; margin-bottom: 5px;">Баллы (max: @item.MaxPoints)</label>
+                        <input type="number" id="grade-@item.SubmissionId" class="input-dark"
+                               min="0" max="@item.MaxPoints" value="@item.MaxPoints" />
+                    </div>
+                    <div>
+                        <label style="font-size: 0.8rem; color: #90a4ae; display: block; margin-bottom: 5px;">Комментарий для студента</label>
+                        <input type="text" id="comment-@item.SubmissionId" class="input-dark"
+                               placeholder="Напишите фидбек..." />
+                    </div>
+                    <button class="btn-submit-grade" onclick="submitGrade(@item.SubmissionId)">
+                        Подтвердить
+                    </button>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        async function submitGrade(id) {
+            const grade = document.getElementById(`grade-${id}`).value;
+            const comment = document.getElementById(`comment-${id}`).value;
+
+            const data = {
+                submissionId: id,
+                grade: parseInt(grade),
+                comment: comment
+            };
+
+            try {
+                const response = await fetch('/Teacher/SubmitGrade', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    const card = document.getElementById(`submission-${id}`);
+                    card.style.transform = "translateX(100px)";
+                    card.style.opacity = "0";
+                    setTimeout(() => {
+                        card.remove();
+                        if (document.querySelectorAll('.submission-card').length === 0) {
+                            location.reload(); // Перезагружаем, чтобы показать пустой стейт
+                        }
+                    }, 300);
+                } else {
+                    Swal.fire('Ошибка', 'Не удалось сохранить оценку', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                Swal.fire('Ошибка', 'Произошла сетевая ошибка', 'error');
+            }
+        }
+    </script>
+}
