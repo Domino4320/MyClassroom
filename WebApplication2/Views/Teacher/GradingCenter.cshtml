@@ -1,0 +1,164 @@
+@model IEnumerable<WebApplication2.Controllers.PendingCourseViewModel>
+
+@{
+    ViewData["Title"] = "Центр проверки";
+}
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Центр проверки</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --border: #334155;
+            --text: #f8fafc;
+            --muted: #94a3b8;
+            --accent: #38bdf8;
+            --success: #10b981;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 20px 80px;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .back {
+            color: var(--muted);
+            text-decoration: none;
+            font-weight: 700;
+        }
+
+        .title {
+            font-size: 2rem;
+            font-weight: 900;
+            margin: 0;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 14px;
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .course-title {
+            font-weight: 800;
+            font-size: 1.05rem;
+            line-height: 1.3;
+        }
+
+        .meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            color: var(--muted);
+            font-size: 0.9rem;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(56, 189, 248, 0.1);
+            border: 1px solid rgba(56, 189, 248, 0.25);
+            color: var(--accent);
+            padding: 8px 12px;
+            border-radius: 999px;
+            font-weight: 800;
+        }
+
+        .btn {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            border: 1px solid rgba(16, 185, 129, 0.35);
+            background: rgba(16, 185, 129, 0.12);
+            color: #d1fae5;
+            text-decoration: none;
+            font-weight: 800;
+        }
+
+        .empty {
+            margin-top: 40px;
+            color: var(--muted);
+            text-align: center;
+            padding: 60px 20px;
+            border: 1px dashed var(--border);
+            border-radius: 18px;
+            background: rgba(255,255,255,0.02);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="topbar">
+            <a class="back" href="/TeacherAccount/Index"><i class="fa-solid fa-chevron-left"></i> В кабинет</a>
+            <h1 class="title">Центр проверки</h1>
+            <div></div>
+        </div>
+
+        @if (Model == null || !Model.Any())
+        {
+            <div class="empty">
+                <div style="font-size: 2.2rem; margin-bottom: 10px;"><i class="fa-solid fa-inbox"></i></div>
+                <div style="font-weight:800; margin-bottom: 6px;">Пока нет работ на ручную проверку</div>
+                <div>Когда студенты отправят ответы в заданиях с ручной проверкой, они появятся здесь.</div>
+            </div>
+        }
+        else
+        {
+            <div class="grid">
+                @foreach (var c in Model.OrderByDescending(x => x.PendingCount).ThenBy(x => x.Title))
+                {
+                    <div class="card">
+                        <div class="course-title">@c.Title</div>
+                        <div class="meta">
+                            <span class="badge"><i class="fa-solid fa-clock"></i> @c.PendingCount</span>
+                            <span>ожидают проверки</span>
+                        </div>
+                        <a class="btn" href="/Teacher/GradeCourse/@c.CourseId">
+                            <i class="fa-solid fa-clipboard-check"></i> Перейти к проверке
+                        </a>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</body>
+</html>
+

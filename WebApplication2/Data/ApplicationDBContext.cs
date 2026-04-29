@@ -23,6 +23,8 @@ namespace WebApplication2.Data
         public DbSet<UserProgressModel> Progress { get; set; }
         public DbSet<CourseReviewModel> CourseReviews { get; set; }
         public DbSet<StepSubmissionModel> StepSubmissions { get; set; }
+        public DbSet<ForumDiscussionModel> ForumDiscussions { get; set; }
+        public DbSet<ForumMessageModel> ForumMessages { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -39,6 +41,12 @@ namespace WebApplication2.Data
                 .HasOne(m => m.Course)
                 .WithMany(c => c.Modules)
                 .HasForeignKey(m => m.CourseId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<ForumMessageModel>()
+                .HasOne(m => m.Discussion)
+                .WithMany(d => d.Messages)
+                .HasForeignKey(m => m.DiscussionId)
                 .OnDelete(DeleteBehavior.Cascade);
         }
     }

@@ -8,9 +8,18 @@
     var isStepCompleted = Model.CompletedStepIds.Contains(Model.CurrentStep.Id);
     var isQuiz = Model.CurrentStep.Type == WebApplication2.Models.StepType.Quiz;
 
-    // ПРИНУДИТЕЛЬНОЕ РАЗДЕЛЕНИЕ:
-    // Если в БД стоит флаг IsManualCheck, мы ИГНОРИРУЕМ наличие вариантов и показываем текстовое поле.
-    var isManualInput = isQuiz && Model.CurrentStep.IsManualCheck;
+    // Тест может быть:
+    // - ручная проверка (IsManualCheck=true) -> текстовый ответ
+    // - автопроверка по тексту (CorrectTextAnswer заполнен) -> текстовый ответ
+    // - автопроверка по вариантам -> radio/checkbox
+    var isTextInputQuiz = isQuiz && (Model.CurrentStep.IsManualCheck || !string.IsNullOrWhiteSpace(Model.CurrentStep.CorrectTextAnswer));
+    var isManualCheckQuiz = isQuiz && Model.CurrentStep.IsManualCheck;
+
+    var hasPendingManual = isManualCheckQuiz && Model.HasPendingManualSubmission;
+    var submission = Model.LatestSubmission;
+
+    var courseEarnedPoints = Model.EarnedPointsInCourse;
+    var courseMaxPoints = Model.MaxPointsInCourse;
 }
 
 <!DOCTYPE html>
@@ -99,6 +108,43 @@
             text-transform: uppercase;
             color: #64748b;
             letter-spacing: 0.05em;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .module-title {
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .status-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border-radius: 999px;
+            padding: 4px 10px;
+            font-size: 0.65rem;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            border: 1px solid transparent;
+            white-space: nowrap;
+        }
+
+        .status-chip.done {
+            color: #d1fae5;
+            background: rgba(16, 185, 129, 0.18);
+            border-color: rgba(16, 185, 129, 0.35);
+        }
+
+        .status-chip.todo {
+            color: #cbd5e1;
+            background: rgba(148, 163, 184, 0.12);
+            border-color: rgba(148, 163, 184, 0.35);
         }
 
         .lesson-item {
@@ -109,6 +155,7 @@
             font-size: 0.95rem;
             border-left: 3px solid transparent;
             transition: var(--transition);
+            position: relative;
         }
 
             .lesson-item:hover {
@@ -122,6 +169,22 @@
                 font-weight: 600;
             }
 
+            .lesson-item.done {
+                border-left-color: var(--accent-green);
+                background: rgba(16, 185, 129, 0.08);
+                color: #d1fae5;
+            }
+
+            .lesson-item.todo {
+                border-left-color: #64748b;
+            }
+
+        .lesson-status {
+            margin-left: 8px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            opacity: 0.95;
+        }
 
         /* --- Main Content --- */
         .learn-content {
@@ -151,6 +214,7 @@
             border-radius: 3px;
             background: #475569;
             transition: var(--transition);
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
         }
 
             .step-dot.active {
@@ -160,6 +224,10 @@
 
             .step-dot.completed {
                 background: var(--accent-green);
+            }
+
+            .step-dot.pending {
+                background: #64748b;
             }
 
         .main-scroll-area {
@@ -258,6 +326,111 @@
                 accent-color: var(--accent-blue);
             }
 
+        /* Comments */
+        .comments-wrap {
+            margin-top: 40px;
+            padding-top: 40px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .comment-form {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+
+        .comment-input {
+            flex: 1;
+            min-height: 54px;
+            background: var(--bg-dark);
+            border: 2px solid var(--border-color);
+            border-radius: 14px;
+            color: #fff;
+            padding: 14px 16px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            outline: none;
+            resize: vertical;
+        }
+
+        .comment-input:focus {
+            border-color: var(--accent-blue);
+        }
+
+        .comment-item {
+            display: flex;
+            gap: 14px;
+            padding: 16px 18px;
+            border-radius: 18px;
+            border: 1px solid rgba(255,255,255,0.06);
+            background: rgba(255,255,255,0.02);
+            margin-bottom: 12px;
+        }
+
+        .comment-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 14px;
+            object-fit: cover;
+            border: 1px solid rgba(56, 189, 248, 0.25);
+            background: var(--bg-dark);
+            flex-shrink: 0;
+        }
+
+        .comment-head {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .comment-user {
+            font-weight: 800;
+            color: var(--accent-blue);
+        }
+
+        .comment-date {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .author-badge {
+            font-size: 0.7rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #d1fae5;
+            border: 1px solid rgba(16, 185, 129, 0.35);
+            background: rgba(16, 185, 129, 0.12);
+            padding: 4px 10px;
+            border-radius: 999px;
+        }
+
+        .comment-text {
+            color: #cbd5e1;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+
+        .comment-reply-preview {
+            margin-bottom: 10px;
+            padding: 8px 10px;
+            border-left: 3px solid var(--accent-blue);
+            background: rgba(56, 189, 248, 0.08);
+            border-radius: 8px;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            line-height: 1.4;
+        }
+
+        .comment-reply-author {
+            color: var(--accent-blue);
+            font-weight: 800;
+            margin-right: 6px;
+        }
+
 
         /* Manual Input Area */
         .manual-textarea {
@@ -326,6 +499,36 @@
                 color: var(--accent-red);
             }
 
+        .review-state {
+            margin-top: 16px;
+            padding: 14px 16px;
+            border-radius: 14px;
+            border: 1px solid rgba(56, 189, 248, 0.25);
+            background: rgba(56, 189, 248, 0.08);
+            color: #dbeafe;
+            line-height: 1.5;
+        }
+
+        .review-result {
+            margin-top: 16px;
+            padding: 16px 18px;
+            border-radius: 16px;
+            border: 1px solid rgba(16, 185, 129, 0.25);
+            background: rgba(16, 185, 129, 0.08);
+        }
+
+        .review-result .score {
+            font-weight: 900;
+            color: #d1fae5;
+            margin-bottom: 6px;
+        }
+
+        .review-result .comment {
+            color: #cbd5e1;
+            white-space: pre-wrap;
+            margin-top: 10px;
+        }
+
     </style>
 </head>
 <body>
@@ -336,18 +539,44 @@
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
                 Вернуться к курсу
             </a>
+            <div style="margin-top: 14px; color: var(--text-muted); font-size: 0.9rem;">
+                <span style="display:inline-flex; align-items:center; gap:8px;">
+                    <span style="width:10px; height:10px; border-radius: 3px; background: var(--accent-blue); display:inline-block;"></span>
+                    Баллы: <strong style="color: var(--text-main);">@courseEarnedPoints</strong> / <strong style="color: var(--text-main);">@courseMaxPoints</strong>
+                </span>
+            </div>
+            <div style="margin-top: 10px; color: var(--text-muted); font-size: 0.8rem; display:flex; gap:14px; flex-wrap:wrap;">
+                <span style="display:inline-flex; align-items:center; gap:6px;">
+                    <span style="width:9px; height:9px; border-radius: 3px; background: var(--accent-green); display:inline-block;"></span> Пройдено
+                </span>
+                <span style="display:inline-flex; align-items:center; gap:6px;">
+                    <span style="width:9px; height:9px; border-radius: 3px; background: #64748b; display:inline-block;"></span> Не пройдено
+                </span>
+            </div>
         </div>
         <div class="modules-container">
             @foreach (var module in Model.AllModules.OrderBy(m => m.Order))
             {
+                var moduleSteps = module.Lessons?.SelectMany(l => l.Steps ?? new List<WebApplication2.Models.StepModel>()).ToList()
+                                  ?? new List<WebApplication2.Models.StepModel>();
+                var moduleCompleted = moduleSteps.Any() && moduleSteps.All(s => Model.CompletedStepIds.Contains(s.Id));
                 <div class="module-group">
-                    <div class="module-label">@module.Title</div>
+                    <div class="module-label">
+                        <span class="module-title">@module.Title</span>
+                        <span class="status-chip @(moduleCompleted ? "done" : "todo")">
+                            <span>@(moduleCompleted ? "✓" : "•")</span>
+                            <span>@(moduleCompleted ? "Пройден" : "Не пройден")</span>
+                        </span>
+                    </div>
                     @foreach (var lesson in module.Lessons.OrderBy(l => l.Order))
                     {
                         var firstStepId = lesson.Steps.OrderBy(s => s.Order).FirstOrDefault()?.Id ?? 0;
+                        var lessonSteps = lesson.Steps?.ToList() ?? new List<WebApplication2.Models.StepModel>();
+                        var lessonCompleted = lessonSteps.Any() && lessonSteps.All(s => Model.CompletedStepIds.Contains(s.Id));
                         <a href="?courseId=@Model.CourseId&stepId=@firstStepId"  
-                           class="lesson-item @(lesson.Id == Model.CurrentStep.LessonId ? "active" : "")">
+                           class="lesson-item @(lesson.Id == Model.CurrentStep.LessonId ? "active" : "") @(lessonCompleted ? "done" : "todo")">
                             @lesson.Title
+                            <span class="lesson-status">@(lessonCompleted ? "✓" : "○")</span>
                         </a>
                     }
                 </div>
@@ -360,7 +589,7 @@
             @foreach (var step in Model.CurrentStep.Lesson.Steps.OrderBy(s => s.Order))
             {
                 <a href="?courseId=@Model.CourseId&stepId=@step.Id"  
-                   class="step-dot @(step.Id == Model.CurrentStep.Id ? "active" : "") @(Model.CompletedStepIds.Contains(step.Id) ? "completed" : "")"
+                   class="step-dot @(step.Id == Model.CurrentStep.Id ? "active" : "") @(Model.CompletedStepIds.Contains(step.Id) ? "completed" : "pending")"
                    title="@step.Title"></a>
             }
         </nav>
@@ -389,13 +618,39 @@
                     <div class="quiz-wrapper">
                         <h3 style="margin-bottom: 20px; color: var(--accent-blue);">Практическое задание</h3>
 
-                        @if (isManualInput)
+                        @if (isTextInputQuiz)
                         {
                             <div class="manual-block">
-                                <p style="margin-bottom: 15px;">Введите ваш ответ ниже. Преподаватель проверит его в ближайшее время.</p>
+                                @if (isManualCheckQuiz)
+                                {
+                                    <p style="margin-bottom: 15px;">Введите ваш ответ ниже. Преподаватель проверит его в ближайшее время.</p>
+                                }
+                                else
+                                {
+                                    <p style="margin-bottom: 15px;">Введите ваш ответ ниже. Система проверит его автоматически.</p>
+                                }
                                 <textarea id="manualAnswer" class="manual-textarea"  
                                           placeholder="Напишите здесь ваше решение или ответ..."  
-                                @(isStepCompleted ? "disabled" : "")></textarea>
+                                @(isStepCompleted || hasPendingManual ? "disabled" : "")></textarea>
+
+                                @if (hasPendingManual)
+                                {
+                                    <div class="review-state">
+                                        Ваш ответ отправлен и <strong>ожидает проверки преподавателем</strong>.
+                                        Пока проверка не завершена, перейти дальше нельзя.
+                                    </div>
+                                }
+                                else if (isManualCheckQuiz && submission != null && !submission.IsPending)
+                                {
+                                    <div class="review-result">
+                                        <div class="score">Результат проверки: @submission.EarnedPoints / @submission.MaxPoints</div>
+                                        <div style="color: var(--text-muted); font-size: 0.9rem;">Проверено: @submission.SubmittedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</div>
+                                        @if (!string.IsNullOrWhiteSpace(submission.TeacherComment))
+                                        {
+                                            <div class="comment">@submission.TeacherComment</div>
+                                        }
+                                    </div>
+                                }
                             </div>
                         }
                         else
@@ -425,10 +680,14 @@
                     }
                     else
                     {
-                        <button id="main-btn" class="btn-primary" onclick="processStep()">
+                        <button id="main-btn" class="btn-primary" onclick="processStep()" @(hasPendingManual ? "disabled" : "")>
                             @if (isStepCompleted)
                             {
                                 <span>Следующий шаг</span>
+                            }
+                            else if (hasPendingManual)
+                            {
+                                <span>Ожидает проверки</span>
                             }
                             else if (isQuiz)
                             {
@@ -441,6 +700,65 @@
                         </button>
                     }
                 </div>
+
+                <div class="comments-wrap">
+                    <h3 style="margin-bottom: 16px; color: var(--accent-blue);">Комментарии</h3>
+
+                    <div class="comment-form">
+                        <input type="hidden" id="parentCommentId" value="">
+                        <div id="replyBanner" style="display:none; margin-bottom: 10px; color: var(--text-muted); font-size: 0.9rem;">
+                            Ответ на <strong id="replyToName" style="color: var(--accent-blue);"></strong>
+                            <a href="javascript:void(0)" onclick="clearReply()" style="margin-left:10px; color: var(--accent-blue); text-decoration:none;">Отменить</a>
+                        </div>
+                        <textarea id="commentText" class="comment-input" placeholder="Напишите комментарий..."></textarea>
+                        <button class="btn-primary" style="height:54px;" onclick="submitComment()">Отправить</button>
+                    </div>
+
+                    <div id="comments-list">
+                        @if (Model.Comments != null && Model.Comments.Any())
+                        {
+                            var comments = Model.Comments.OrderByDescending(x => x.CreatedAt).ToList();
+                            var commentsById = Model.Comments.ToDictionary(x => x.Id, x => x);
+
+                            @foreach (var c in comments)
+                            {
+                                <div class="comment-item">
+                                    <img class="comment-avatar" src="@(string.IsNullOrEmpty(c.User?.Avatar) ? Url.Content("~/images/default_avatar.jpg") : c.User.Avatar)" alt="">
+                                    <div style="flex:1;">
+                                        @if (c.ParentCommentId.HasValue && commentsById.TryGetValue(c.ParentCommentId.Value, out var parentComment))
+                                        {
+                                            var parentAuthor = string.IsNullOrEmpty(parentComment.User?.Username) ? parentComment.UserLogin : parentComment.User.Username;
+                                            var sourceText = (parentComment.Text ?? "").Trim();
+                                            var snippet = sourceText.Length > 70 ? sourceText.Substring(0, 70) + "..." : sourceText;
+                                            <div class="comment-reply-preview">
+                                                <span class="comment-reply-author">@parentAuthor</span>
+                                                <span>@snippet</span>
+                                            </div>
+                                        }
+                                        <div class="comment-head">
+                                            <span class="comment-user">@(!string.IsNullOrEmpty(c.User?.Username) ? c.User.Username : c.UserLogin)</span>
+                                            @if (c.UserLogin == Model.AuthorLogin)
+                                            {
+                                                <span class="author-badge">Автор</span>
+                                            }
+                                            <span class="comment-date">@c.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</span>
+                                            <a href="javascript:void(0)"
+                                               onclick="setReply(@c.Id, '@(string.IsNullOrEmpty(c.User?.Username) ? c.UserLogin : c.User.Username)')"
+                                               style="margin-left:auto; color: var(--accent-blue); text-decoration:none; font-weight:700; font-size:0.85rem;">
+                                                Ответить
+                                            </a>
+                                        </div>
+                                        <div class="comment-text">@c.Text</div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div style="color: var(--text-muted);">Пока нет комментариев. Будьте первым.</div>
+                        }
+                    </div>
+                </div>
             </div>
         </div>
     </main>
@@ -450,7 +768,8 @@
             id: @Model.CurrentStep.Id,
             courseId: @Model.CourseId,
             isQuiz: @isQuiz.ToString().ToLower(),
-            isManual: @isManualInput.ToString().ToLower(),
+            isTextInputQuiz: @isTextInputQuiz.ToString().ToLower(),
+            hasPendingManual: @hasPendingManual.ToString().ToLower(),
             isCompleted: @isStepCompleted.ToString().ToLower(),
             token: '@tokens.RequestToken'
         };
@@ -480,12 +799,17 @@
                 return;
             }
 
+            // 1.5 Если ожидает ручной проверки — дальше нельзя
+            if (STEP_DATA.hasPendingManual) {
+                return;
+            }
+
             // 2. Сбор данных
             const params = new URLSearchParams();
             params.append('stepId', STEP_DATA.id);
 
             if (STEP_DATA.isQuiz) {
-                if (STEP_DATA.isManual) {
+                if (STEP_DATA.isTextInputQuiz) {
                     const text = document.getElementById('manualAnswer').value.trim();
                     if (!text) return alert("Пожалуйста, введите ответ перед отправкой.");
                     params.append('manualAnswer', text);
@@ -524,6 +848,52 @@
                 alert("Ошибка при отправке данных.");
                 btn.disabled = false;
             }
+        }
+
+        async function submitComment() {
+            const textArea = document.getElementById('commentText');
+            const text = (textArea.value || '').trim();
+            if (!text) return alert("Введите текст комментария.");
+
+            const params = new URLSearchParams();
+            params.append('stepId', STEP_DATA.id);
+            params.append('text', text);
+            const parentId = (document.getElementById('parentCommentId').value || '').trim();
+            if (parentId) params.append('parentCommentId', parentId);
+
+            try {
+                const res = await fetch('/Course/AddComment', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'RequestVerificationToken': STEP_DATA.token
+                    },
+                    body: params
+                });
+
+                const result = await res.json();
+                if (result && result.success) {
+                    location.reload();
+                } else {
+                    alert("Не удалось отправить комментарий.");
+                }
+            } catch (e) {
+                console.error(e);
+                alert("Ошибка при отправке комментария.");
+            }
+        }
+
+        function setReply(commentId, name) {
+            document.getElementById('parentCommentId').value = String(commentId);
+            document.getElementById('replyToName').innerText = name || '';
+            document.getElementById('replyBanner').style.display = 'block';
+            document.getElementById('commentText').focus();
+        }
+
+        function clearReply() {
+            document.getElementById('parentCommentId').value = '';
+            document.getElementById('replyToName').innerText = '';
+            document.getElementById('replyBanner').style.display = 'none';
         }
     </script>
 </body>

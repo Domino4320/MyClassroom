@@ -18,6 +18,7 @@ namespace WebApplication2.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public IActionResult Create(UserModel user)
         {
             bool userExists = _db.Users.Any(u => u.Login == user.Login);

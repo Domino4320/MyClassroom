@@ -13,6 +13,7 @@
             <p class="register-subtitle">Введите свои данные, чтобы войти</p>
 
             <form id="registerForm" method="post" asp-controller="Authorization" asp-action="Login">
+                @Html.AntiForgeryToken()
 
                 <div class="form-group">
                     <label asp-for="Login">Логин</label>

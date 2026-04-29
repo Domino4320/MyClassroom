@@ -1,23 +1,25 @@
 using Microsoft.EntityFrameworkCore;
 using WebApplication2.Data;
+using WebApplication2.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Настройка БД
+// 1. пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ
 builder.Services.AddDbContext<ApplicationDBContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// 2. Настройка сессий
+// 2. пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
-    options.IdleTimeout = TimeSpan.FromHours(2); // Увеличил время, чтобы препод не вылетел при долгом наборе текста
+    options.IdleTimeout = TimeSpan.FromHours(2); // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
-    options.Cookie.Name = ".MyClassroom.Session"; // Уникальное имя куки
+    options.Cookie.Name = ".MyClassroom.Session"; // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
 });
 
 builder.Services.AddControllersWithViews();
+builder.Services.AddScoped<CertificatePdfService>();
 
 var app = builder.Build();
 
@@ -32,13 +34,13 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-// ПРАВИЛЬНЫЙ ПОРЯДОК: Сначала сессия, потом аутентификация/авторизация
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ: пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ/пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 app.UseSession();
 app.UseAuthorization();
 
 app.UseEndpoints(endpoints =>
 {
-    // Этот роут покроет и MyCourses, и CourseConstructor, и остальные контроллеры автоматически
+    // пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ MyCourses, пїЅ CourseConstructor, пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
     endpoints.MapControllerRoute(
         name: "default",
         pattern: "{controller=Home}/{action=Index}/{id?}"

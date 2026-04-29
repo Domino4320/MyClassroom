@@ -182,7 +182,15 @@ namespace WebApplication2.Controllers
                     step.IsMultipleChoice = stepDto.IsMultipleChoice;
                     step.IsManualCheck = stepDto.IsManualCheck;
                     step.CorrectTextAnswer = stepDto.CorrectTextAnswer ?? "";
-                    step.MaxPoints = stepDto.MaxPoints > 0 ? stepDto.MaxPoints : 1;
+                    // Баллы должны быть только за тесты (и ручные, и автоматические)
+                    if (step.Type == StepType.Quiz)
+                    {
+                        step.MaxPoints = stepDto.MaxPoints > 0 ? stepDto.MaxPoints : 1;
+                    }
+                    else
+                    {
+                        step.MaxPoints = 0;
+                    }
                 }
             }
 

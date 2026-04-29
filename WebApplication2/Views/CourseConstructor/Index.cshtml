@@ -350,6 +350,7 @@
                 stepDiv.setAttribute('data-step-id', step.id);
                 stepDiv.setAttribute('data-step-type', step.type);
                 const typeLabel = step.type === 0 ? "Текст" : step.type === 1 ? "Video" : "Тест";
+                const autoQuizMode = (!step.isManualCheck && (step.correctTextAnswer || '').trim().length > 0) ? 'text' : 'options';
 
                 stepDiv.innerHTML = `
                                     <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
@@ -359,20 +360,20 @@
                                     <label>Заголовок шага</label>
                                     <input type="text" value="${step.title || ''}" class="step-title" data-id="${step.id}">
 
+                                    ${step.type === 2 ? `
                                     <div class="settings-grid">
                                         <div>
                                             <label>Макс. баллов</label>
                                             <input type="number" class="step-points" data-id="${step.id}" value="${step.maxPoints || 1}" min="1">
                                         </div>
-                                        ${step.type === 2 ? `
                                         <div>
                                             <label>Тип проверки</label>
                                             <select class="step-manual-check" data-id="${step.id}" onchange="toggleCheckMode(${step.id}, this.value)">
                                                 <option value="false" ${!step.isManualCheck ? 'selected' : ''}>Автоматическая</option>
                                                 <option value="true" ${step.isManualCheck ? 'selected' : ''}>Вручную (текст)</option>
                                             </select>
-                                        </div>` : '<div></div>'}
-                                    </div>
+                                        </div>
+                                    </div>` : ''}
 
                                     <div style="margin-top:15px;">
                                         ${step.type === 0 ? `<textarea rows="6" class="step-content" data-id="${step.id}">${step.textContent || ''}</textarea>` : ''}
@@ -381,13 +382,26 @@
                                             <div class="quiz-editor-box">
                                                 <div id="auto-quiz-settings-${step.id}" style="display: ${step.isManualCheck ? 'none' : 'block'};">
                                                     <div style="margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid var(--border);">
+                                                        <label>Формат ответа</label>
+                                                        <select class="step-auto-mode" data-id="${step.id}" onchange="toggleAutoQuizMode(${step.id}, this.value)">
+                                                            <option value="options" ${autoQuizMode === 'options' ? 'selected' : ''}>Варианты ответа</option>
+                                                            <option value="text" ${autoQuizMode === 'text' ? 'selected' : ''}>Текстовый ответ</option>
+                                                        </select>
+                                                    </div>
+                                                    <div style="margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid var(--border);">
                                                         <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
                                                             <input type="checkbox" class="step-is-multiple" data-id="${step.id}" ${step.isMultipleChoice ? 'checked' : ''} onchange="toggleMultipleChoice(${step.id}, this.checked)">
                                                             <span>Множественный выбор</span>
                                                         </label>
                                                     </div>
-                                                    <div id="quiz-options-${step.id}"></div>
-                                                    <button class="btn btn-outline" style="width:100%; margin-top:10px;" onclick="addOption(${step.id})">+ Добавить вариант</button>
+                                                    <div id="auto-quiz-options-box-${step.id}" style="display:${autoQuizMode === 'options' ? 'block' : 'none'};">
+                                                        <div id="quiz-options-${step.id}"></div>
+                                                        <button class="btn btn-outline" style="width:100%; margin-top:10px;" onclick="addOption(${step.id})">+ Добавить вариант</button>
+                                                    </div>
+                                                    <div id="auto-quiz-text-box-${step.id}" style="display:${autoQuizMode === 'text' ? 'block' : 'none'};">
+                                                        <label>Правильный ответ (точное совпадение)</label>
+                                                        <textarea class="step-correct-text" data-id="${step.id}" rows="3" placeholder="Например: 42" oninput="this.closest('.step-card').style.borderColor='var(--border)'">${step.correctTextAnswer || ''}</textarea>
+                                                    </div>
                                                 </div>
                                                 <div id="manual-quiz-settings-${step.id}" style="display: ${step.isManualCheck ? 'block' : 'none'};">
                                                     <label>Эталонный ответ (для учителя)</label>
@@ -420,6 +434,32 @@
             }
         }
 
+        function toggleAutoQuizMode(stepId, mode) {
+            const optionsBox = document.getElementById(`auto-quiz-options-box-${stepId}`);
+            const textBox = document.getElementById(`auto-quiz-text-box-${stepId}`);
+            const stepCard = document.querySelector(`.step-card[data-step-id="${stepId}"]`);
+            const errorSpan = document.getElementById(`quiz-error-${stepId}`);
+
+            if (stepCard) stepCard.style.borderColor = 'var(--border)';
+            if (errorSpan) errorSpan.style.display = 'none';
+
+            if (mode === 'text') {
+                if (optionsBox) optionsBox.style.display = 'none';
+                if (textBox) textBox.style.display = 'block';
+
+                // В текстовом режиме множественный выбор не нужен
+                const mult = document.querySelector(`.step-is-multiple[data-id="${stepId}"]`);
+                if (mult) mult.checked = false;
+            } else {
+                if (optionsBox) optionsBox.style.display = 'block';
+                if (textBox) textBox.style.display = 'none';
+
+                // В режиме вариантов очищаем текстовый ответ, чтобы не было двусмысленности
+                const txt = stepCard?.querySelector(`textarea.step-correct-text[data-id="${stepId}"]`);
+                if (txt) txt.value = '';
+            }
+        }
+
         async function saveCurrentLesson(showAlert = false, runValidation = false) {
             if (!currentLessonId) return true;
 
@@ -434,16 +474,30 @@
                     const errorSpan = document.getElementById(`quiz-error-${stepId}`);
 
                     if (!isManual) {
-                        // Валидация для автоматического теста
-                        const container = document.getElementById(`quiz-options-${stepId}`);
-                        if (container) {
-                            const correctCount = container.querySelectorAll('input[type="radio"]:checked, input[type="checkbox"]:checked').length;
-                            if (correctCount === 0) {
+                        const mode = stepCard.querySelector('.step-auto-mode')?.value || 'options';
+                        if (mode === 'text') {
+                            const textInput = stepCard.querySelector('.step-correct-text');
+                            const textValue = textInput ? textInput.value.trim() : "";
+                            if (textValue.length < 1) {
                                 isValid = false;
                                 stepCard.style.borderColor = 'var(--danger)';
                                 if (errorSpan) {
-                                    errorSpan.innerText = "Выберите хотя бы один правильный вариант!";
+                                    errorSpan.innerText = "Введите правильный текстовый ответ!";
                                     errorSpan.style.display = 'block';
+                                }
+                            }
+                        } else {
+                            // Валидация для автоматического теста с вариантами
+                            const container = document.getElementById(`quiz-options-${stepId}`);
+                            if (container) {
+                                const correctCount = container.querySelectorAll('input[type="radio"]:checked, input[type="checkbox"]:checked').length;
+                                if (correctCount === 0) {
+                                    isValid = false;
+                                    stepCard.style.borderColor = 'var(--danger)';
+                                    if (errorSpan) {
+                                        errorSpan.innerText = "Выберите хотя бы один правильный вариант!";
+                                        errorSpan.style.display = 'block';
+                                    }
                                 }
                             }
                         }
@@ -473,6 +527,8 @@
                 const id = card.getAttribute('data-step-id');
                 const multCheck = card.querySelector(`.step-is-multiple`);
                 const manualCheckSelect = card.querySelector(`.step-manual-check`);
+                const autoMode = card.querySelector(`.step-auto-mode`)?.value || 'options';
+                const correctText = card.querySelector(`.step-correct-text`)?.value || "";
 
                 steps.push({
                     id: parseInt(id),
@@ -481,8 +537,8 @@
                     videoUrl: card.querySelector(`input.step-video`)?.value || "",
                     isMultipleChoice: multCheck ? multCheck.checked : false,
                     isManualCheck: manualCheckSelect ? (manualCheckSelect.value === "true") : false,
-                    correctTextAnswer: card.querySelector(`.step-correct-text`)?.value || "",
-                    maxPoints: parseInt(card.querySelector('.step-points').value) || 1
+                    correctTextAnswer: (autoMode === 'options' && !(manualCheckSelect ? (manualCheckSelect.value === "true") : false)) ? "" : correctText,
+                    maxPoints: parseInt(card.querySelector('.step-points')?.value) || 1
                 });
             });
 

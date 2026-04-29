@@ -13,6 +13,7 @@
             <p class="register-subtitle">Введите свои данные, чтобы зарегистрироваться</p>
 
             <form id="registerForm" method="post" asp-controller="Register" asp-action="Create">
+                @Html.AntiForgeryToken()
                 <div class="form-group">
                     <label asp-for="Username">Имя пользователя</label>
                     <input asp-for="Username" class ="form-control" placeholder="Иван Иванов">
@@ -27,7 +28,7 @@
 
                 <div class="form-group">
                     <label asp-for="Password">Пароль</label>
-                    <input asp-for="Password" class="form-control" placeholder="Введите пароль">
+                    <input asp-for="Password" type="password" class="form-control" placeholder="Введите пароль">
                 </div>
 
                 <div class="form-group">

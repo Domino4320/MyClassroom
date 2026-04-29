@@ -12,6 +12,8 @@
 
     bool isEnrolled = ViewData["IsEnrolled"] != null && (bool)ViewData["IsEnrolled"];
     bool hasCompletedCourse = ViewData["HasCompletedCourse"] != null && (bool)ViewData["HasCompletedCourse"];
+    var courseEarnedPoints = ViewData["CourseEarnedPoints"] as int? ?? 0;
+    var courseMaxPoints = ViewData["CourseMaxPoints"] as int? ?? 0;
 
     // Аналитика из контроллера
     var rank = ViewData["CategoryRank"] ?? "0";
@@ -182,6 +184,55 @@
 
         .btn-blue {
             background: var(--accent);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            margin-left: 10px;
+        }
+
+        .cert-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(2, 6, 23, 0.82);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            padding: 20px;
+        }
+
+        .cert-modal.open {
+            display: flex;
+        }
+
+        .cert-modal-card {
+            width: min(1080px, 100%);
+            height: min(90vh, 760px);
+            background: #0b1220;
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .cert-modal-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .cert-preview-frame {
+            border: none;
+            flex: 1;
+            width: 100%;
+            background: #111827;
         }
 
         /* COVER */
@@ -436,6 +487,15 @@
                             <div class="stat-label">Рейтинг</div>
                             <div class="stat-val" style="color:#fbbf24;">⭐ @displayRating</div>
                         </div>
+                        @if (isEnrolled)
+                        {
+                            <div class="stat-box">
+                                <div class="stat-label">Баллы в курсе</div>
+                                <div class="stat-val" style="color:var(--accent);">
+                                    <i class="fas fa-coins"></i> @courseEarnedPoints / @courseMaxPoints
+                                </div>
+                            </div>
+                        }
                         <div class="stat-box">
                             <div class="stat-label">Рекомендуют</div>
                             <div class="stat-val" style="color:var(--success);"><i class="fas fa-thumbs-up"></i> @recPercent%</div>
@@ -453,6 +513,15 @@
                         <a asp-action="Index" asp-route-courseId="@Model.Id" class="btn-action btn-blue">
                             <i class="fas fa-play" style="margin-right:10px;"></i> Продолжить обучение
                         </a>
+                        @if (hasCompletedCourse)
+                        {
+                            <button type="button" class="btn-action btn-outline" onclick="openCertificatePreview()">
+                                <i class="fas fa-eye" style="margin-right:10px;"></i> Предпросмотр сертификата
+                            </button>
+                            <a asp-action="DownloadCertificate" asp-route-courseId="@Model.Id" class="btn-action btn-outline">
+                                <i class="fas fa-download" style="margin-right:10px;"></i> Скачать PDF
+                            </a>
+                        }
                     }
                     else
                     {
@@ -625,6 +694,16 @@
         </div>
     </div>
 
+    <div class="cert-modal" id="certModal">
+        <div class="cert-modal-card">
+            <div class="cert-modal-head">
+                <strong>Сертификат о завершении курса</strong>
+                <button type="button" class="btn-action btn-outline" onclick="closeCertificatePreview()">Закрыть</button>
+            </div>
+            <iframe id="certFrame" class="cert-preview-frame" src=""></iframe>
+        </div>
+    </div>
+
     <script>
         function showTab(e, id) {
             document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
@@ -653,6 +732,19 @@
             });
 
             if ((await res.json()).success) location.reload();
+        }
+
+        function openCertificatePreview() {
+            const frame = document.getElementById('certFrame');
+            frame.src = '/Course/PreviewCertificate?courseId=@Model.Id';
+            document.getElementById('certModal').classList.add('open');
+        }
+
+        function closeCertificatePreview() {
+            const modal = document.getElementById('certModal');
+            const frame = document.getElementById('certFrame');
+            modal.classList.remove('open');
+            frame.src = '';
         }
     </script>
 </body>

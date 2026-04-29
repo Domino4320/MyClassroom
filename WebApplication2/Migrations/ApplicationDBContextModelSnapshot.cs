@@ -77,6 +77,66 @@ namespace WebApplication2.Migrations
                     b.ToTable("Enrollments");
                 });
 
+            modelBuilder.Entity("WebApplication2.Models.ForumDiscussionModel", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("AuthorLogin")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AuthorLogin");
+
+                    b.ToTable("ForumDiscussions");
+                });
+
+            modelBuilder.Entity("WebApplication2.Models.ForumMessageModel", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("DiscussionId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("ParentMessageId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasMaxLength(3000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UserLogin")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DiscussionId");
+
+                    b.HasIndex("ParentMessageId");
+
+                    b.HasIndex("UserLogin");
+
+                    b.ToTable("ForumMessages");
+                });
+
             modelBuilder.Entity("TeacherProfile", b =>
                 {
                     b.Property<string>("UserLogin")
@@ -429,6 +489,42 @@ namespace WebApplication2.Migrations
                     b.Navigation("Course");
                 });
 
+            modelBuilder.Entity("WebApplication2.Models.ForumDiscussionModel", b =>
+                {
+                    b.HasOne("WebApplication2.Models.UserModel", "Author")
+                        .WithMany()
+                        .HasForeignKey("AuthorLogin")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Author");
+                });
+
+            modelBuilder.Entity("WebApplication2.Models.ForumMessageModel", b =>
+                {
+                    b.HasOne("WebApplication2.Models.ForumDiscussionModel", "Discussion")
+                        .WithMany("Messages")
+                        .HasForeignKey("DiscussionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("WebApplication2.Models.ForumMessageModel", "ParentMessage")
+                        .WithMany()
+                        .HasForeignKey("ParentMessageId");
+
+                    b.HasOne("WebApplication2.Models.UserModel", "User")
+                        .WithMany()
+                        .HasForeignKey("UserLogin")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Discussion");
+
+                    b.Navigation("ParentMessage");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("TeacherProfile", b =>
                 {
                     b.HasOne("WebApplication2.Models.UserModel", null)
@@ -539,6 +635,11 @@ namespace WebApplication2.Migrations
                     b.Navigation("Modules");
 
                     b.Navigation("Reviews");
+                });
+
+            modelBuilder.Entity("WebApplication2.Models.ForumDiscussionModel", b =>
+                {
+                    b.Navigation("Messages");
                 });
 
             modelBuilder.Entity("WebApplication2.Models.LessonModel", b =>

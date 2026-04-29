@@ -21,6 +21,7 @@ namespace WebApplication2.Controllers
 
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public IActionResult Login(UserModel model)
         {
             // Ищем пользователя в БД
@@ -44,6 +45,7 @@ namespace WebApplication2.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public IActionResult Logout()
         {
             HttpContext.Session.Clear();

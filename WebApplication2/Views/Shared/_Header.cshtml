@@ -23,6 +23,7 @@
 
             <div class="auth-buttons">
                 <form method="post" asp-controller="Authorization" asp-action="Logout">
+                    @Html.AntiForgeryToken()
                     <button type="submit">Выйти из аккаунта</button>
                 </form>
             </div>

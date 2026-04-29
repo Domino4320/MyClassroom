@@ -3,16 +3,44 @@ using Microsoft.EntityFrameworkCore;
 using WebApplication2.Data;
 using WebApplication2.Models;
 using System.Diagnostics;
+using WebApplication2.Services;
 
 namespace WebApplication2.Controllers
 {
     public class CourseController : Controller
     {
         private readonly ApplicationDBContext _db;
+        private readonly CertificatePdfService _certificatePdfService;
 
-        public CourseController(ApplicationDBContext db)
+        public CourseController(ApplicationDBContext db, CertificatePdfService certificatePdfService)
         {
             _db = db;
+            _certificatePdfService = certificatePdfService;
+        }
+
+        private async Task<(bool IsEnrolled, bool HasCompletedCourse)> GetCourseCompletionStatusAsync(int courseId, string login)
+        {
+            var isEnrolled = await _db.Enrollments
+                .AnyAsync(e => e.CourseId == courseId && e.UserLogin == login);
+
+            if (!isEnrolled)
+                return (false, false);
+
+            var allStepIds = await _db.Steps
+                .Where(s => s.Lesson.Module.CourseId == courseId)
+                .Select(s => s.Id)
+                .ToListAsync();
+
+            if (!allStepIds.Any())
+                return (true, false);
+
+            var completedCount = await _db.Progress
+                .Where(p => p.UserLogin == login && p.IsCompleted && allStepIds.Contains(p.StepId))
+                .Select(p => p.StepId)
+                .Distinct()
+                .CountAsync();
+
+            return (true, completedCount >= allStepIds.Count);
         }
 
         // --- СТРАНИЦА ОПИСАНИЯ КУРСА (DETAILS) ---
@@ -83,6 +111,24 @@ namespace WebApplication2.Controllers
 
                     hasCompletedCourse = completedCount >= allStepIds.Count;
                 }
+
+                // --- БАЛЛЫ ЗА ТЕСТЫ В КУРСЕ ---
+                if (isEnrolled)
+                {
+                    var maxPointsInCourse = await _db.Steps
+                        .Where(s => s.Lesson.Module.CourseId == id && s.Type == StepType.Quiz)
+                        .SumAsync(s => (int?)s.MaxPoints) ?? 0;
+
+                    var earnedPointsInCourse = await _db.StepSubmissions
+                        .Where(s => s.UserLogin == login &&
+                                    !s.IsPending &&
+                                    s.Step.Lesson.Module.CourseId == id &&
+                                    s.Step.Type == StepType.Quiz)
+                        .SumAsync(s => (int?)s.EarnedPoints) ?? 0;
+
+                    ViewData["CourseEarnedPoints"] = earnedPointsInCourse;
+                    ViewData["CourseMaxPoints"] = maxPointsInCourse;
+                }
             }
 
             ViewData["IsEnrolled"] = isEnrolled;
@@ -114,6 +160,50 @@ namespace WebApplication2.Controllers
 
             // После записи отправляем на первый урок
             return RedirectToAction("Index", new { courseId = courseId });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> PreviewCertificate(int courseId)
+        {
+            var login = HttpContext.Session.GetString("Login");
+            if (string.IsNullOrEmpty(login))
+                return RedirectToAction("Index", "Authorization");
+
+            var (isEnrolled, hasCompletedCourse) = await GetCourseCompletionStatusAsync(courseId, login);
+            if (!isEnrolled || !hasCompletedCourse)
+                return Forbid();
+
+            var course = await _db.Courses.FirstOrDefaultAsync(c => c.Id == courseId);
+            var user = await _db.Users.FirstOrDefaultAsync(u => u.Login == login);
+            if (course == null || user == null)
+                return NotFound();
+
+            var userDisplayName = string.IsNullOrWhiteSpace(user.Username) ? user.Login : user.Username;
+            var pdf = _certificatePdfService.GenerateCourseCertificate(userDisplayName, course.Title, DateTime.UtcNow);
+            Response.Headers.ContentDisposition = $"inline; filename=\"certificate-course-{courseId}.pdf\"";
+            return File(pdf, "application/pdf");
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> DownloadCertificate(int courseId)
+        {
+            var login = HttpContext.Session.GetString("Login");
+            if (string.IsNullOrEmpty(login))
+                return RedirectToAction("Index", "Authorization");
+
+            var (isEnrolled, hasCompletedCourse) = await GetCourseCompletionStatusAsync(courseId, login);
+            if (!isEnrolled || !hasCompletedCourse)
+                return Forbid();
+
+            var course = await _db.Courses.FirstOrDefaultAsync(c => c.Id == courseId);
+            var user = await _db.Users.FirstOrDefaultAsync(u => u.Login == login);
+            if (course == null || user == null)
+                return NotFound();
+
+            var userDisplayName = string.IsNullOrWhiteSpace(user.Username) ? user.Login : user.Username;
+            var pdf = _certificatePdfService.GenerateCourseCertificate(userDisplayName, course.Title, DateTime.UtcNow);
+            var fileName = $"certificate-course-{courseId}.pdf";
+            return File(pdf, "application/pdf", fileName);
         }
 
         // --- СТРАНИЦА ОБУЧЕНИЯ (ПЛЕЕР) ---
@@ -179,10 +269,42 @@ namespace WebApplication2.Controllers
             var comments = await _db.Comments
                 .Where(c => c.StepId == currentStep.Id)
                 .Include(c => c.User)
+                .Include(c => c.ParentComment)
                 .OrderByDescending(c => c.CreatedAt)
                 .ToListAsync();
 
+            var latestSubmission = await _db.StepSubmissions
+                .Where(s => s.StepId == currentStep.Id && s.UserLogin == login)
+                .OrderByDescending(s => s.SubmittedAt)
+                .Select(s => new StepSubmissionViewModel
+                {
+                    IsPending = s.IsPending,
+                    EarnedPoints = s.EarnedPoints,
+                    MaxPoints = s.Step.MaxPoints,
+                    TeacherComment = s.TeacherComment,
+                    SubmittedAt = s.SubmittedAt
+                })
+                .FirstOrDefaultAsync();
+
+            var hasPendingManual = await _db.StepSubmissions.AnyAsync(s =>
+                s.StepId == currentStep.Id &&
+                s.UserLogin == login &&
+                s.IsPending &&
+                s.Step.IsManualCheck);
+
             var course = await _db.Courses.FindAsync(courseId);
+
+            // Баллы по курсу (только тесты)
+            var maxPointsInCourse = await _db.Steps
+                .Where(s => s.Lesson.Module.CourseId == courseId && s.Type == StepType.Quiz)
+                .SumAsync(s => (int?)s.MaxPoints) ?? 0;
+
+            var earnedPointsInCourse = await _db.StepSubmissions
+                .Where(s => s.UserLogin == login &&
+                            !s.IsPending &&
+                            s.Step.Lesson.Module.CourseId == courseId &&
+                            s.Step.Type == StepType.Quiz)
+                .SumAsync(s => (int?)s.EarnedPoints) ?? 0;
 
             var viewModel = new CourseLearnViewModel
             {
@@ -192,7 +314,11 @@ namespace WebApplication2.Controllers
                 CompletedStepIds = completedStepIds,
                 Comments = comments,
                 IsAuthor = course?.AuthorLogin == login,
-                IsLastStep = currentIndex == allStepsSorted.Count - 1
+                IsLastStep = currentIndex == allStepsSorted.Count - 1,
+                HasPendingManualSubmission = hasPendingManual,
+                LatestSubmission = latestSubmission,
+                EarnedPointsInCourse = earnedPointsInCourse,
+                MaxPointsInCourse = maxPointsInCourse
             };
 
             return View(viewModel);
@@ -221,16 +347,46 @@ namespace WebApplication2.Controllers
                     if (string.IsNullOrWhiteSpace(manualAnswer))
                         return Json(new { success = false, message = "Введите текст ответа!" });
 
-                    // Сохраняем ответ на проверку
-                    var submission = new StepSubmissionModel
+                    // Если уже есть активная работа на проверке — не создаем дубликат
+                    var hasPending = await _db.StepSubmissions.AnyAsync(s =>
+                        s.StepId == stepId &&
+                        s.UserLogin == login &&
+                        s.IsPending);
+
+                    if (!hasPending)
                     {
-                        StepId = stepId,
-                        UserLogin = login,
-                        UserAnswerText = manualAnswer,
-                        IsPending = true,
-                        SubmittedAt = DateTime.UtcNow
-                    };
-                    _db.StepSubmissions.Add(submission);
+                        // Сохраняем ответ на проверку
+                        var submission = new StepSubmissionModel
+                        {
+                            StepId = stepId,
+                            UserLogin = login,
+                            UserAnswerText = manualAnswer,
+                            IsPending = true,
+                            SubmittedAt = DateTime.UtcNow
+                        };
+                        _db.StepSubmissions.Add(submission);
+                        await _db.SaveChangesAsync();
+                    }
+
+                    // ВАЖНО: ручная проверка НЕ засчитывает шаг, пока преподаватель не выставит баллы
+                    return Json(new { success = true, pendingReview = true });
+                }
+                else if (!string.IsNullOrWhiteSpace(currentStep.CorrectTextAnswer))
+                {
+                    if (string.IsNullOrWhiteSpace(manualAnswer))
+                        return Json(new { success = false, message = "Введите текст ответа!" });
+
+                    static string Normalize(string s) => (s ?? "")
+                        .Trim()
+                        .ToLowerInvariant()
+                        .Replace("\r\n", "\n")
+                        .Replace("\r", "\n");
+
+                    var expected = Normalize(currentStep.CorrectTextAnswer);
+                    var actual = Normalize(manualAnswer);
+
+                    if (!string.Equals(expected, actual, StringComparison.Ordinal))
+                        return Json(new { success = false, message = "Неверный ответ!" });
                 }
                 else
                 {
@@ -241,6 +397,31 @@ namespace WebApplication2.Controllers
                     if (!correctIds.SequenceEqual(userIds))
                     {
                         return Json(new { success = false, message = "Неверный ответ!" });
+                    }
+                }
+
+                // Автоматические тесты (и по тексту, и по вариантам) должны давать баллы.
+                // Создаем запись попытки/результата, чтобы можно было суммировать баллы по курсу.
+                if (!currentStep.IsManualCheck)
+                {
+                    var hasResult = await _db.StepSubmissions.AnyAsync(s =>
+                        s.StepId == stepId &&
+                        s.UserLogin == login &&
+                        !s.IsPending);
+
+                    if (!hasResult)
+                    {
+                        _db.StepSubmissions.Add(new StepSubmissionModel
+                        {
+                            StepId = stepId,
+                            UserLogin = login,
+                            UserAnswerText = manualAnswer,
+                            IsPending = false,
+                            IsCorrect = true,
+                            EarnedPoints = Math.Max(0, currentStep.MaxPoints),
+                            SubmittedAt = DateTime.UtcNow
+                        });
+                        await _db.SaveChangesAsync();
                     }
                 }
             }
@@ -327,17 +508,24 @@ namespace WebApplication2.Controllers
         // --- ДОБАВЛЕНИЕ КОММЕНТАРИЯ (AJAX) ---
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AddComment(int stepId, string text)
+        public async Task<IActionResult> AddComment(int stepId, string text, int? parentCommentId)
         {
             var login = HttpContext.Session.GetString("Login");
             if (string.IsNullOrEmpty(login) || string.IsNullOrWhiteSpace(text))
                 return Json(new { success = false });
+
+            if (parentCommentId.HasValue)
+            {
+                var parent = await _db.Comments.FirstOrDefaultAsync(c => c.Id == parentCommentId.Value && c.StepId == stepId);
+                if (parent == null) return Json(new { success = false });
+            }
 
             _db.Comments.Add(new CommentModel
             {
                 StepId = stepId,
                 UserLogin = login,
                 Text = text,
+                ParentCommentId = parentCommentId,
                 CreatedAt = DateTime.UtcNow
             });
             await _db.SaveChangesAsync();

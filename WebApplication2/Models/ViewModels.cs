@@ -21,6 +21,22 @@
         public bool IsAuthor { get; set; }
         public List<CommentModel> Comments { get; set; }
         public string AuthorLogin => CurrentStep?.Lesson?.Module?.Course?.AuthorLogin ?? "";
+
+        public int EarnedPointsInCourse { get; set; }
+        public int MaxPointsInCourse { get; set; }
+
+        // Статус ручной проверки по текущему шагу
+        public bool HasPendingManualSubmission { get; set; }
+        public StepSubmissionViewModel? LatestSubmission { get; set; }
+    }
+
+    public class StepSubmissionViewModel
+    {
+        public bool IsPending { get; set; }
+        public int EarnedPoints { get; set; }
+        public int MaxPoints { get; set; }
+        public string? TeacherComment { get; set; }
+        public DateTime SubmittedAt { get; set; }
     }
 
     public class LessonUpdateDto

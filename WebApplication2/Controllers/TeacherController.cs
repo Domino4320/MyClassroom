@@ -18,17 +18,20 @@ namespace WebApplication2.Controllers
         // Страница со списком всех курсов автора, где есть непроверенные работы
         public async Task<IActionResult> GradingCenter()
         {
-            var userLogin = User.Identity.Name;
+            var userLogin = HttpContext.Session.GetString("Login");
+            if (string.IsNullOrEmpty(userLogin)) return RedirectToAction("Index", "Authorization");
 
             // Находим все курсы этого автора
             var courses = await _context.Courses
                 .Where(c => c.AuthorLogin == userLogin)
-                .Select(c => new
+                .Select(c => new PendingCourseViewModel
                 {
                     CourseId = c.Id,
                     Title = c.Title,
-                    PendingCount = _context.StepSubmissions
-                        .Count(s => s.Step.Lesson.Module.CourseId == c.Id && s.IsPending)
+                    PendingCount = _context.StepSubmissions.Count(s =>
+                        s.Step.Lesson.Module.CourseId == c.Id &&
+                        s.IsPending &&
+                        s.Step.IsManualCheck)
                 })
                 .ToListAsync();
 
@@ -38,12 +41,17 @@ namespace WebApplication2.Controllers
         // Страница проверки конкретного курса
         public async Task<IActionResult> GradeCourse(int id)
         {
-            var userLogin = User.Identity.Name;
+            var userLogin = HttpContext.Session.GetString("Login");
+            if (string.IsNullOrEmpty(userLogin)) return RedirectToAction("Index", "Authorization");
+
+            var course = await _context.Courses.FirstOrDefaultAsync(c => c.Id == id);
+            if (course == null) return NotFound();
+            if (course.AuthorLogin != userLogin) return Forbid();
 
             var pendingSubmissions = await _context.StepSubmissions
                 .Include(s => s.Step)
                 .ThenInclude(st => st.Lesson)
-                .Where(s => s.Step.Lesson.Module.CourseId == id && s.IsPending)
+                .Where(s => s.Step.Lesson.Module.CourseId == id && s.IsPending && s.Step.IsManualCheck)
                 .OrderBy(s => s.SubmittedAt)
                 .Select(s => new GradingViewModel
                 {
@@ -68,32 +76,49 @@ namespace WebApplication2.Controllers
         {
             var submission = await _context.StepSubmissions
                 .Include(s => s.Step)
+                .ThenInclude(st => st.Lesson)
+                .ThenInclude(l => l.Module)
                 .FirstOrDefaultAsync(s => s.Id == data.SubmissionId);
 
             if (submission == null) return NotFound();
 
-            submission.EarnedPoints = data.Grade;
+            var userLogin = HttpContext.Session.GetString("Login");
+            if (string.IsNullOrEmpty(userLogin)) return Unauthorized();
+
+            // Проверяем, что это работа по курсу текущего преподавателя
+            var course = await _context.Courses.FindAsync(submission.Step.Lesson.Module.CourseId);
+            if (course == null) return NotFound();
+            if (course.AuthorLogin != userLogin) return Forbid();
+
+            var grade = Math.Clamp(data.Grade, 0, submission.Step.MaxPoints);
+            submission.EarnedPoints = grade;
             submission.TeacherComment = data.Comment;
             submission.IsPending = false;
-            submission.IsCorrect = data.Grade > 0; // Считаем пройденным, если баллов > 0
+            submission.IsCorrect = grade > 0; // Считаем пройденным, если баллов > 0
 
-            // Также обновляем общий прогресс пользователя, чтобы шаг зачелся
+            // Обновляем прогресс пользователя:
+            // - если баллы > 0 -> шаг засчитан
+            // - если 0 -> шаг не засчитан, переход дальше заблокирован
             var progress = await _context.UserProgress
                 .FirstOrDefaultAsync(p => p.UserLogin == submission.UserLogin && p.StepId == submission.StepId);
 
-            if (progress == null)
+            if (grade > 0)
             {
-                _context.UserProgress.Add(new UserProgressModel
+                if (progress == null)
                 {
-                    UserLogin = submission.UserLogin,
-                    StepId = submission.StepId,
-                    IsCompleted = true,
-                    CompletedAt = DateTime.UtcNow
-                });
-            }
-            else
-            {
-                progress.IsCompleted = true;
+                    _context.UserProgress.Add(new UserProgressModel
+                    {
+                        UserLogin = submission.UserLogin,
+                        StepId = submission.StepId,
+                        IsCompleted = true,
+                        CompletedAt = DateTime.UtcNow
+                    });
+                }
+                else
+                {
+                    progress.IsCompleted = true;
+                    progress.CompletedAt = DateTime.UtcNow;
+                }
             }
 
             await _context.SaveChangesAsync();
@@ -102,6 +127,13 @@ namespace WebApplication2.Controllers
     }
 
     // Вспомогательные DTO
+    public class PendingCourseViewModel
+    {
+        public int CourseId { get; set; }
+        public string Title { get; set; }
+        public int PendingCount { get; set; }
+    }
+
     public class GradingViewModel
     {
         public int SubmissionId { get; set; }
