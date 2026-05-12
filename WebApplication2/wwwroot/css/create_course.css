@@ -1,32 +1,23 @@
-﻿:root {
-    --bg-light-blue: #f0f7ff; /* Тот самый светло-голубой фон */
-    --accent-blue: #3b82f6;
-    --text-dark: #1e293b;
-    --border-color: #d1e5ff;
-}
-
-/* Центрирование на весь экран */
-.page-wrapper {
+﻿.page-wrapper {
     display: flex;
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    background-color: var(--bg-light-blue); /* Фон страницы */
-    font-family: 'Inter', sans-serif;
+    background: var(--bg-page);
+    font-family: "Inter", "Segoe UI", sans-serif;
     padding: 20px;
 }
 
-/* Белая карточка */
 .course-registration-card {
     width: 100%;
     max-width: 580px;
-    background: #ffffff;
+    background: var(--surface-card);
     border-radius: 24px;
     padding: 40px;
-    box-shadow: 0 15px 35px rgba(59, 130, 246, 0.08); /* Легкая синеватая тень */
+    box-shadow: var(--shadow-strong);
+    border: 1px solid var(--border-glass);
 }
 
-/* Шапка регистрации */
 .header-content {
     text-align: center;
     margin-bottom: 35px;
@@ -35,8 +26,8 @@
 .icon-circle {
     width: 50px;
     height: 50px;
-    background: var(--accent-blue);
-    color: white;
+    background: var(--accent-main);
+    color: var(--bg-dark);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -48,30 +39,29 @@
 .header-content h1 {
     font-size: 24px;
     font-weight: 800;
-    color: var(--text-dark);
+    color: var(--text-strong);
     margin: 0;
 }
 
 .header-content p {
-    color: #64748b;
+    color: var(--text-muted);
     font-size: 14px;
     margin-top: 5px;
 }
 
-/* Стили полей */
 .field-block {
     margin-bottom: 20px;
 }
 
-    .field-block label {
-        display: block;
-        font-size: 13px;
-        font-weight: 700;
-        color: var(--text-dark);
-        margin-bottom: 8px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
+.field-block label {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
 
 .input-with-icon {
     position: relative;
@@ -79,28 +69,32 @@
     align-items: center;
 }
 
-    .input-with-icon i {
-        position: absolute;
-        left: 15px;
-        color: #94a3b8;
-    }
-
-
-input, textarea, select {
-    width: 100%;
-    padding: 12px 16px;
-    border: 1.5px solid var(--border-color);
-    border-radius: 12px;
-    font-size: 15px;
-    background: #ffffff;
-    transition: 0.2s ease;
+.input-with-icon i {
+    position: absolute;
+    left: 15px;
+    color: var(--text-muted);
 }
 
-    input:focus, textarea:focus, select:focus {
-        outline: none;
-        border-color: var(--accent-blue);
-        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
-    }
+input,
+textarea,
+select {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1.5px solid var(--border-glass);
+    border-radius: 12px;
+    font-size: 15px;
+    background: var(--input-bg);
+    color: var(--text-main);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+    outline: none;
+    border-color: var(--accent-main);
+    box-shadow: 0 0 0 3px rgba(79, 195, 247, 0.2);
+}
 
 .dual-fields {
     display: grid;
@@ -108,29 +102,27 @@ input, textarea, select {
     gap: 15px;
 }
 
-/* Зона загрузки */
 .upload-box {
-    border: 2px dashed var(--border-color);
-    background: #f8fbff;
+    border: 2px dashed var(--border-glass);
+    background: rgba(30, 41, 59, 0.4);
     padding: 25px;
     border-radius: 15px;
     text-align: center;
     cursor: pointer;
-    transition: 0.3s;
+    transition: border-color 0.2s ease, background 0.2s ease;
 }
 
-    .upload-box:hover {
-        background: #eff6ff;
-        border-color: var(--accent-blue);
-    }
+.upload-box:hover {
+    background: rgba(79, 195, 247, 0.08);
+    border-color: var(--accent-main);
+}
 
-    .upload-box i {
-        font-size: 24px;
-        color: var(--accent-blue);
-        margin-bottom: 8px;
-    }
+.upload-box i {
+    font-size: 24px;
+    color: var(--accent-main);
+    margin-bottom: 8px;
+}
 
-/* Кнопки */
 .form-actions-row {
     display: flex;
     justify-content: flex-end;
@@ -139,36 +131,76 @@ input, textarea, select {
 }
 
 .btn-submit-course {
-    background: var(--text-dark); /* Черная кнопка на синем фоне выглядит премиально */
-    color: white;
+    background: linear-gradient(135deg, var(--accent-strong), var(--accent-main));
+    color: var(--bg-dark);
     padding: 12px 25px;
     border-radius: 10px;
     border: none;
     font-weight: 600;
     cursor: pointer;
-    transition: 0.2s;
+    transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
-    .btn-submit-course:hover {
-        background: #000;
-        transform: translateY(-1px);
-    }
+.btn-submit-course:hover {
+    opacity: 0.95;
+    transform: translateY(-1px);
+}
+
+.btn-submit-course.btn-success {
+    background: linear-gradient(135deg, #059669, #10b981);
+    color: #fff;
+}
 
 .btn-ghost {
     background: none;
     border: none;
-    color: #64748b;
+    color: var(--text-muted);
     font-weight: 600;
     cursor: pointer;
 }
 
-/* Анимация */
 .animate-in {
     animation: fadeInUp 0.5s ease;
 }
 
 .required_icon {
-    color: red;
+    color: #f87171;
+}
+
+.text-danger,
+.field-validation-error {
+    color: #f87171;
+    font-size: 0.85rem;
+    margin-top: 4px;
+    display: block;
+    animation: fadeIn 0.3s ease-in;
+}
+
+.input-validation-error {
+    border: 1.5px solid #f87171 !important;
+    background-color: rgba(248, 113, 113, 0.08) !important;
+}
+
+.current-cover-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+    padding: 12px;
+    background: rgba(30, 41, 59, 0.5);
+    border: 1px solid var(--border-glass);
+    border-radius: 12px;
+}
+
+.current-cover-wrapper img {
+    width: 120px;
+    height: 70px;
+    object-fit: cover;
+    border-radius: 6px;
+}
+
+.animate-shake {
+    animation: shake 0.5s ease;
 }
 
 @keyframes fadeInUp {
@@ -176,10 +208,34 @@ input, textarea, select {
         opacity: 0;
         transform: translateY(20px);
     }
-
     to {
         opacity: 1;
         transform: translateY(0);
     }
 }
 
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes shake {
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+    20%,
+    60% {
+        transform: translateX(-6px);
+    }
+    40%,
+    80% {
+        transform: translateX(6px);
+    }
+}

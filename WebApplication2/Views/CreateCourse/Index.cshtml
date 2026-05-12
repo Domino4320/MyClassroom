@@ -1,60 +1,14 @@
 ﻿@model WebApplication2.Models.CourseModel
 
 @{
-    // Автоматический флаг: если ID не 0, значит мы в режиме редактирования
     bool isEdit = Model != null && Model.Id != 0;
     ViewData["Title"] = isEdit ? "Редактирование курса" : "Создание нового курса";
 }
 
-<link href="~/css/create_course.css" rel="stylesheet" />
-<link href="~/css/style_for_main_page.css" rel="stylesheet" />
-
-<style>
-    /* Стили валидации */
-    .text-danger, .field-validation-error {
-        color: #ff4d4d;
-        font-size: 0.85rem;
-        margin-top: 4px;
-        display: block;
-        animation: fadeIn 0.3s ease-in;
-    }
-
-    .input-validation-error {
-        border: 1.5px solid #ff4d4d !important;
-        background-color: rgba(255, 77, 77, 0.05) !important;
-    }
-
-    /* Превью текущей обложки при редактировании */
-    .current-cover-wrapper {
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        margin-bottom: 15px;
-        padding: 12px;
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid #334155;
-        border-radius: 12px;
-    }
-
-        .current-cover-wrapper img {
-            width: 120px;
-            height: 70px;
-            object-fit: cover;
-            border-radius: 6px;
-        }
-
-    @@keyframes fadeIn {
-        from {
-            opacity: 0;
-            transform: translateY(-5px);
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-</style>
+<link href="~/css/variables.css" rel="stylesheet" asp-append-version="true" />
+<link href="~/css/create_course.css" rel="stylesheet" asp-append-version="true" />
+<link href="~/css/style_for_main_page.css" rel="stylesheet" asp-append-version="true" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 
 @section Scripts {
     <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
@@ -62,19 +16,16 @@
 
     <script>
         $(document).ready(function () {
-            // Отображение имени выбранного файла
-            $('#fileInp').on('change', function () {
-                var fileName = $(this).val().split('\\').pop();
+            $("#fileInp").on("change", function () {
+                var fileName = $(this).val().split("\\").pop();
                 if (fileName) {
-                    $('#fileName').text("Выбран файл: " + fileName).css("color", "#4ade80");
+                    $("#fileName").text("Выбран файл: " + fileName).css("color", "#4ade80");
                 }
             });
-
-            // Анимация кнопки при ошибках
-            $('form').bind('invalid-form.validate', function () {
-                $('.btn-submit-course').addClass('animate-shake');
+            $("form").bind("invalid-form.validate", function () {
+                $(".btn-submit-course").addClass("animate-shake");
                 setTimeout(function () {
-                    $('.btn-submit-course').removeClass('animate-shake');
+                    $(".btn-submit-course").removeClass("animate-shake");
                 }, 500);
             });
         });
@@ -99,7 +50,6 @@
             @if (isEdit)
             {
                 <input type="hidden" asp-for="Id" />
-                @* Скрытое поле, чтобы сохранить текущий статус публикации при редактировании инфо *@
                 <input type="hidden" asp-for="IsPublished" />
             }
 
@@ -235,8 +185,8 @@
                     <div class="current-cover-wrapper">
                         <img src="@Model.CoverImagePath" alt="Текущая обложка" />
                         <div>
-                            <span style="display: block; font-size: 0.85rem; color: #94a3b8;">Текущая обложка</span>
-                            <span style="font-size: 0.75rem; color: #64748b;">Загрузите новый файл для замены</span>
+                            <span style="display:block;font-size:0.85rem;color:var(--text-muted);">Текущая обложка</span>
+                            <span style="font-size:0.75rem;color:var(--text-muted);">Загрузите новый файл для замены</span>
                         </div>
                     </div>
                 }
@@ -250,7 +200,7 @@
 
             <div class="form-actions-row">
                 <button type="button" class="btn-ghost" onclick="history.back()">Отмена</button>
-                <button type="submit" class="btn-submit-course" style="@(isEdit ? "background: #10b981;" : "")">
+                <button type="submit" class="btn-submit-course @(isEdit ? "btn-success" : "")">
                     @(isEdit ? "Сохранить изменения" : "Создать курс")
                 </button>
             </div>

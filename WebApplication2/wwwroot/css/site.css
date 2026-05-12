@@ -19,4 +19,6 @@ html {
 
 body {
   margin-bottom: 60px;
+  background: var(--bg-dark, #0f172a);
+  color: var(--text-main, #e2e8f0);
 }

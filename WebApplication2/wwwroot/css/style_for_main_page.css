@@ -1,15 +1,13 @@
-﻿/* Убираем лишние отступы и растягиваем базу */
-body {
+﻿body {
     height: 100%;
     background: var(--bg-page);
+    color: var(--text-main);
 }
 
-/* ========== ОБЩАЯ СТРУКТУРА ========== */
 .main-layout {
     display: flex;
     min-height: 100vh;
     width: 100%;
-
 }
 
 .content-area {
@@ -20,34 +18,27 @@ body {
     transition: margin-left 0.45s ease;
 }
 
-/* ========== MAIN CONTENT ========== */
 .main-content {
-    margin-top: 70px; /* Отступ под фиксированный хедер */
+    margin-top: 70px;
     padding: 2rem;
     min-height: calc(100vh - 70px);
 }
 
-/* Если сайдбар открыт, сдвигаем контент (добавляется через JS) */
 .content-area.shift {
     margin-left: 280px;
 }
 
-/* ========== СЕТКА КУРСОВ (GRID) ========== */
 .courses-grid {
     display: grid;
-    /* repeat(auto-fill) заполнит весь ряд карточками. 
-       minmax(320px, 1fr) говорит: карточка не меньше 320px, 
-       но если есть место — растяни её. */
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
     gap: 2rem;
-    justify-items: center; /* Центрируем карточки в ячейках */
+    justify-items: center;
     align-items: start;
 }
 
-/* Адаптивность для мобилок */
 @media (max-width: 480px) {
     .courses-grid {
-        grid-template-columns: 1fr; /* На мобилках строго по одной в ряд */
+        grid-template-columns: 1fr;
         gap: 1.5rem;
         padding: 0.5rem;
     }
@@ -57,21 +48,20 @@ body {
     }
 }
 
-/* ========== ПУСТОЕ СОСТОЯНИЕ ========== */
 .empty-state {
-    grid-column: 1 / -1; /* Растягиваем на всю ширину сетки */
+    grid-column: 1 / -1;
     text-align: center;
     padding: 4rem 2rem;
-    color: #607d8b;
+    color: var(--text-muted);
 }
 
-    .empty-state i {
-        font-size: 4rem;
-        margin-bottom: 1rem;
-        display: block;
-        color: rgba(79, 195, 247, 0.3);
-    }
+.empty-state i {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    display: block;
+    color: rgba(79, 195, 247, 0.35);
+}
 
-    .empty-state p {
-        font-size: 1.2rem;
-    }
+.empty-state p {
+    font-size: 1.2rem;
+}

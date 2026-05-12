@@ -9,7 +9,6 @@
     <div class="user-section">
         @if (!string.IsNullOrEmpty(username))
         {
-            @* Добавляем параметр версии, чтобы избежать кеширования браузером *@
             var avatarPath = string.IsNullOrEmpty(avatar)
             ? Url.Content("~/images/default_avatar.jpg")
             : avatar + "?v=" + DateTime.Now.Ticks;

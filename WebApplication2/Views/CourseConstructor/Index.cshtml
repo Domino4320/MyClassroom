@@ -34,7 +34,6 @@
             overflow: hidden;
         }
 
-        /* --- Sidebar --- */
         .sidebar {
             width: 320px;
             background: var(--sidebar-bg);
@@ -96,7 +95,6 @@
             opacity: 1;
         }
 
-        /* --- Editor Area --- */
         .editor-area {
             flex-grow: 1;
             display: flex;
@@ -421,7 +419,6 @@
             const stepCard = autoBox.closest('.step-card');
             const errorSpan = document.getElementById(`quiz-error-${stepId}`);
 
-            // Сбрасываем ошибки при переключении
             if (stepCard) stepCard.style.borderColor = 'var(--border)';
             if (errorSpan) errorSpan.style.display = 'none';
 
@@ -447,14 +444,12 @@
                 if (optionsBox) optionsBox.style.display = 'none';
                 if (textBox) textBox.style.display = 'block';
 
-                // В текстовом режиме множественный выбор не нужен
                 const mult = document.querySelector(`.step-is-multiple[data-id="${stepId}"]`);
                 if (mult) mult.checked = false;
             } else {
                 if (optionsBox) optionsBox.style.display = 'block';
                 if (textBox) textBox.style.display = 'none';
 
-                // В режиме вариантов очищаем текстовый ответ, чтобы не было двусмысленности
                 const txt = stepCard?.querySelector(`textarea.step-correct-text[data-id="${stepId}"]`);
                 if (txt) txt.value = '';
             }
@@ -487,7 +482,6 @@
                                 }
                             }
                         } else {
-                            // Валидация для автоматического теста с вариантами
                             const container = document.getElementById(`quiz-options-${stepId}`);
                             if (container) {
                                 const correctCount = container.querySelectorAll('input[type="radio"]:checked, input[type="checkbox"]:checked').length;
@@ -502,7 +496,6 @@
                             }
                         }
                     } else {
-                        // Валидация для ручной проверки
                         const textInput = stepCard.querySelector('.step-correct-text');
                         const textValue = textInput ? textInput.value.trim() : "";
                         if (textValue.length < 2) {

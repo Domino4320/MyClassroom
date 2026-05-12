@@ -79,7 +79,7 @@
         }
 
         .btn-admin-tool.grading {
-            background: rgba(255, 193, 7, 0.6); /* Янтарный цвет для проверки */
+            background: rgba(255, 193, 7, 0.6);
         }
 
         .btn-admin-tool.delete {
@@ -202,7 +202,6 @@
                 </span>
 
                 <div class="card-admin-overlay">
-                @* Кнопка проверки тестов - доступна всегда для автора *@
                     <a asp-controller="Teacher" asp-action="GradeCourse" asp-route-id="@Model.Id"
                        class="btn-admin-tool grading" title="Проверить ответы студентов"
                        onclick="event.stopPropagation();">

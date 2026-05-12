@@ -17,7 +17,6 @@
             <li><a href="@Url.Action("Index", "Courses")">Библиотека курсов</a></li>
             <li><a href="@Url.Action("Index", "Forum")">Форум</a></li>
 
-            @* 1. Активные курсы: доступны любому авторизованному пользователю (и ученику, и учителю) *@
             @if (!string.IsNullOrEmpty(login))
             {
                 <li>
@@ -27,7 +26,6 @@
                 </li>
             }
 
-            @* 2. Блок в зависимости от роли *@
             @if (role != "Teacher")
             {
                 <li>
@@ -36,7 +34,6 @@
             }
             else
             {
-                @* Раздел для тех, кто сам создает курсы *@
                 <li>
                     <a href="@Url.Action("Index", "MyCourses")">Управление курсами</a>
                 </li>

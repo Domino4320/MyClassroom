@@ -1,74 +1,73 @@
-﻿/* ========== SIDEBAR ========== */
-.sidebar {
+﻿.sidebar {
     position: fixed;
     top: 0;
     left: -280px;
     width: 280px;
     height: 100%;
     z-index: 999;
-    background: linear-gradient( 180deg, #06172d, #0a2447 );
+    background: linear-gradient(180deg, #06172d, #0a2447);
     padding-top: 80px;
     transition: left 0.45s ease;
     border-right: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-    .sidebar.open {
-        left: 0;
-    }
+.sidebar.open {
+    left: 0;
+}
 
-    .sidebar nav ul {
-        list-style: none;
-    }
+.sidebar nav ul {
+    list-style: none;
+}
 
-        .sidebar nav ul li {
-            padding: 1.1rem 1.5rem;
-            color: #cfe9ff;
-            font-weight: 500;
-            cursor: pointer;
-            position: relative;
-            transition: all 0.3s ease;
-        }
+.sidebar nav ul li {
+    padding: 1.1rem 1.5rem;
+    color: #cfe9ff;
+    font-weight: 500;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.3s ease;
+}
 
-            .sidebar nav ul li a {
-                display: block;
-                color: inherit;
-                text-decoration: none;
-                width: 100%;
-                height: 100%;
-            }
+.sidebar nav ul li a {
+    display: block;
+    color: inherit;
+    text-decoration: none;
+    width: 100%;
+    height: 100%;
+}
 
-            .sidebar nav ul li:hover {
-                color: #03a9f4;
-                background: rgba(79,195,247,0.08);
-            }
+.sidebar nav ul li:hover {
+    color: #03a9f4;
+    background: rgba(79, 195, 247, 0.08);
+}
 
-            .sidebar nav ul li::after {
-                content: '';
-                position: absolute;
-                left: 1.2rem;
-                bottom: 0.4rem;
-                width: 0;
-                height: 2px;
-                background: #03a9f4;
-                transition: width 0.3s;
-            }
+.sidebar nav ul li::after {
+    content: "";
+    position: absolute;
+    left: 1.2rem;
+    bottom: 0.4rem;
+    width: 0;
+    height: 2px;
+    background: #03a9f4;
+    transition: width 0.3s;
+}
 
-            .sidebar nav ul li:hover::after {
-                width: 40%;
-            }
+.sidebar nav ul li:hover::after {
+    width: 40%;
+}
 
-    .sidebar .avatar {
-        display: flex;
-        align-items: center;
-        gap: 0.9rem;
-        padding: 1.4rem;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        color: #ffffff;
-    }
+.sidebar .avatar {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    padding: 1.4rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+}
 
-        .sidebar .avatar img {
-            width: 46px;
-            height: 46px;
-            border-radius: 50%;
-            border: 2px solid #03a9f4;
-        }
+.sidebar .avatar img {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    border: 2px solid #03a9f4;
+}

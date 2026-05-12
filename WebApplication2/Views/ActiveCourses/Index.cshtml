@@ -1,8 +1,8 @@
 ﻿@model IEnumerable<WebApplication2.Models.CourseCardModel>
 
 @{
-    ViewData["Title"] = "MyClassroom - Мои курсы";
-    Layout = null; // Отключаем стандартный Layout, так как используем свои Header и Sidebar
+    ViewData["Title"] = "MyClassroom - Активные курсы";
+    Layout = null;
 }
 
 <!DOCTYPE html>
@@ -10,146 +10,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="~/css/style_for_main_page.css" rel="stylesheet" />
     <title>@ViewData["Title"]</title>
-
-    <style>
-        /* Базовые стили для корректного отображения */
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: #f8fafc;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        .main-layout {
-            display: flex;
-            width: 100%;
-            min-height: 100vh;
-        }
-
-        .content-area {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            min-width: 0;
-        }
-
-        .main-content {
-            padding: 40px;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        /* Стили заголовка страницы */
-        .page-header {
-            margin-bottom: 30px;
-            border-bottom: 2px solid #e2e8f0;
-            padding-bottom: 15px;
-        }
-
-            .page-header h2 {
-                color: #1e293b;
-                margin: 0;
-                font-size: 1.8rem;
-            }
-
-        /* Поиск */
-        .search-container {
-            margin-bottom: 40px;
-            display: flex;
-            justify-content: center;
-        }
-
-        .search-input-wrapper {
-            width: 100%;
-            max-width: 550px;
-        }
-
-        .dynamic-search-input {
-            width: 100%;
-            padding: 16px 24px;
-            background: #1e293b;
-            border: 1px solid rgba(79, 195, 247, 0.4);
-            border-radius: 14px;
-            color: #ffffff;
-            font-size: 1rem;
-            outline: none;
-            transition: all 0.3s ease;
-        }
-
-            .dynamic-search-input:focus {
-                border-color: #38bdf8;
-                box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
-            }
-
-        /* Сетка курсов (защита от сплющивания) */
-        .courses-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 30px;
-            width: 100%;
-        }
-
-        .course-item {
-            display: flex;
-            justify-content: center;
-            width: 100%;
-            min-width: 320px;
-        }
-
-            /* Принудительный размер для карточки из Partial */
-            .course-item > div {
-                width: 100% !important;
-                max-width: 360px !important;
-            }
-
-            .course-item.hidden {
-                display: none !important;
-            }
-
-        /* Состояния "Пусто" */
-        .no-search-results {
-            display: none;
-            grid-column: 1 / -1;
-            text-align: center;
-            padding: 60px;
-            color: #64748b;
-            background: #f1f5f9;
-            border-radius: 20px;
-            border: 2px dashed #cbd5e1;
-        }
-
-        .empty-active-state {
-            grid-column: 1 / -1;
-            text-align: center;
-            padding: 100px 20px;
-            color: #94a3b8;
-        }
-
-            .empty-active-state i {
-                font-size: 4rem;
-                margin-bottom: 20px;
-                display: block;
-                color: #cbd5e1;
-            }
-
-        .btn-to-library {
-            display: inline-block;
-            margin-top: 20px;
-            padding: 12px 24px;
-            background-color: #38bdf8;
-            color: white;
-            text-decoration: none;
-            border-radius: 10px;
-            font-weight: 600;
-            transition: background 0.2s;
-        }
-
-            .btn-to-library:hover {
-                background-color: #0ea5e9;
-            }
-    </style>
+    <link href="~/css/variables.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/style_for_main_page.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/course_list_page.css" rel="stylesheet" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
 
@@ -194,7 +59,6 @@
                         </div>
                     }
 
-                    @* Сообщение для поиска *@
                     <div id="noResults" class="no-search-results">
                         <p>Курс с таким названием не найден в вашем списке.</p>
                     </div>
@@ -204,42 +68,37 @@
     </div>
 
     <script src="~/js/script_for_main_page.js"></script>
-
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            const searchInput = document.getElementById('activeSearch');
-            const items = document.querySelectorAll('.course-item');
-            const noResults = document.getElementById('noResults');
+            const searchInput = document.getElementById("activeSearch");
+            const items = document.querySelectorAll(".course-item");
+            const noResults = document.getElementById("noResults");
+            if (!searchInput) return;
 
-            if (searchInput) {
-                searchInput.addEventListener('input', function () {
-                    const query = this.value.toLowerCase().trim();
-                    let foundCount = 0;
+            searchInput.addEventListener("input", function () {
+                const query = this.value.toLowerCase().trim();
+                let foundCount = 0;
 
-                    // Если поле пустое — показываем все активные курсы
-                    if (query === "") {
-                        items.forEach(item => item.classList.remove('hidden'));
-                        if (noResults) noResults.style.display = 'none';
-                        return;
-                    }
+                if (query === "") {
+                    items.forEach((item) => item.classList.remove("hidden"));
+                    if (noResults) noResults.style.display = "none";
+                    return;
+                }
 
-                    // Фильтрация по введенным буквам
-                    items.forEach(item => {
-                        const title = item.getAttribute('data-title') || "";
-                        if (title.includes(query)) {
-                            item.classList.remove('hidden');
-                            foundCount++;
-                        } else {
-                            item.classList.add('hidden');
-                        }
-                    });
-
-                    // Управление плашкой "Ничего не найдено"
-                    if (noResults) {
-                        noResults.style.display = (foundCount === 0) ? 'block' : 'none';
+                items.forEach((item) => {
+                    const title = item.getAttribute("data-title") || "";
+                    if (title.includes(query)) {
+                        item.classList.remove("hidden");
+                        foundCount++;
+                    } else {
+                        item.classList.add("hidden");
                     }
                 });
-            }
+
+                if (noResults) {
+                    noResults.style.display = foundCount === 0 ? "block" : "none";
+                }
+            });
         });
     </script>
 </body>
