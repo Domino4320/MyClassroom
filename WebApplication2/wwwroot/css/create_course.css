@@ -132,7 +132,7 @@ select:focus {
 
 .btn-submit-course {
     background: linear-gradient(135deg, var(--accent-strong), var(--accent-main));
-    color: var(--bg-dark);
+    color: #ffffff;
     padding: 12px 25px;
     border-radius: 10px;
     border: none;
@@ -144,6 +144,7 @@ select:focus {
 .btn-submit-course:hover {
     opacity: 0.95;
     transform: translateY(-1px);
+    color: #ffffff;
 }
 
 .btn-submit-course.btn-success {

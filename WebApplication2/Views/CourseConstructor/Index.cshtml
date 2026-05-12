@@ -156,10 +156,21 @@
             color: white;
         }
 
+        .btn-primary:hover {
+            filter: brightness(1.07);
+            color: #fff;
+        }
+
         .btn-outline {
             background: rgba(79, 195, 247, 0.1);
             border: 1px solid var(--primary);
             color: var(--primary);
+        }
+
+        .btn-outline:hover {
+            background: rgba(79, 195, 247, 0.22);
+            color: #e3f2fd;
+            border-color: #7dd3fc;
         }
 
         .step-card {
@@ -375,7 +386,7 @@
 
                                     <div style="margin-top:15px;">
                                         ${step.type === 0 ? `<textarea rows="6" class="step-content" data-id="${step.id}">${step.textContent || ''}</textarea>` : ''}
-                                        ${step.type === 1 ? `<input type="text" class="step-video" data-id="${step.id}" value="${step.videoUrl || ''}" placeholder="Ссылка на видео (YouTube/Vimeo)">` : ''}
+                                        ${step.type === 1 ? `<input type="text" class="step-video" data-id="${step.id}" value="${step.videoUrl || ''}" placeholder="Ссылка на видео (YouTube / RuTube / любая https-ссылка)">` : ''}
                                         ${step.type === 2 ? `
                                             <div class="quiz-editor-box">
                                                 <div id="auto-quiz-settings-${step.id}" style="display: ${step.isManualCheck ? 'none' : 'block'};">
@@ -461,6 +472,7 @@
             if (runValidation) {
                 let isValid = true;
                 const quizSteps = document.querySelectorAll('.step-card[data-step-type="2"]');
+                const videoSteps = document.querySelectorAll('.step-card[data-step-type="1"]');
 
                 quizSteps.forEach(stepCard => {
                     const stepId = stepCard.getAttribute('data-step-id');
@@ -509,8 +521,25 @@
                     }
                 });
 
+                videoSteps.forEach(stepCard => {
+                    const videoInput = stepCard.querySelector('.step-video');
+                    const videoValue = (videoInput?.value || '').trim();
+                    if (videoInput) {
+                        const hasValidVideoUrl = videoValue.length > 0 && /^https?:\/\/\S+$/i.test(videoValue);
+                        if (!hasValidVideoUrl) {
+                            isValid = false;
+                            stepCard.style.borderColor = 'var(--danger)';
+                            videoInput.style.borderColor = 'var(--danger)';
+                            videoInput.style.boxShadow = '0 0 0 2px rgba(255, 69, 58, 0.2)';
+                        } else {
+                            videoInput.style.borderColor = 'var(--border)';
+                            videoInput.style.boxShadow = 'none';
+                        }
+                    }
+                });
+
                 if (!isValid) {
-                    alert("Проверьте настройки тестов!");
+                    alert("Заполните обязательные поля: тесты и ссылки для видео.");
                     return false;
                 }
             }

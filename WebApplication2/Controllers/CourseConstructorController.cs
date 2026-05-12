@@ -14,6 +14,15 @@ namespace WebApplication2.Controllers
             _db = db;
         }
 
+        private static bool IsValidVideoUrl(string? videoUrl)
+        {
+            if (string.IsNullOrWhiteSpace(videoUrl))
+                return false;
+
+            return Uri.TryCreate(videoUrl.Trim(), UriKind.Absolute, out var uri)
+                   && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
+        }
+
         // Вспомогательный метод для проверки прав доступа и состояния курса
         private async Task<(CourseModel? course, string? error)> GetValidCourse(int courseId, bool checkPublished = true)
         {
@@ -173,6 +182,15 @@ namespace WebApplication2.Controllers
 
             foreach (var stepDto in model.Steps)
             {
+                var existingStep = lesson.Steps.FirstOrDefault(s => s.Id == stepDto.Id);
+                if (existingStep?.Type == StepType.Video && !IsValidVideoUrl(stepDto.VideoUrl))
+                {
+                    return BadRequest("Для шага типа «Видео» обязательно укажите корректную ссылку (http/https).");
+                }
+            }
+
+            foreach (var stepDto in model.Steps)
+            {
                 var step = lesson.Steps.FirstOrDefault(s => s.Id == stepDto.Id);
                 if (step != null)
                 {
@@ -290,6 +308,8 @@ namespace WebApplication2.Controllers
             var allLessons = courseWithData!.Modules.SelectMany(m => m.Lessons).ToList();
             if (!allLessons.Any()) return BadRequest("В курсе должен быть хотя бы один урок.");
             if (allLessons.Any(l => !l.Steps.Any())) return BadRequest("Все уроки должны содержать хотя бы один шаг контента.");
+            if (allLessons.SelectMany(l => l.Steps).Any(s => s.Type == StepType.Video && !IsValidVideoUrl(s.VideoUrl)))
+                return BadRequest("В шаге типа «Видео» заполните корректную ссылку (http/https).");
 
             courseWithData.IsPublished = true;
             await _db.SaveChangesAsync();
