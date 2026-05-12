@@ -1,0 +1,175 @@
+@model TeacherPublicProfileViewModel
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
+@{
+    Layout = null;
+    var tokens = Antiforgery.GetAndStoreTokens(Context);
+}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@Model.Username — преподаватель</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="~/css/variables.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/teacher_catalog.css" asp-append-version="true" />
+    <link href="~/css/style_for_main_page.css" rel="stylesheet" asp-append-version="true" />
+    <script src="~/js/script_for_main_page.js"></script>
+</head>
+<body>
+    @await Html.PartialAsync("_Header")
+    @await Html.PartialAsync("_Sidebar")
+    <div class="main-gradient-bg"></div>
+
+    <div class="tc-profile">
+        <p style="margin-bottom:16px;">
+            <a href="@Url.Action("Index", "Teachers")" style="color:var(--accent-main);font-weight:600;text-decoration:none;"><i class="fas fa-chevron-left"></i> К каталогу</a>
+        </p>
+
+        <div class="tc-profile-hero">
+            <img class="tc-profile-avatar" src="@(string.IsNullOrEmpty(Model.Avatar) ? Url.Content("~/images/default_avatar.jpg") : Model.Avatar)" alt="" />
+            <div style="flex:1;min-width:0;">
+                <h1>@Model.Username</h1>
+                <div class="sub">@Model.Profile.CurrentJob</div>
+                <div class="tc-stats">
+                    <span>Опыт: <span class="val">@Model.Profile.Experience лет</span></span>
+                    <span>Курсов: <span class="val">@Model.PublishedCoursesCount</span></span>
+                    <span>Рейтинг: <span class="val" style="color:#fbbf24;">⭐ @(Model.ReviewsCount > 0 ? Model.AverageRating.ToString("0.0") : "—")</span> (@Model.ReviewsCount отзывов)</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="tc-section">
+            <h2><i class="fas fa-user-tie"></i> О преподавателе</h2>
+            <p class="tc-muted">@Model.Profile.About</p>
+            <div style="margin-top:12px;font-size:0.9rem;color:var(--text-muted);">
+                <strong style="color:var(--text-main);">Специализация:</strong> @Model.Profile.SpecializationCategory
+            </div>
+            @if (!string.IsNullOrEmpty(Model.Profile.PortfolioUrl))
+            {
+                <div style="margin-top:12px;">
+                    <span style="font-size:0.9rem;color:var(--text-muted);"><strong style="color:var(--text-main);">Портфолио:</strong></span>
+                    <a href="@Model.Profile.PortfolioUrl" target="_blank" rel="noopener" class="tc-portfolio-link">
+                        <i class="fas fa-briefcase"></i> @Model.Profile.PortfolioUrl
+                    </a>
+                </div>
+            }
+            @if (!string.IsNullOrEmpty(Model.Profile.TeacherTags))
+            {
+                <div class="tc-tags">
+                    @foreach (var tag in Model.Profile.TeacherTags.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                    {
+                        <span class="tc-tag">@tag.Trim()</span>
+                    }
+                </div>
+            }
+        </div>
+
+        @if (!string.IsNullOrEmpty(Model.Profile.ExtraInfo))
+        {
+            <div class="tc-section">
+                <h2><i class="fas fa-circle-info"></i> Дополнительно</h2>
+                <p class="tc-muted">@Model.Profile.ExtraInfo</p>
+            </div>
+        }
+
+        @if (Model.PublishedCourses.Any())
+        {
+            <div class="tc-section">
+                <h2><i class="fas fa-book"></i> Курсы на платформе</h2>
+                <ul class="tc-course-list">
+                    @foreach (var c in Model.PublishedCourses)
+                    {
+                        <li><a asp-controller="Course" asp-action="Details" asp-route-id="@c.Id">@c.Title</a></li>
+                    }
+                </ul>
+            </div>
+        }
+
+        <div class="tc-section">
+            <h2><i class="fas fa-comments"></i> Отзывы студентов</h2>
+
+            @if (Model.CanLeaveReview)
+            {
+                <div class="form-review-t">
+                    <h3 style="margin-top:0;font-size:1rem;color:var(--text-strong);">Оставить отзыв</h3>
+                    <div class="stars-rate-t">
+                        @for (int i = 5; i >= 1; i--)
+                        {
+                            <input type="radio" id="tr-@i" name="tr-rating" value="@i" />
+                            <label for="tr-@i" class="fas fa-star"></label>
+                        }
+                    </div>
+                    <label style="display:flex;align-items:center;gap:8px;margin-bottom:12px;cursor:pointer;color:var(--text-main);font-size:0.9rem;">
+                        <input type="checkbox" id="tr-recom" style="accent-color:#10b981;width:18px;height:18px;"> Рекомендую этого преподавателя
+                    </label>
+                    <textarea id="tr-msg" style="width:100%;min-height:96px;padding:12px;border-radius:12px;border:1px solid var(--border-glass);background:var(--input-bg);color:var(--text-main);font-family:inherit;margin-bottom:12px;" placeholder="Ваши впечатления…"></textarea>
+                    <button type="button" class="btn-action" style="background:#10b981;color:#fff;border:none;padding:12px 22px;border-radius:12px;font-weight:700;cursor:pointer;font-size:0.95rem;" onclick="submitTeacherReview()">Отправить</button>
+                </div>
+            }
+            else if (Model.HasAlreadyReviewed)
+            {
+                <p style="color:#10b981;font-weight:700;margin-bottom:16px;">Спасибо, вы уже оставили отзыв этому преподавателю.</p>
+            }
+            else if (Model.IsOwnProfile)
+            {
+                <p class="tc-muted" style="margin-bottom:0;">Это ваш профиль. Отзывы оставляют студенты после прохождения вашего курса.</p>
+            }
+            else
+            {
+                <p class="tc-muted" style="margin-bottom:0;">Отзыв можно оставить после прохождения хотя бы одного опубликованного курса этого преподавателя (полностью, все шаги).</p>
+            }
+
+            @if (Model.Reviews.Any())
+            {
+                @foreach (var r in Model.Reviews)
+                {
+                    <div class="rev-item-t">
+                        <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+                            <span style="font-weight:700;color:var(--accent-main);">@r.AuthorDisplayName</span>
+                            <span style="color:#fbbf24;">
+                                @for (int i = 0; i < r.Rating; i++) { <i class="fas fa-star"></i> }
+                            </span>
+                        </div>
+                        <p style="color:var(--text-muted);margin:10px 0;line-height:1.5;">@r.Text</p>
+                        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;font-size:0.8rem;">
+                            @if (r.IsRecommended)
+                            {
+                                <span style="color:#10b981;font-weight:700;"><i class="fas fa-check"></i> Рекомендует</span>
+                            }
+                            <span style="color:var(--text-muted);">@r.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy")</span>
+                        </div>
+                    </div>
+                }
+            }
+            else if (!Model.CanLeaveReview && !Model.HasAlreadyReviewed)
+            {
+                <p class="tc-muted" style="margin-bottom:0;">Пока нет отзывов.</p>
+            }
+        </div>
+    </div>
+
+    <script>
+        async function submitTeacherReview() {
+            const rate = document.querySelector('input[name="tr-rating"]:checked');
+            const msg = document.getElementById('tr-msg').value;
+            const isRec = document.getElementById('tr-recom').checked;
+            if (!rate || !msg.trim()) { alert('Заполните оценку и текст'); return; }
+            const data = new URLSearchParams();
+            data.append('teacherLogin', '@Model.Login');
+            data.append('rating', rate.value);
+            data.append('text', msg);
+            data.append('isRecommended', isRec);
+            const res = await fetch('@Url.Action("AddReview", "Teachers")', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': '@tokens.RequestToken' },
+                body: data
+            });
+            const j = await res.json();
+            if (j.success) location.reload();
+            else alert(j.message || 'Не удалось отправить');
+        }
+    </script>
+</body>
+</html>

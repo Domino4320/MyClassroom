@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.EntityFrameworkCore;
 using WebApplication2.Data;
 using WebApplication2.Services;
@@ -19,6 +20,10 @@ builder.Services.AddSession(options =>
 });
 
 builder.Services.AddControllersWithViews();
+
+// fetch() отправляет заголовок RequestVerificationToken для [ValidateAntiForgeryToken].
+builder.Services.Configure<AntiforgeryOptions>(o => o.HeaderName = "RequestVerificationToken");
+
 builder.Services.AddScoped<CertificatePdfService>();
 
 var app = builder.Build();

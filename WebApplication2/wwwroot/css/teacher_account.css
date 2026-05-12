@@ -43,8 +43,8 @@ body {
 
 .side-panel {
     background: var(--surface-card);
-    padding: 40px 30px;
-    border-radius: 32px;
+    padding: 28px 22px;
+    border-radius: 24px;
     box-shadow: var(--shadow-soft);
     text-align: center;
     border: 1px solid var(--border-glass);
@@ -98,9 +98,9 @@ body {
 
 .glass-card {
     background: var(--surface-card);
-    padding: 35px;
-    border-radius: 28px;
-    margin-bottom: 25px;
+    padding: 26px 28px;
+    border-radius: 22px;
+    margin-bottom: 18px;
     box-shadow: var(--shadow-soft);
     border: 1px solid var(--border-glass);
 }
@@ -142,20 +142,79 @@ body {
     white-space: pre-line;
 }
 
-.edit-icon {
-    color: var(--accent-main);
-    cursor: pointer;
-    font-size: 0.9rem;
-    opacity: 0.35;
-    transition: 0.2s;
-    padding: 5px;
+.profile-field {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    text-align: left;
+    margin-bottom: 12px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: rgba(15, 23, 42, 0.35);
+    border: 1px solid var(--border-glass);
 }
 
-.editable-group:hover .edit-icon,
-.experience-badge:hover .edit-icon,
-.section-header:hover .edit-icon,
-.action-buttons:hover .edit-icon {
-    opacity: 1;
+.profile-field-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.profile-field .tagline {
+    margin-bottom: 0;
+}
+
+.experience-row .experience-inner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.experience-row .experience-inner i {
+    color: var(--accent-main);
+}
+
+.edit-btn {
+    flex-shrink: 0;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    border: 1px solid var(--border-glass);
+    background: var(--surface-dark);
+    color: var(--accent-main);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    transition: 0.2s;
+}
+
+.edit-btn:hover {
+    border-color: var(--accent-main);
+    background: rgba(79, 195, 247, 0.12);
+}
+
+.section-header .edit-btn {
+    width: 36px;
+    height: 36px;
+}
+
+.portfolio-row {
+    display: flex;
+    align-items: stretch;
+    gap: 10px;
+}
+
+.portfolio-row .btn {
+    flex: 1;
+}
+
+.portfolio-row .edit-btn {
+    align-self: center;
 }
 
 .skills-tags {
@@ -184,8 +243,8 @@ body {
 .action-buttons {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    margin-top: 20px;
+    gap: 10px;
+    margin-top: 16px;
 }
 
 .btn {
@@ -294,6 +353,19 @@ body {
 #inputContainer textarea:focus {
     border-color: var(--accent-main);
     box-shadow: 0 0 0 3px rgba(79, 195, 247, 0.15);
+}
+
+.modal-field-error {
+    display: none;
+    margin-top: 8px;
+    margin-bottom: 4px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #fca5a5;
+    background: rgba(239, 68, 68, 0.14);
+    border: 1px solid rgba(248, 113, 113, 0.35);
 }
 
 .modal-buttons {

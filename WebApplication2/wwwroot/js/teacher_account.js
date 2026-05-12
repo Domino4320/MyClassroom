@@ -60,7 +60,8 @@ function editField(fieldName) {
         container.innerHTML = `<input type="text" id="editValue" placeholder="Напр: C#, SQL" value="${currentValue}">`;
     } else if (fieldName === 'PortfolioUrl') {
         const link = document.getElementById('portfolioUrl');
-        currentValue = link ? link.getAttribute('href') : "";
+        const href = link ? link.getAttribute('href') : "";
+        currentValue = href && href !== '#' ? href : "";
         container.innerHTML = `<input type="text" id="editValue" placeholder="https://github.com/..." value="${currentValue}">`;
     }
 
@@ -90,17 +91,12 @@ async function saveChanges() {
         const isLinkedin = urlToCheck.includes("linkedin.com");
 
         if (!isGithub && !isLinkedin) {
-            const errorMsg = "Ошибка! Допускаются только ссылки на GitHub или LinkedIn.";
-
-            // Выводим alert для надежности
-            alert(errorMsg);
-
-            // Выводим ошибку в модальное окно
+            const errorMsg = "Допускаются только ссылки на GitHub или LinkedIn.";
             errorDiv.innerText = errorMsg;
             errorDiv.style.display = 'block';
             inputElement.style.borderColor = '#ff4d4d';
-
-            return; // СТРОГАЯ ОСТАНОВКА. Код дальше не пойдет.
+            errorDiv.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            return;
         }
     }
 

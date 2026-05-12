@@ -25,6 +25,21 @@
                                !string.IsNullOrEmpty(currentUserLogin) &&
                                Model.Reviews.Any(r => r.UserLogin == currentUserLogin);
 
+    var teacherAvgRating = ViewData["TeacherAvgRating"] != null ? (double)ViewData["TeacherAvgRating"] : 0d;
+    var teacherReviewsCount = ViewData["TeacherReviewsCount"] != null ? (int)ViewData["TeacherReviewsCount"] : 0;
+
+    string TeacherReviewsPhrase(int n)
+    {
+        if (n <= 0) return "";
+        if (n % 100 >= 11 && n % 100 <= 14) return $"{n} отзывов";
+        return (n % 10) switch
+        {
+            1 => $"{n} отзыв",
+            2 or 3 or 4 => $"{n} отзыва",
+            _ => $"{n} отзывов"
+        };
+    }
+
     // ПОЛУЧЕНИЕ ДАННЫХ ПРЕПОДАВАТЕЛЯ
     // Подгружаем профиль учителя (Experience, Specialization и т.д.)
     var teacherProfile = Model.Author;
@@ -190,7 +205,62 @@
             background: transparent;
             border: 1px solid var(--accent);
             color: var(--accent);
-            margin-left: 10px;
+        }
+
+        .hero-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            margin-top: 8px;
+        }
+
+        .hero-actions .btn-action {
+            margin-left: 0;
+        }
+
+        .hero-actions form {
+            display: inline;
+        }
+
+        .btn-secondary-outline {
+            background: rgba(56, 189, 248, 0.08);
+            border: 1px solid var(--accent);
+            color: var(--accent);
+        }
+
+        .btn-secondary-outline:hover {
+            background: rgba(56, 189, 248, 0.18);
+            transform: translateY(-2px);
+        }
+
+        .teacher-card-footer {
+            margin-top: 16px;
+            padding-top: 14px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .teacher-profile-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 16px;
+            border-radius: 12px;
+            background: rgba(56, 189, 248, 0.12);
+            color: var(--accent);
+            font-weight: 700;
+            text-decoration: none;
+            font-size: 0.9rem;
+            border: 1px solid rgba(56, 189, 248, 0.35);
+            transition: 0.2s;
+        }
+
+        .teacher-profile-link:hover {
+            background: rgba(56, 189, 248, 0.22);
         }
 
         .cert-modal {
@@ -309,6 +379,22 @@
             color: var(--text-main);
         }
 
+        .t-detail-item.t-detail-span {
+            grid-column: 1 / -1;
+        }
+
+        .t-portfolio-link {
+            color: var(--accent);
+            font-weight: 700;
+            text-decoration: none;
+            font-size: 0.85rem;
+            word-break: break-all;
+        }
+
+        .t-portfolio-link:hover {
+            text-decoration: underline;
+        }
+
         .t-tags-list {
             display: flex;
             flex-wrap: wrap;
@@ -345,7 +431,8 @@
         /* TABS */
         .tabs-nav {
             display: flex;
-            gap: 40px;
+            flex-wrap: wrap;
+            gap: 12px 32px;
             border-bottom: 1px solid var(--border);
             margin: 50px 0 30px;
         }
@@ -510,25 +597,29 @@
 
                     @if (isEnrolled)
                     {
-                        <a asp-action="Index" asp-route-courseId="@Model.Id" class="btn-action btn-blue">
-                            <i class="fas fa-play" style="margin-right:10px;"></i> Продолжить обучение
-                        </a>
-                        @if (hasCompletedCourse)
-                        {
-                            <button type="button" class="btn-action btn-outline" onclick="openCertificatePreview()">
-                                <i class="fas fa-eye" style="margin-right:10px;"></i> Предпросмотр сертификата
-                            </button>
-                            <a asp-action="DownloadCertificate" asp-route-courseId="@Model.Id" class="btn-action btn-outline">
-                                <i class="fas fa-download" style="margin-right:10px;"></i> Скачать PDF
+                        <div class="hero-actions">
+                            <a asp-action="Index" asp-route-courseId="@Model.Id" class="btn-action btn-blue">
+                                <i class="fas fa-play" style="margin-right:10px;"></i> Продолжить обучение
                             </a>
-                        }
+                            @if (hasCompletedCourse)
+                            {
+                                <button type="button" class="btn-action btn-secondary-outline" onclick="openCertificatePreview()">
+                                    <i class="fas fa-eye" style="margin-right:10px;"></i> Предпросмотр сертификата
+                                </button>
+                                <a asp-action="DownloadCertificate" asp-route-courseId="@Model.Id" class="btn-action btn-secondary-outline">
+                                    <i class="fas fa-download" style="margin-right:10px;"></i> Скачать PDF
+                                </a>
+                            }
+                        </div>
                     }
                     else
                     {
-                        <form asp-action="Enroll" method="post">
-                            <input type="hidden" name="courseId" value="@Model.Id" />
-                            <button type="submit" class="btn-action">Записаться на курс</button>
-                        </form>
+                        <div class="hero-actions">
+                            <form asp-action="Enroll" method="post">
+                                <input type="hidden" name="courseId" value="@Model.Id" />
+                                <button type="submit" class="btn-action">Записаться на курс</button>
+                            </form>
+                        </div>
                     }
                 </div>
 
@@ -571,6 +662,15 @@
                                     <span class="t-detail-label">Опыт</span>
                                     <span class="t-detail-val">@teacherProfile.Experience лет</span>
                                 </div>
+                                @if (!string.IsNullOrEmpty(teacherProfile.PortfolioUrl))
+                                {
+                                    <div class="t-detail-item t-detail-span">
+                                        <span class="t-detail-label">Портфолио</span>
+                                        <a href="@teacherProfile.PortfolioUrl" target="_blank" rel="noopener" class="t-portfolio-link">
+                                            <i class="fas fa-briefcase"></i> @teacherProfile.PortfolioUrl
+                                        </a>
+                                    </div>
+                                }
                             </div>
 
                             @if (!string.IsNullOrEmpty(teacherProfile.TeacherTags))
@@ -586,11 +686,20 @@
                             <span class="t-bio-title">О преподавателе</span>
                             <div class="t-bio-content">@teacherProfile.About</div>
 
-                            @if (!string.IsNullOrEmpty(teacherProfile.PortfolioUrl))
+                            @if (!string.IsNullOrEmpty(Model.AuthorLogin))
                             {
-                                <a href="@teacherProfile.PortfolioUrl" target="_blank" style="color:var(--accent); text-decoration:none; font-size:0.85rem; font-weight:700; display:block; margin-top:15px;">
-                                    <i class="fas fa-link"></i> Портфолио автора
-                                </a>
+                                <div class="teacher-card-footer">
+                                    @if (teacherReviewsCount > 0)
+                                    {
+                                        <div style="font-size:0.85rem;color:var(--text-dim);line-height:1.4;">
+                                            <span style="color:#fbbf24;font-weight:700;">⭐ @teacherAvgRating.ToString("0.0")</span>
+                                            · @TeacherReviewsPhrase(teacherReviewsCount) на платформе
+                                        </div>
+                                    }
+                                    <a asp-controller="Teachers" asp-action="PublicProfile" asp-route-id="@Model.AuthorLogin" class="teacher-profile-link">
+                                        <i class="fas fa-user-tie"></i> Профиль преподавателя
+                                    </a>
+                                </div>
                             }
                         </div>
                     }
@@ -609,6 +718,15 @@
         <div id="info" class="tab-pane active">
             <div style="max-width:850px; line-height:1.8; color:#cbd5e1; font-size:1.1rem; white-space:pre-line;">
                 @Model.Description
+                @if (teacherProfile != null && !string.IsNullOrEmpty(teacherProfile.PortfolioUrl))
+                {
+                    <div style="margin-top:28px;padding-top:20px;border-top:1px solid var(--border);font-size:0.95rem;color:var(--text-dim);">
+                        <strong style="color:var(--text-main);">Портфолио преподавателя:</strong>
+                        <a href="@teacherProfile.PortfolioUrl" target="_blank" rel="noopener" style="margin-left:8px;color:var(--accent);font-weight:700;text-decoration:none;">
+                            @teacherProfile.PortfolioUrl <i class="fas fa-external-link-alt" style="font-size:0.75rem;opacity:0.85;"></i>
+                        </a>
+                    </div>
+                }
             </div>
         </div>
 

@@ -134,6 +134,23 @@ namespace WebApplication2.Controllers
             ViewData["IsEnrolled"] = isEnrolled;
             ViewData["HasCompletedCourse"] = hasCompletedCourse;
 
+            double teacherAvgRating = 0;
+            int teacherReviewsCount = 0;
+            if (!string.IsNullOrEmpty(course.AuthorLogin))
+            {
+                var teacherRatings = await _db.TeacherReviews
+                    .AsNoTracking()
+                    .Where(r => r.TeacherLogin == course.AuthorLogin)
+                    .Select(r => r.Rating)
+                    .ToListAsync();
+                teacherReviewsCount = teacherRatings.Count;
+                if (teacherRatings.Count > 0)
+                    teacherAvgRating = Math.Round(teacherRatings.Average(), 1);
+            }
+
+            ViewData["TeacherAvgRating"] = teacherAvgRating;
+            ViewData["TeacherReviewsCount"] = teacherReviewsCount;
+
             return View(course);
         }
 

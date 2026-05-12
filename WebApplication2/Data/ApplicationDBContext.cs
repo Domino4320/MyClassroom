@@ -22,6 +22,7 @@ namespace WebApplication2.Data
         public DbSet<CommentModel> Comments { get; set; }
         public DbSet<UserProgressModel> Progress { get; set; }
         public DbSet<CourseReviewModel> CourseReviews { get; set; }
+        public DbSet<TeacherReviewModel> TeacherReviews { get; set; }
         public DbSet<StepSubmissionModel> StepSubmissions { get; set; }
         public DbSet<ForumDiscussionModel> ForumDiscussions { get; set; }
         public DbSet<ForumMessageModel> ForumMessages { get; set; }
@@ -47,6 +48,20 @@ namespace WebApplication2.Data
                 .HasOne(m => m.Discussion)
                 .WithMany(d => d.Messages)
                 .HasForeignKey(m => m.DiscussionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<TeacherReviewModel>()
+                .HasOne(r => r.Teacher)
+                .WithMany()
+                .HasForeignKey(r => r.TeacherLogin)
+                .HasPrincipalKey(tp => tp.UserLogin)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<TeacherReviewModel>()
+                .HasOne(r => r.User)
+                .WithMany()
+                .HasForeignKey(r => r.UserLogin)
+                .HasPrincipalKey(u => u.Login)
                 .OnDelete(DeleteBehavior.Cascade);
         }
     }
