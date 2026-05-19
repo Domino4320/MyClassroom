@@ -5,46 +5,33 @@
     var tokens = Antiforgery.GetAndStoreTokens(Context);
 }
 
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@ViewData["Title"]</title>
-    <link href="~/css/variables.css" rel="stylesheet" asp-append-version="true" />
+@section Styles {
     <link href="~/css/style_for_main_page.css" rel="stylesheet" asp-append-version="true" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-</head>
-<body>
+    <link href="~/css/course_list_page.css" rel="stylesheet" asp-append-version="true" />
+}
 
-    <div class="main-layout">
-        @await Html.PartialAsync("_Sidebar")
+<div class="page-header">
+    <h2>Управление курсами</h2>
+</div>
 
-        <div class="content-area">
-            @await Html.PartialAsync("_Header")
-
-            <main class="main-content">
-                <section class="courses-grid">
-                    @if (Model != null && Model.Any())
-                    {
-                        @foreach (var course in Model)
-                        {
-                            @await Html.PartialAsync("_CourseCard", course, new ViewDataDictionary(ViewData) { { "IsEditable", true } })
-                        }
-                    }
-                    else
-                    {
-                        <div class="empty-state">
-                            <i class="fa-solid fa-graduation-cap"></i>
-                            <p>Курсов пока нет. Станьте первым!</p>
-                        </div>
-                    }
-                </section>
-            </main>
+<section class="courses-grid">
+    @if (Model != null && Model.Any())
+    {
+        @foreach (var course in Model)
+        {
+            @await Html.PartialAsync("_CourseCard", course, new ViewDataDictionary(ViewData) { { "IsEditable", true } })
+        }
+    }
+    else
+    {
+        <div class="empty-state">
+            <i class="fa-solid fa-graduation-cap"></i>
+            <p>Курсов пока нет. Создайте первый курс!</p>
         </div>
-    </div>
+    }
+</section>
 
-    <script src="~/js/script_for_main_page.js"></script>
+@section Scripts {
     <script>
         async function deleteCourse(courseId) {
             if (!confirm("Вы уверены, что хотите полностью удалить этот курс? Все модули и уроки внутри него будут стерты.")) {
@@ -69,6 +56,4 @@
             }
         }
     </script>
-
-</body>
-</html>
+}

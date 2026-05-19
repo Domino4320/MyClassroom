@@ -1,62 +1,50 @@
 @model List<TeacherCatalogRowViewModel>
 @{
-    Layout = null;
+    ViewData["Title"] = "Каталог преподавателей";
 }
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Каталог преподавателей</title>
+
+@section Styles {
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="~/css/variables.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/teacher_catalog.css" asp-append-version="true" />
-    <link href="~/css/style_for_main_page.css" rel="stylesheet" asp-append-version="true" />
-    <script src="~/js/script_for_main_page.js"></script>
-</head>
-<body>
-    @await Html.PartialAsync("_Header")
-    @await Html.PartialAsync("_Sidebar")
-    <div class="main-gradient-bg"></div>
+}
 
-    <div class="tc-wrap">
-        <div class="tc-hero">
-            <h1><i class="fas fa-chalkboard-teacher" style="color:var(--accent-main);margin-right:10px;"></i>Каталог преподавателей</h1>
-            <p>Ознакомьтесь с авторами курсов. После прохождения хотя бы одного курса преподавателя можно оставить ему отзыв на странице профиля.</p>
-        </div>
+<div class="main-gradient-bg"></div>
 
-        @if (Model == null || !Model.Any())
-        {
-            <p class="tc-muted">Пока нет преподавателей в каталоге.</p>
-        }
-        else
-        {
-            <div class="tc-grid">
-                @foreach (var t in Model)
-                {
-                    <a class="tc-card" asp-action="PublicProfile" asp-route-id="@t.Login">
-                        <div class="tc-card-head">
-                            <img class="tc-card-avatar" src="@(string.IsNullOrEmpty(t.Avatar) ? Url.Content("~/images/default_avatar.jpg") : t.Avatar)" alt="" />
-                            <div>
-                                <div class="tc-card-name">@t.Username</div>
-                                <div class="tc-card-job">@t.CurrentJob</div>
-                            </div>
-                        </div>
-                        <div class="tc-card-meta">
-                            <span><strong>@t.Experience</strong> лет опыта</span>
-                            <span><strong>@t.PublishedCoursesCount</strong> курсов</span>
-                            <span>⭐ <strong>@(t.ReviewsCount > 0 ? t.AverageRating.ToString("0.0") : "—")</strong> (@t.ReviewsCount)</span>
-                        </div>
-                        @if (!string.IsNullOrEmpty(t.AboutSnippet))
-                        {
-                            <p class="tc-snippet">@t.AboutSnippet</p>
-                        }
-                        <span style="font-size:0.8rem;font-weight:700;color:var(--accent-main);">Профиль <i class="fas fa-arrow-right"></i></span>
-                    </a>
-                }
-            </div>
-        }
+<div class="tc-wrap">
+    <div class="tc-hero">
+        <h1><i class="fas fa-chalkboard-teacher" style="color:var(--accent-main);margin-right:10px;"></i>Каталог преподавателей</h1>
+        <p>Ознакомьтесь с авторами курсов. После прохождения хотя бы одного курса преподавателя можно оставить ему отзыв на странице профиля.</p>
     </div>
-</body>
-</html>
+
+    @if (Model == null || !Model.Any())
+    {
+        <p class="tc-muted">Пока нет преподавателей в каталоге.</p>
+    }
+    else
+    {
+        <div class="tc-grid">
+            @foreach (var t in Model)
+            {
+                <a class="tc-card" asp-action="PublicProfile" asp-route-id="@t.Login">
+                    <div class="tc-card-head">
+                        <img class="tc-card-avatar" src="@(string.IsNullOrEmpty(t.Avatar) ? Url.Content("~/images/default_avatar.jpg") : t.Avatar)" alt="" />
+                        <div>
+                            <div class="tc-card-name">@t.Username</div>
+                            <div class="tc-card-job">@t.CurrentJob</div>
+                        </div>
+                    </div>
+                    <div class="tc-card-meta">
+                        <span><strong>@t.Experience</strong> лет опыта</span>
+                        <span><strong>@t.PublishedCoursesCount</strong> курсов</span>
+                        <span>⭐ <strong>@(t.ReviewsCount > 0 ? t.AverageRating.ToString("0.0") : "—")</strong> (@t.ReviewsCount)</span>
+                    </div>
+                    @if (!string.IsNullOrEmpty(t.AboutSnippet))
+                    {
+                        <p class="tc-snippet">@t.AboutSnippet</p>
+                    }
+                    <span class="tc-card-link">Профиль <i class="fas fa-arrow-right"></i></span>
+                </a>
+            }
+        </div>
+    }
+</div>

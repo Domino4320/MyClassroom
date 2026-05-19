@@ -19,10 +19,10 @@ body {
     line-height: 1.6;
 }
 
-.container {
+.teacher-account-container {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 100px 20px 40px;
+    padding: 0 0 2rem;
     position: relative;
     z-index: 1;
 }
@@ -278,6 +278,12 @@ body {
     background: transparent;
     border: 2px dashed var(--accent-main);
     color: var(--accent-main);
+}
+
+.btn-accent-outline:hover {
+    background: rgba(79, 195, 247, 0.12);
+    color: var(--accent-soft);
+    border-color: var(--accent-main);
 }
 
 .btn-outline {

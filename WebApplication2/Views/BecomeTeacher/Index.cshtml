@@ -2,20 +2,11 @@
     ViewData["Title"] = "MyClassroom - Стать учителем";
     var login = Context.Session.GetString("Login");
 }
-<link rel="stylesheet" href="~/css/variables.css" asp-append-version="true" />
-<link rel="stylesheet" href="~/css/teacher_form.css" asp-append-version="true" />
-<link rel="stylesheet" href="~/css/style_for_main_page.css" asp-append-version="true" />
-<script src="~/js/script_for_main_page.js"></script>
+@section Styles {
+    <link rel="stylesheet" href="~/css/teacher_form.css" asp-append-version="true" />
+}
 
-
-
-    @await Html.PartialAsync("_Header")
-
-
-    @await Html.PartialAsync("_Sidebar")
-
-
-<main class="main-content">
+<div class="become-teacher-page">
     @if(login != null){
     <div class="teacher-registration-container">
         <div class="form-glass-card">
@@ -206,4 +197,4 @@
     else {
         @await Html.PartialAsync("_NotAuthorized")
     }
-</main>
+</div>

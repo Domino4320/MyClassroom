@@ -1,11 +1,12 @@
 ﻿.page-wrapper {
     display: flex;
     justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    background: var(--bg-page);
+    align-items: flex-start;
+    min-height: auto;
     font-family: "Inter", "Segoe UI", sans-serif;
-    padding: 20px;
+    padding: 0.5rem 0 2rem;
+    max-width: 640px;
+    margin: 0 auto;
 }
 
 .course-registration-card {

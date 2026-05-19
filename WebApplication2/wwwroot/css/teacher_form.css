@@ -144,9 +144,15 @@
     transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
+.become-teacher-page {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
 .submit-btn:hover {
     opacity: 0.95;
     transform: translateY(-2px);
+    color: #0f172a;
 }
 
 .input-group label.required-field::after {

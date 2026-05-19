@@ -1,0 +1,30 @@
+@{
+    var pageTitle = ViewData["Title"] as string ?? "MyClassroom";
+}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@pageTitle</title>
+    <link rel="stylesheet" href="~/css/variables.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/app-shell.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body>
+    <div class="main-layout">
+        @await Html.PartialAsync("_Sidebar")
+        <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
+        <div class="content-area" id="appContentArea">
+            @await Html.PartialAsync("_Header")
+            <main class="main-content">
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+    <input type="file" id="avatarInput" accept="image/*" style="display:none" />
+    <script src="~/js/script_for_main_page.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

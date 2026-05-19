@@ -5,7 +5,6 @@
     var role = Context.Session.GetString("Role");
 }
 
-<link href="~/css/sidebar.css" rel="stylesheet" />
 <div class="sidebar" id="sidebar">
     <div class="avatar">
         <img src="@(string.IsNullOrEmpty(avatar) ? Url.Content("~/images/default_avatar.jpg") : avatar)" alt="avatar" id="sidebarAvatar">

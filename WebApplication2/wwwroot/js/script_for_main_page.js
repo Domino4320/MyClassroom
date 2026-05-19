@@ -1,8 +1,10 @@
 ﻿function toggleSidebar() {
     const sidebar = document.getElementById("sidebar");
     const content = document.querySelector(".content-area");
+    const backdrop = document.getElementById("sidebarBackdrop");
     if (sidebar) sidebar.classList.toggle("open");
     if (content) content.classList.toggle("shift");
+    if (backdrop) backdrop.classList.toggle("visible");
 }
 
 function chooseAvatar() {

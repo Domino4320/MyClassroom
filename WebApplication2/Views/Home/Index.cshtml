@@ -159,15 +159,7 @@
     }
 </style>
 
-<div class="main-layout">
-    @await Html.PartialAsync("_Sidebar")
-
-    <div class="content-area">
-        @await Html.PartialAsync("_Header")
-
-        <main class="main-content">
-
-            @if (isGuest)
+@if (isGuest)
             {
                 <div class="guest-wrapper">
                     <div class="guest-message">
@@ -205,7 +197,3 @@
                     </section>
                 }
             }
-
-        </main>
-    </div>
-</div>

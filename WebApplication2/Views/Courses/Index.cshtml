@@ -2,71 +2,52 @@
 
 @{
     ViewData["Title"] = "MyClassroom - Библиотека курсов";
-    Layout = null;
 }
 
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@ViewData["Title"]</title>
-    <link href="~/css/variables.css" rel="stylesheet" asp-append-version="true" />
+@section Styles {
     <link href="~/css/style_for_main_page.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/course_list_page.css" rel="stylesheet" asp-append-version="true" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-</head>
-<body>
+}
 
-    <div class="main-layout">
-        @await Html.PartialAsync("_Sidebar")
+<div class="page-header">
+    <h2>Библиотека курсов</h2>
+</div>
 
-        <div class="content-area">
-            @await Html.PartialAsync("_Header")
-
-            <main class="main-content">
-                <div class="page-header">
-                    <h2>Библиотека курсов</h2>
-                </div>
-
-                <section class="search-container">
-                    <div class="search-input-wrapper">
-                        <input type="text"
-                               id="librarySearch"
-                               class="dynamic-search-input"
-                               placeholder="Введите название курса для поиска..."
-                               autocomplete="off">
-                    </div>
-                </section>
-
-                <section class="courses-grid" id="coursesGrid">
-                    @if (Model != null && Model.Any())
-                    {
-                        @foreach (var course in Model)
-                        {
-                            <div class="course-item" data-title="@course.Title.ToLower()">
-                                @await Html.PartialAsync("_CourseCard", course)
-                            </div>
-                        }
-                    }
-                    else
-                    {
-                        <div class="empty-state">
-                            <i class="fa-solid fa-box-open"></i>
-                            <p>В данный момент доступных курсов нет.</p>
-                        </div>
-                    }
-
-                    <div id="noResults" class="no-search-results">
-                        <i class="fa-solid fa-magnifying-glass" style="font-size: 2rem; margin-bottom: 10px; display: block;"></i>
-                        <p>По вашему запросу ничего не найдено. Попробуйте другое название.</p>
-                    </div>
-                </section>
-            </main>
-        </div>
+<section class="search-container">
+    <div class="search-input-wrapper">
+        <input type="text"
+               id="librarySearch"
+               class="dynamic-search-input"
+               placeholder="Введите название курса для поиска..."
+               autocomplete="off">
     </div>
+</section>
 
-    <script src="~/js/script_for_main_page.js"></script>
+<section class="courses-grid" id="coursesGrid">
+    @if (Model != null && Model.Any())
+    {
+        @foreach (var course in Model)
+        {
+            <div class="course-item" data-title="@course.Title.ToLower()">
+                @await Html.PartialAsync("_CourseCard", course)
+            </div>
+        }
+    }
+    else
+    {
+        <div class="empty-state">
+            <i class="fa-solid fa-box-open"></i>
+            <p>В данный момент доступных курсов нет.</p>
+        </div>
+    }
+
+    <div id="noResults" class="no-search-results">
+        <i class="fa-solid fa-magnifying-glass" style="font-size: 2rem; margin-bottom: 10px; display: block;"></i>
+        <p>По вашему запросу ничего не найдено. Попробуйте другое название.</p>
+    </div>
+</section>
+
+@section Scripts {
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             const searchInput = document.getElementById("librarySearch");
@@ -100,5 +81,4 @@
             });
         });
     </script>
-</body>
-</html>
+}

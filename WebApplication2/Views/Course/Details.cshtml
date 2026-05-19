@@ -4,7 +4,7 @@
 @using Microsoft.EntityFrameworkCore
 @using Microsoft.AspNetCore.Http
 @{
-    Layout = null;
+    ViewData["Title"] = Model.Title + " — детали курса";
     var tokens = Antiforgery.GetAndStoreTokens(Context);
 
     // Данные текущего пользователя из сессии
@@ -50,15 +50,13 @@
     string displayName = userAccount?.Username ?? Model.AuthorLogin;
 }
 
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@Model.Title - Детали курса</title>
+@section Styles {
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
+        .main-content:has(.course-details-root) {
+            padding: 0;
+            max-width: none;
+        }
         :root {
             --bg-dark: #0f172a;
             --card-bg: #1e293b;
@@ -69,9 +67,7 @@
             --border: #334155;
         }
 
-        html, body {
-            margin: 0;
-            padding: 0;
+        .course-details-root {
             width: 100%;
             background: var(--bg-dark);
             color: var(--text-main);
@@ -557,14 +553,14 @@
                     color: #fbbf24;
                 }
     </style>
-</head>
-<body>
+}
 
+<div class="course-details-root">
     <section class="hero">
         <div class="container">
             <div class="hero-layout">
                 <div class="hero-main">
-                    <a href="/" class="back-btn"><i class="fas fa-chevron-left"></i> На главную</a>
+                    <a href="@Url.Action("Index", "Courses")" class="back-btn"><i class="fas fa-chevron-left"></i> К библиотеке курсов</a>
                     <br />
                     <span class="cat-badge">@Model.Category</span>
                     <h1 class="title">@Model.Title</h1>
@@ -822,6 +818,7 @@
         </div>
     </div>
 
+@section Scripts {
     <script>
         function showTab(e, id) {
             document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
@@ -865,5 +862,5 @@
             frame.src = '';
         }
     </script>
-</body>
-</html>
+}
+</div>

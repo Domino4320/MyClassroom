@@ -1,28 +1,18 @@
 @model TeacherPublicProfileViewModel
 @inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 @{
-    Layout = null;
+    ViewData["Title"] = Model.Username + " — преподаватель";
     var tokens = Antiforgery.GetAndStoreTokens(Context);
 }
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@Model.Username — преподаватель</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="~/css/variables.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/teacher_catalog.css" asp-append-version="true" />
-    <link href="~/css/style_for_main_page.css" rel="stylesheet" asp-append-version="true" />
-    <script src="~/js/script_for_main_page.js"></script>
-</head>
-<body>
-    @await Html.PartialAsync("_Header")
-    @await Html.PartialAsync("_Sidebar")
-    <div class="main-gradient-bg"></div>
 
-    <div class="tc-profile">
+@section Styles {
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="~/css/teacher_catalog.css" asp-append-version="true" />
+}
+
+<div class="main-gradient-bg"></div>
+
+<div class="tc-profile">
         <p style="margin-bottom:16px;">
             <a href="@Url.Action("Index", "Teachers")" style="color:var(--accent-main);font-weight:600;text-decoration:none;"><i class="fas fa-chevron-left"></i> К каталогу</a>
         </p>
@@ -150,6 +140,7 @@
         </div>
     </div>
 
+@section Scripts {
     <script>
         async function submitTeacherReview() {
             const rate = document.querySelector('input[name="tr-rating"]:checked');
@@ -171,5 +162,4 @@
             else alert(j.message || 'Не удалось отправить');
         }
     </script>
-</body>
-</html>
+}
