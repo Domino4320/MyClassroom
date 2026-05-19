@@ -1,49 +1,44 @@
 ﻿@model UserModel
 @{
     ViewData["Title"] = "MyClassroom - Регистрация";
-    Layout = null;
+    Layout = "_AuthLayout";
 }
-<html>
-    <head>
-        <link href="~/css/variables.css" rel="stylesheet" asp-append-version="true" />
-        <link href="~/css/register.css" rel="stylesheet" asp-append-version="true" />
-    </head>
-    <body>
-    <div class="register-page">
-        <div class="register-card">
-            <h2 class="register-title">Создать аккаунт</h2>
-            <p class="register-subtitle">Введите свои данные, чтобы зарегистрироваться</p>
 
-            <form id="registerForm" method="post" asp-controller="Register" asp-action="Create">
-                @Html.AntiForgeryToken()
-                <div class="form-group">
-                    <label asp-for="Username">Имя пользователя</label>
-                    <input asp-for="Username" class ="form-control" placeholder="Иван Иванов">
-                </div>
+<div class="register-page">
+    <div class="register-card">
+        <h2 class="register-title">Создать аккаунт</h2>
+        <p class="register-subtitle">Введите свои данные, чтобы зарегистрироваться</p>
 
-                <div class="form-group">
-                    <label asp-for="Login">Логин</label>
-                    <input asp-for="Login" class="form-control" placeholder="Ivan_Ivanov"/>
-                    <span asp-validation-for="Login" class="error-message"></span>
-                </div>
+        <form id="registerForm" method="post" asp-controller="Register" asp-action="Create">
+            @Html.AntiForgeryToken()
+            <div class="form-group">
+                <label asp-for="Username">Имя пользователя</label>
+                <input asp-for="Username" class="form-control" placeholder="Иван Иванов">
+            </div>
 
+            <div class="form-group">
+                <label asp-for="Login">Логин</label>
+                <input asp-for="Login" class="form-control" placeholder="Ivan_Ivanov"/>
+                <span asp-validation-for="Login" class="error-message"></span>
+            </div>
 
-                <div class="form-group">
-                    <label asp-for="Password">Пароль</label>
-                    <input asp-for="Password" type="password" class="form-control" placeholder="Введите пароль">
-                </div>
+            <div class="form-group">
+                <label asp-for="Password">Пароль</label>
+                <input asp-for="Password" type="password" class="form-control" placeholder="Введите пароль">
+            </div>
 
-                <div class="form-group">
-                    <label for="confirmPassword">Повторите пароль</label>
-                    <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Повторите пароль">
-                </div>
+            <div class="form-group">
+                <label for="confirmPassword">Повторите пароль</label>
+                <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Повторите пароль">
+            </div>
 
-                <button type="submit" class="btn-register">Зарегистрироваться</button>
-            </form>
+            <button type="submit" class="btn-register">Зарегистрироваться</button>
+        </form>
 
-            <p class="register-login">Уже есть аккаунт? <a href="@Url.Action("Index", "Authorization")">Войти</a></p>
-        </div>
+        <p class="register-login">Уже есть аккаунт? <a href="@Url.Action("Index", "Authorization")">Войти</a></p>
     </div>
+</div>
+
+@section Scripts {
     <script src="~/js/register.js"></script>
-    </body>
-</html>
+}

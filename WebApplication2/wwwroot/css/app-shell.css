@@ -9,7 +9,9 @@ body {
     margin: 0;
     padding: 0;
     min-height: 100%;
-    background: var(--bg-page, linear-gradient(135deg, #0b1628, #0f172a 50%, #0c1929));
+    background-color: var(--bg-page-solid, #0f172a);
+    background-image: var(--bg-page, linear-gradient(135deg, #0b1628, #0f172a 50%, #0c1929));
+    background-attachment: fixed;
     color: var(--text-main, #e2e8f0);
 }
 
@@ -216,8 +218,10 @@ body {
 .page-header h2 {
     margin: 0;
     color: var(--text-strong, #f8fafc);
+    font-family: var(--font-family);
     font-size: clamp(1.35rem, 2.5vw, 1.85rem);
     font-weight: 800;
+    letter-spacing: -0.02em;
 }
 
 .main-content a:not([class*="btn"]):not(.tc-card):hover {

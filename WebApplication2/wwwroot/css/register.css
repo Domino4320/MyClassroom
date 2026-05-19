@@ -1,10 +1,26 @@
-﻿.register-page {
+﻿html,
+body.auth-body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    min-height: 100%;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    background-color: var(--bg-page-solid);
+    background-image: var(--bg-page);
+    background-attachment: fixed;
+    color: var(--text-main);
+}
+
+.register-page {
     min-height: 100vh;
+    min-height: 100dvh;
+    width: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
-    background: var(--bg-page);
-    padding: 2rem;
+    box-sizing: border-box;
+    padding: clamp(1rem, 4vw, 2rem);
 }
 
 .register-card {
@@ -27,7 +43,10 @@
 }
 
 .register-title {
+    font-family: var(--font-family);
     font-size: 1.9rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
     color: var(--text-strong);
     margin-bottom: 0.3rem;
     animation: fadeInUp 0.6s ease;
@@ -56,6 +75,12 @@
     font-size: 0.85rem;
     color: var(--text-muted);
     margin-bottom: 0.4rem;
+}
+
+.form-group input,
+.form-group .form-control,
+.btn-register {
+    font-family: inherit;
 }
 
 .form-group input,

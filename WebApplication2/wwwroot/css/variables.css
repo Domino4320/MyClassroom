@@ -1,5 +1,7 @@
 ﻿:root {
+    --font-family: "Plus Jakarta Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     --bg-page: linear-gradient(135deg, #0b1628, #0f172a 50%, #0c1929);
+    --bg-page-solid: #0f172a;
     --bg-dark: #0f172a;
     --bg-dark-soft: #162031;
     --surface-glass: rgba(30, 41, 59, 0.88);
