@@ -38,7 +38,11 @@ namespace WebApplication2.Controllers
                             // Берем Avatar из UserModel (поле называется Avatar, а не AvatarPath)
                             AuthorAvatar = (author != null && !string.IsNullOrEmpty(author.Avatar))
                                            ? author.Avatar
-                                           : "/images/default_avatar.jpg"
+                                           : "/images/default_avatar.jpg",
+
+                            AverageRating = course.Reviews.Any()
+                                ? Math.Round(course.Reviews.Average(r => r.Rating), 1)
+                                : 0
                         };
 
             var model = await query.ToListAsync();

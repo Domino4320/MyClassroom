@@ -39,7 +39,10 @@ namespace WebApplication2.Controllers
                     CoverImagePath = c.CoverImagePath,
                     CreatedAt = c.CreatedAt,
                     AuthorUsername = c.AuthorLogin ?? "Автор",
-                    AuthorAvatar = "/images/default_avatar.jpg"
+                    AuthorAvatar = "/images/default_avatar.jpg",
+                    AverageRating = c.Reviews.Any()
+                        ? Math.Round(c.Reviews.Average(r => r.Rating), 1)
+                        : 0
                 })
                 .ToListAsync();
 

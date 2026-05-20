@@ -1,0 +1,32 @@
+@{
+    var searchId = ViewData["SearchInputId"] as string ?? "courseSearch";
+    var searchPlaceholder = ViewData["SearchPlaceholder"] as string ?? "Поиск по названию...";
+    var categories = ViewData["FilterCategories"] as IEnumerable<string> ?? Enumerable.Empty<string>();
+}
+
+<section class="course-filters">
+    <div class="course-filters-bar">
+        <div class="search-input-wrapper course-filters-search">
+            <input type="text"
+                   id="@searchId"
+                   class="dynamic-search-input"
+                   placeholder="@searchPlaceholder"
+                   autocomplete="off">
+        </div>
+        <select id="categoryFilter" class="course-filter-select" aria-label="Категория">
+            <option value="">Все категории</option>
+            @foreach (var category in categories)
+            {
+                <option value="@category">@category</option>
+            }
+        </select>
+        <select id="ratingFilter" class="course-filter-select" aria-label="Рейтинг">
+            <option value="">Любой рейтинг</option>
+            <option value="1">от 1 ★</option>
+            <option value="2">от 2 ★</option>
+            <option value="3">от 3 ★</option>
+            <option value="4">от 4 ★</option>
+            <option value="5">5 ★</option>
+        </select>
+    </div>
+</section>

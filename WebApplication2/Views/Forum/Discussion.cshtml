@@ -1,6 +1,6 @@
 @model WebApplication2.Models.ForumDiscussionModel
 @{
-    Layout = null;
+    ViewData["Title"] = Model.Title;
     var login = Context.Session.GetString("Login");
     var messages = (Model.Messages ?? new List<WebApplication2.Models.ForumMessageModel>())
         .OrderBy(m => m.CreatedAt)
@@ -8,198 +8,91 @@
     var byId = messages.ToDictionary(m => m.Id, m => m);
 }
 
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@Model.Title</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg: #0f172a;
-            --card: #1e293b;
-            --accent: #38bdf8;
-            --text: #e2e8f0;
-            --muted: #94a3b8;
-            --border: #334155;
-        }
-        *, *::before, *::after { box-sizing: border-box; }
-        body { margin:0; font-family:Inter, sans-serif; background:var(--bg); color:var(--text); }
-        .wrap { max-width: 1000px; margin: 0 auto; padding: 30px 20px 190px; }
-        a { color: var(--accent); text-decoration:none; font-weight:700; }
-        .header { display:flex; justify-content:space-between; align-items:flex-start; gap: 14px; margin-bottom: 18px; }
-        .card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 18px; }
-        .msg { display:flex; gap: 12px; }
-        .avatar { width:40px; height:40px; border-radius: 14px; object-fit:cover; border:1px solid rgba(56,189,248,0.25); background:#0b1222; }
-        .meta { color: var(--muted); font-size: 0.85rem; margin-top: 4px; }
-        .name { font-weight: 900; color:#fff; }
-        .text { white-space: pre-wrap; line-height: 1.55; margin-top: 8px; }
-        .reply { color: var(--accent); font-weight:800; font-size: 0.85rem; margin-left:auto; background:none; border:none; cursor:pointer; padding:0; }
-        textarea { width:100%; min-height: 80px; max-height: 180px; background:#0b1222; border:1px solid var(--border); border-radius: 14px; padding: 14px; color:#fff; outline:none; resize: vertical; }
-        .row { display:flex; gap: 12px; align-items:center; }
-        .btn { background: linear-gradient(135deg, #0ea5e9, #0284c7); border:none; color:#fff; border-radius: 12px; padding: 12px 16px; font-weight:800; cursor:pointer; }
-        .composer-shell {
-            position: fixed;
-            left: 50%;
-            transform: translateX(-50%);
-            bottom: 12px;
-            width: min(1000px, calc(100vw - 24px));
-            z-index: 20;
-            background: linear-gradient(to top, rgba(15, 23, 42, 0.98) 70%, rgba(15, 23, 42, 0));
-            padding-top: 8px;
-        }
-        .reply-banner {
-            display:none;
-            margin-bottom: 10px;
-            color: var(--muted);
-            font-size: 0.9rem;
-            border-left: 3px solid var(--accent);
-            padding-left: 10px;
-        }
-        .reply-user {
-            color: var(--accent);
-            font-weight: 800;
-        }
-        .reply-action {
-            margin-left: 10px;
-            color: var(--accent);
-            text-decoration: none;
-            font-weight: 700;
-        }
-        .reply-preview {
-            margin-top: 8px;
-            margin-bottom: 10px;
-            padding: 8px 10px;
-            border-left: 3px solid var(--accent);
-            background: rgba(56, 189, 248, 0.08);
-            border-radius: 8px;
-            color: var(--muted);
-            font-size: 0.85rem;
-            line-height: 1.4;
-        }
-        .reply-preview .reply-author {
-            color: var(--accent);
-            font-weight: 800;
-            margin-right: 6px;
-        }
-    </style>
-</head>
-<body>
-    <div class="wrap">
-        <div class="header">
-            <div>
-                <a href="/Forum/Index">← Назад к форуму</a>
-                <h1 style="margin:10px 0 0;">@Model.Title</h1>
-                <div class="meta">Автор: @(string.IsNullOrEmpty(Model.Author?.Username) ? Model.AuthorLogin : Model.Author.Username) • @Model.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</div>
-            </div>
-        </div>
+@section Styles {
+    <link rel="stylesheet" href="~/css/forum.css" asp-append-version="true" />
+}
 
-        <div style="display:flex; flex-direction:column; gap: 12px;">
+<div class="forum-discussion-page">
+    <div class="page-header">
+        <a class="forum-back-link" href="@Url.Action("Index", "Forum")">← Назад к форуму</a>
+        <h1 class="forum-discussion-title">@Model.Title</h1>
+        <div class="forum-meta">
+            Автор: @(string.IsNullOrEmpty(Model.Author?.Username) ? Model.AuthorLogin : Model.Author.Username)
+            • @Model.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")
+        </div>
+    </div>
+
+    <div class="forum-wrap">
+        <div class="forum-messages">
             @foreach (var m in messages)
             {
-                <div class="card msg">
-                    <img class="avatar" src="@(string.IsNullOrEmpty(m.User?.Avatar) ? Url.Content("~/images/default_avatar.jpg") : m.User.Avatar)" alt="">
-                    <div style="flex:1; min-width:0;">
+                <div class="forum-card forum-msg">
+                    <img class="forum-avatar"
+                         src="@(string.IsNullOrEmpty(m.User?.Avatar) ? Url.Content("~/images/default_avatar.jpg") : m.User.Avatar)"
+                         alt="">
+                    <div class="forum-msg-body">
                         @if (m.ParentMessageId.HasValue && byId.TryGetValue(m.ParentMessageId.Value, out var parentMsg))
                         {
                             var parentAuthor = string.IsNullOrEmpty(parentMsg.User?.Username) ? parentMsg.UserLogin : parentMsg.User.Username;
                             var sourceText = (parentMsg.Text ?? "").Trim();
                             var snippet = sourceText.Length > 70 ? sourceText.Substring(0, 70) + "..." : sourceText;
-                            <div class="reply-preview">
-                                <span class="reply-author">@parentAuthor</span>
+                            <div class="forum-reply-preview">
+                                <span class="forum-reply-author">@parentAuthor</span>
                                 <span>@snippet</span>
                             </div>
                         }
-                        <div style="display:flex; gap:10px; align-items:center;">
-                            <div class="name">@(string.IsNullOrEmpty(m.User?.Username) ? m.UserLogin : m.User.Username)</div>
-                            <div class="meta">@m.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</div>
+                        <div class="forum-msg-head">
+                            <div class="forum-msg-name">@(string.IsNullOrEmpty(m.User?.Username) ? m.UserLogin : m.User.Username)</div>
+                            <div class="forum-meta">@m.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</div>
                             @if (!string.IsNullOrEmpty(login))
                             {
                                 <button type="button"
-                                        class="reply js-reply-btn"
+                                        class="forum-reply-btn js-reply-btn"
                                         data-message-id="@m.Id"
                                         data-message-user="@(string.IsNullOrEmpty(m.User?.Username) ? m.UserLogin : m.User.Username)">
                                     Ответить
                                 </button>
                             }
                         </div>
-                        <div class="text">@m.Text</div>
+                        <div class="forum-msg-text">@m.Text</div>
                     </div>
                 </div>
             }
         </div>
 
-        <div class="composer-shell">
-            <div class="card">
+        <div class="forum-composer">
+            <div class="forum-card">
                 @if (!string.IsNullOrEmpty(login))
                 {
                     <input type="hidden" id="parentMessageId" value="">
-                    <div id="replyBanner" class="reply-banner">
-                        Ответ пользователю <span id="replyToName" class="reply-user"></span>
-                        <a href="javascript:void(0)" id="cancelReplyBtn" class="reply-action">Отменить</a>
+                    <div id="replyBanner" class="forum-reply-banner">
+                        Ответ пользователю <span id="replyToName" class="forum-reply-user"></span>
+                        <a href="javascript:void(0)" id="cancelReplyBtn" class="forum-reply-cancel">Отменить</a>
                     </div>
                     <form asp-action="AddMessage" method="post">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="discussionId" value="@Model.Id" />
                         <input type="hidden" name="parentMessageId" id="parentMessageIdForm" value="" />
-                        <textarea name="text" id="textBox" placeholder="Сообщение..." required maxlength="3000"></textarea>
-                        <div class="row" style="margin-top:12px; justify-content:flex-end;">
-                            <button class="btn" type="submit">Отправить</button>
+                        <textarea name="text" id="textBox" class="forum-textarea" placeholder="Сообщение..." required maxlength="3000"></textarea>
+                        <div class="forum-composer-row">
+                            <button class="forum-btn" type="submit">Отправить</button>
                         </div>
                     </form>
                 }
                 else
                 {
-                    <div style="color:var(--muted);">
-                        Чтобы писать сообщения, нужно <a href="/Authorization/Index">войти</a>.
+                    <div class="forum-guest-hint">
+                        Чтобы писать сообщения, нужно <a href="@Url.Action("Index", "Authorization")">войти</a>.
                     </div>
                 }
             </div>
         </div>
     </div>
+</div>
 
+@section Scripts {
     <script>
-        const IS_AUTH = @(string.IsNullOrEmpty(login) ? "false" : "true");
-        const parentMessageInput = document.getElementById('parentMessageId');
-        const parentMessageFormInput = document.getElementById('parentMessageIdForm');
-        const replyBanner = document.getElementById('replyBanner');
-        const replyToName = document.getElementById('replyToName');
-        const cancelReplyBtn = document.getElementById('cancelReplyBtn');
-        const textBox = document.getElementById('textBox');
-
-        function setReply(messageId, name) {
-            if (!IS_AUTH || !parentMessageInput || !parentMessageFormInput || !replyBanner || !replyToName) return;
-            parentMessageInput.value = String(messageId);
-            parentMessageFormInput.value = String(messageId);
-            replyToName.innerText = name || '';
-            replyBanner.style.display = 'block';
-            if (textBox) textBox.focus();
-        }
-
-        function clearReply() {
-            if (!parentMessageInput || !parentMessageFormInput || !replyBanner || !replyToName) return;
-            parentMessageInput.value = '';
-            parentMessageFormInput.value = '';
-            replyToName.innerText = '';
-            replyBanner.style.display = 'none';
-        }
-
-        if (IS_AUTH) {
-            document.addEventListener('click', (event) => {
-                const btn = event.target.closest('.js-reply-btn');
-                if (!btn) return;
-                const messageId = btn.getAttribute('data-message-id');
-                const messageUser = btn.getAttribute('data-message-user') || '';
-                if (!messageId) return;
-                setReply(messageId, messageUser);
-            });
-
-            if (cancelReplyBtn) {
-                cancelReplyBtn.addEventListener('click', clearReply);
-            }
-        }
+        document.body.dataset.forumAuth = "@(string.IsNullOrEmpty(login) ? "false" : "true")";
     </script>
-</body>
-</html>
-
+    <script src="~/js/forum-discussion.js" asp-append-version="true"></script>
+}

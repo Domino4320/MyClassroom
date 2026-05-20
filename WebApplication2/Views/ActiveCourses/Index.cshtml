@@ -1,7 +1,17 @@
 ﻿@model IEnumerable<WebApplication2.Models.CourseCardModel>
+@using System.Globalization
 
 @{
     ViewData["Title"] = "MyClassroom - Активные курсы";
+    var categories = Model?
+        .Select(c => c.Category)
+        .Where(c => !string.IsNullOrWhiteSpace(c))
+        .Distinct()
+        .OrderBy(c => c)
+        .ToList() ?? new List<string>();
+    ViewData["SearchInputId"] = "activeSearch";
+    ViewData["SearchPlaceholder"] = "Поиск среди ваших курсов...";
+    ViewData["FilterCategories"] = categories;
 }
 
 @section Styles {
@@ -13,22 +23,17 @@
     <h2>Мои активные курсы</h2>
 </div>
 
-<section class="search-container">
-    <div class="search-input-wrapper">
-        <input type="text"
-               id="activeSearch"
-               class="dynamic-search-input"
-               placeholder="Поиск среди ваших курсов..."
-               autocomplete="off">
-    </div>
-</section>
+@await Html.PartialAsync("_CourseListFilters")
 
 <section class="courses-grid" id="coursesGrid">
     @if (Model != null && Model.Any())
     {
         @foreach (var course in Model)
         {
-            <div class="course-item" data-title="@course.Title.ToLower()">
+            <div class="course-item"
+                 data-title="@course.Title.ToLower()"
+                 data-category="@course.Category"
+                 data-rating="@course.AverageRating.ToString(CultureInfo.InvariantCulture)">
                 @await Html.PartialAsync("_CourseCard", course)
             </div>
         }
@@ -44,42 +49,15 @@
     }
 
     <div id="noResults" class="no-search-results">
-        <p>Курс с таким названием не найден в вашем списке.</p>
+        <p>Курсы не найдены. Измените фильтры или название.</p>
     </div>
 </section>
 
 @section Scripts {
+    <script src="~/js/course-list-filters.js" asp-append-version="true"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            const searchInput = document.getElementById("activeSearch");
-            const items = document.querySelectorAll(".course-item");
-            const noResults = document.getElementById("noResults");
-            if (!searchInput) return;
-
-            searchInput.addEventListener("input", function () {
-                const query = this.value.toLowerCase().trim();
-                let foundCount = 0;
-
-                if (query === "") {
-                    items.forEach((item) => item.classList.remove("hidden"));
-                    if (noResults) noResults.style.display = "none";
-                    return;
-                }
-
-                items.forEach((item) => {
-                    const title = item.getAttribute("data-title") || "";
-                    if (title.includes(query)) {
-                        item.classList.remove("hidden");
-                        foundCount++;
-                    } else {
-                        item.classList.add("hidden");
-                    }
-                });
-
-                if (noResults) {
-                    noResults.style.display = foundCount === 0 ? "block" : "none";
-                }
-            });
+            initCourseListFilters("activeSearch");
         });
     </script>
 }
