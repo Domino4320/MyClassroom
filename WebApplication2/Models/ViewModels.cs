@@ -28,6 +28,9 @@
         // Статус ручной проверки по текущему шагу
         public bool HasPendingManualSubmission { get; set; }
         public StepSubmissionViewModel? LatestSubmission { get; set; }
+
+        public int? BookmarkedStepId { get; set; }
+        public bool IsCurrentStepBookmarked { get; set; }
     }
 
     public class StepSubmissionViewModel

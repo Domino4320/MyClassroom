@@ -1,0 +1,96 @@
+@model List<BookmarkListItemViewModel>
+@{
+    ViewData["Title"] = "Мои закладки";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/bookmarks.css" asp-append-version="true" />
+}
+
+<div class="page-header">
+    <h1>Мои закладки</h1>
+</div>
+
+<p class="bookmarks-intro">
+    Одна закладка на курс — сохраняйте нужный шаг и возвращайтесь к нему в один клик.
+</p>
+
+@if (Model == null || !Model.Any())
+{
+    <div class="bookmarks-empty">
+        <i class="fa-solid fa-bookmark"></i>
+        <h3>Закладок пока нет</h3>
+        <p>На странице обучения нажмите «Добавить в закладки» у нужного шага.</p>
+        <a class="bookmarks-btn" href="@Url.Action("Index", "ActiveCourses")">К активным курсам</a>
+    </div>
+}
+else
+{
+    <div class="bookmarks-list">
+        @foreach (var b in Model)
+        {
+            var cover = string.IsNullOrWhiteSpace(b.CoverImagePath)
+                ? Url.Content("~/images/default-course.jpg")
+                : b.CoverImagePath;
+
+            <article class="bookmark-card">
+                <div class="bookmark-card-cover" style="background-image:url('@cover');"></div>
+                <div class="bookmark-card-body">
+                    <h2 class="bookmark-course-title">@b.CourseTitle</h2>
+                    <p class="bookmark-step-path">
+                        <span>@b.ModuleTitle</span>
+                        @if (!string.IsNullOrEmpty(b.LessonTitle))
+                        {
+                            <span> · @b.LessonTitle</span>
+                        }
+                    </p>
+                    <p class="bookmark-step-title">
+                        <i class="fa-solid fa-bookmark"></i> @b.StepTitle
+                    </p>
+                    <p class="bookmark-updated">Обновлено @b.UpdatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</p>
+                    <div class="bookmark-actions">
+                        <a class="bookmarks-btn bookmarks-btn-primary"
+                           href="@Url.Action("Index", "Course", new { courseId = b.CourseId, stepId = b.StepId })">
+                            Перейти к шагу
+                        </a>
+                        <button type="button"
+                                class="bookmarks-btn bookmarks-btn-ghost js-remove-bookmark"
+                                data-course-id="@b.CourseId">
+                            Удалить
+                        </button>
+                    </div>
+                </div>
+            </article>
+        }
+    </div>
+}
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+            document.querySelectorAll(".js-remove-bookmark").forEach((btn) => {
+                btn.addEventListener("click", async function () {
+                    const courseId = this.getAttribute("data-course-id");
+                    if (!courseId || !token) return;
+                    const fd = new FormData();
+                    fd.append("courseId", courseId);
+                    fd.append("__RequestVerificationToken", token);
+                    const res = await fetch("@Url.Action("Remove", "Bookmarks")", {
+                        method: "POST",
+                        body: fd
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        this.closest(".bookmark-card")?.remove();
+                        if (!document.querySelector(".bookmark-card")) {
+                            location.reload();
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+}
+
+@Html.AntiForgeryToken()

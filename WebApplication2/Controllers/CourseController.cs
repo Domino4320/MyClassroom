@@ -265,9 +265,15 @@ namespace WebApplication2.Controllers
 
             if (currentStep == null) return NotFound();
 
-            // Проверка последовательности (нельзя прыгнуть вперед через шаг)
+            var courseBookmark = await _db.CourseBookmarks
+                .AsNoTracking()
+                .FirstOrDefaultAsync(b => b.UserLogin == login && b.CourseId == courseId);
+
+            var isBookmarkStep = courseBookmark != null && courseBookmark.StepId == currentStep.Id;
+
+            // Проверка последовательности (нельзя прыгнуть вперед, кроме сохранённой закладки)
             int currentIndex = allStepsSorted.IndexOf(currentStep);
-            if (currentIndex > 0)
+            if (currentIndex > 0 && !isBookmarkStep)
             {
                 var prevStep = allStepsSorted[currentIndex - 1];
                 if (!completedStepIds.Contains(prevStep.Id))
@@ -335,7 +341,9 @@ namespace WebApplication2.Controllers
                 HasPendingManualSubmission = hasPendingManual,
                 LatestSubmission = latestSubmission,
                 EarnedPointsInCourse = earnedPointsInCourse,
-                MaxPointsInCourse = maxPointsInCourse
+                MaxPointsInCourse = maxPointsInCourse,
+                BookmarkedStepId = courseBookmark?.StepId,
+                IsCurrentStepBookmarked = isBookmarkStep
             };
 
             return View(viewModel);

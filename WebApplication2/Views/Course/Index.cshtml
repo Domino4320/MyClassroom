@@ -529,6 +529,51 @@
             margin-top: 10px;
         }
 
+        .bookmark-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .btn-bookmark {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            border: 1px solid rgba(251, 191, 36, 0.45);
+            background: rgba(251, 191, 36, 0.12);
+            color: #fcd34d;
+            font-size: 0.88rem;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.2s, border-color 0.2s;
+        }
+
+        .btn-bookmark:hover {
+            background: rgba(251, 191, 36, 0.22);
+        }
+
+        .btn-bookmark.is-active {
+            background: rgba(251, 191, 36, 0.28);
+            border-color: #fbbf24;
+            color: #fef3c7;
+        }
+
+        .bookmark-link-page {
+            font-size: 0.85rem;
+            color: var(--accent-blue);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .bookmark-link-page:hover {
+            text-decoration: underline;
+        }
+
     </style>
 </head>
 <body>
@@ -596,6 +641,18 @@
 
         <div class="main-scroll-area">
             <div class="content-card">
+                <div class="bookmark-toolbar">
+                    <button type="button"
+                            id="bookmarkToggleBtn"
+                            class="btn-bookmark @(Model.IsCurrentStepBookmarked ? "is-active" : "")"
+                            data-course-id="@Model.CourseId"
+                            data-step-id="@Model.CurrentStep.Id"
+                            data-is-bookmarked="@(Model.IsCurrentStepBookmarked ? "true" : "false")">
+                        <span id="bookmarkToggleIcon">@(Model.IsCurrentStepBookmarked ? "★" : "☆")</span>
+                        <span id="bookmarkToggleLabel">@(Model.IsCurrentStepBookmarked ? "В закладках" : "Добавить в закладки")</span>
+                    </button>
+                    <a class="bookmark-link-page" href="@Url.Action("Index", "Bookmarks")">Все закладки</a>
+                </div>
                 <h1 class="step-title">@Model.CurrentStep.Title</h1>
 
                 @if (!string.IsNullOrEmpty(Model.CurrentStep.VideoUrl))
@@ -895,6 +952,55 @@
             document.getElementById('replyToName').innerText = '';
             document.getElementById('replyBanner').style.display = 'none';
         }
+
+        (function initBookmarkToggle() {
+            const btn = document.getElementById("bookmarkToggleBtn");
+            if (!btn) return;
+
+            const icon = document.getElementById("bookmarkToggleIcon");
+            const label = document.getElementById("bookmarkToggleLabel");
+            const setUrl = "@Url.Action("Set", "Bookmarks")";
+            const removeUrl = "@Url.Action("Remove", "Bookmarks")";
+
+            function setUi(active) {
+                btn.classList.toggle("is-active", active);
+                btn.dataset.isBookmarked = active ? "true" : "false";
+                if (icon) icon.textContent = active ? "★" : "☆";
+                if (label) label.textContent = active ? "В закладках" : "Добавить в закладки";
+            }
+
+            btn.addEventListener("click", async function () {
+                const isBookmarked = btn.dataset.isBookmarked === "true";
+                const params = new URLSearchParams();
+                params.append("courseId", btn.dataset.courseId);
+                params.append("__RequestVerificationToken", STEP_DATA.token);
+
+                if (!isBookmarked) {
+                    params.append("stepId", btn.dataset.stepId);
+                }
+
+                const url = isBookmarked ? removeUrl : setUrl;
+                try {
+                    const res = await fetch(url, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/x-www-form-urlencoded",
+                            "RequestVerificationToken": STEP_DATA.token
+                        },
+                        body: params
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        setUi(!isBookmarked);
+                    } else {
+                        alert(data.message || "Не удалось обновить закладку.");
+                    }
+                } catch (e) {
+                    console.error(e);
+                    alert("Ошибка при сохранении закладки.");
+                }
+            });
+        })();
     </script>
 </body>
 </html>

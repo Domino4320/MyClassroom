@@ -26,6 +26,7 @@ namespace WebApplication2.Data
         public DbSet<StepSubmissionModel> StepSubmissions { get; set; }
         public DbSet<ForumDiscussionModel> ForumDiscussions { get; set; }
         public DbSet<ForumMessageModel> ForumMessages { get; set; }
+        public DbSet<CourseBookmarkModel> CourseBookmarks { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -62,6 +63,22 @@ namespace WebApplication2.Data
                 .WithMany()
                 .HasForeignKey(r => r.UserLogin)
                 .HasPrincipalKey(u => u.Login)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<CourseBookmarkModel>()
+                .HasIndex(b => new { b.UserLogin, b.CourseId })
+                .IsUnique();
+
+            modelBuilder.Entity<CourseBookmarkModel>()
+                .HasOne(b => b.Course)
+                .WithMany()
+                .HasForeignKey(b => b.CourseId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<CourseBookmarkModel>()
+                .HasOne(b => b.Step)
+                .WithMany()
+                .HasForeignKey(b => b.StepId)
                 .OnDelete(DeleteBehavior.Cascade);
         }
     }
