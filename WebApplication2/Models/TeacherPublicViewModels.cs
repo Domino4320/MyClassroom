@@ -9,6 +9,8 @@ namespace WebApplication2.Models
         public string Username { get; set; }
         public string? Avatar { get; set; }
         public string CurrentJob { get; set; }
+        public string SpecializationCategory { get; set; } = string.Empty;
+        public string? TeacherTags { get; set; }
         public int Experience { get; set; }
         public string? AboutSnippet { get; set; }
         public int PublishedCoursesCount { get; set; }

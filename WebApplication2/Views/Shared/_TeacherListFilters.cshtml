@@ -1,0 +1,32 @@
+@{
+    var specializations = ViewData["FilterSpecializations"] as IEnumerable<string> ?? Enumerable.Empty<string>();
+}
+
+<section class="teacher-filters">
+    <div class="teacher-filters-bar">
+        <div class="search-input-wrapper teacher-filters-field">
+            <input type="text"
+                   id="teacherNameSearch"
+                   class="dynamic-search-input"
+                   placeholder="ФИО преподавателя..."
+                   autocomplete="off"
+                   aria-label="ФИО">
+        </div>
+        <select id="teacherSpecFilter" class="teacher-filter-select" aria-label="Специализация">
+            <option value="">Все специализации</option>
+            @foreach (var spec in specializations)
+            {
+                <option value="@spec">@spec</option>
+            }
+        </select>
+        <div class="search-input-wrapper teacher-filters-field teacher-filters-tags">
+            <input type="text"
+                   id="teacherTagsSearch"
+                   class="dynamic-search-input"
+                   placeholder="Теги (через запятую)..."
+                   autocomplete="off"
+                   aria-label="Теги">
+        </div>
+    </div>
+    <p class="teacher-filters-hint">Подстрока без учёта регистра. Несколько тегов через запятую — должны совпасть все.</p>
+</section>

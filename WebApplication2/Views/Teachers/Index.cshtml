@@ -1,6 +1,13 @@
 @model List<TeacherCatalogRowViewModel>
 @{
     ViewData["Title"] = "Каталог преподавателей";
+    var specializations = Model?
+        .Select(t => t.SpecializationCategory)
+        .Where(s => !string.IsNullOrWhiteSpace(s))
+        .Distinct()
+        .OrderBy(s => s)
+        .ToList() ?? new List<string>();
+    ViewData["FilterSpecializations"] = specializations;
 }
 
 @section Styles {
@@ -21,17 +28,47 @@
     }
     else
     {
-        <div class="tc-grid">
+        @await Html.PartialAsync("_TeacherListFilters")
+
+        <div class="tc-grid" id="teachersGrid">
             @foreach (var t in Model)
             {
-                <a class="tc-card" asp-action="PublicProfile" asp-route-id="@t.Login">
+                var tagList = (t.TeacherTags ?? "")
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(tag => tag.Trim())
+                    .Where(tag => tag.Length > 0)
+                    .ToList();
+
+                var tagsNormalized = tagList
+                    .Select(tag => tag.ToLowerInvariant());
+
+                <a class="tc-card teacher-catalog-item"
+                   asp-action="PublicProfile"
+                   asp-route-id="@t.Login"
+                   data-name="@t.Username.ToLowerInvariant()"
+                   data-specialization="@t.SpecializationCategory.ToLowerInvariant()"
+                   data-tags="@string.Join(" ", tagsNormalized)">
                     <div class="tc-card-head">
                         <img class="tc-card-avatar" src="@(string.IsNullOrEmpty(t.Avatar) ? Url.Content("~/images/default_avatar.jpg") : t.Avatar)" alt="" />
-                        <div>
+                        <div class="tc-card-head-text">
                             <div class="tc-card-name">@t.Username</div>
                             <div class="tc-card-job">@t.CurrentJob</div>
+                            @if (tagList.Any())
+                            {
+                                <div class="tc-card-tags">
+                                    @foreach (var tag in tagList.Take(4))
+                                    {
+                                        <span class="tc-tag tc-tag--compact" title="@tag">@tag</span>
+                                    }
+                                    @if (tagList.Count > 4)
+                                    {
+                                        <span class="tc-tag-more" title="@string.Join(", ", tagList.Skip(4))">+@(tagList.Count - 4)</span>
+                                    }
+                                </div>
+                            }
                         </div>
                     </div>
+                    <div class="tc-card-spec">@t.SpecializationCategory</div>
                     <div class="tc-card-meta">
                         <span><strong>@t.Experience</strong> лет опыта</span>
                         <span><strong>@t.PublishedCoursesCount</strong> курсов</span>
@@ -44,6 +81,20 @@
                     <span class="tc-card-link">Профиль <i class="fas fa-arrow-right"></i></span>
                 </a>
             }
+
+            <div id="teachersNoResults" class="tc-no-results">
+                <i class="fas fa-magnifying-glass" style="font-size:1.5rem;margin-bottom:10px;display:block;"></i>
+                Преподаватели не найдены. Измените фильтры.
+            </div>
         </div>
     }
 </div>
+
+@section Scripts {
+    <script src="~/js/teacher-catalog-search.js" asp-append-version="true"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            initTeacherCatalogFilters();
+        });
+    </script>
+}

@@ -88,6 +88,8 @@ namespace WebApplication2.Controllers
                     Username = r.u.Username,
                     Avatar = r.u.Avatar,
                     CurrentJob = r.tp.CurrentJob,
+                    SpecializationCategory = r.tp.SpecializationCategory ?? "",
+                    TeacherTags = r.tp.TeacherTags,
                     Experience = r.tp.Experience,
                     AboutSnippet = string.IsNullOrWhiteSpace(snippet) ? null : snippet,
                     PublishedCoursesCount = cc,
