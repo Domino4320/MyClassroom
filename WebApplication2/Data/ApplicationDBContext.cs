@@ -27,6 +27,7 @@ namespace WebApplication2.Data
         public DbSet<ForumDiscussionModel> ForumDiscussions { get; set; }
         public DbSet<ForumMessageModel> ForumMessages { get; set; }
         public DbSet<CourseBookmarkModel> CourseBookmarks { get; set; }
+        public DbSet<NotificationModel> Notifications { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -79,6 +80,13 @@ namespace WebApplication2.Data
                 .HasOne(b => b.Step)
                 .WithMany()
                 .HasForeignKey(b => b.StepId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<NotificationModel>()
+                .HasOne(n => n.User)
+                .WithMany()
+                .HasForeignKey(n => n.UserLogin)
+                .HasPrincipalKey(u => u.Login)
                 .OnDelete(DeleteBehavior.Cascade);
         }
     }

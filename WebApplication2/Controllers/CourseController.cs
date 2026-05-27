@@ -539,10 +539,38 @@ namespace WebApplication2.Controllers
             if (string.IsNullOrEmpty(login) || string.IsNullOrWhiteSpace(text))
                 return Json(new { success = false });
 
+            var step = await _db.Steps
+                .Include(s => s.Lesson)
+                    .ThenInclude(l => l.Module)
+                .FirstOrDefaultAsync(s => s.Id == stepId);
+
+            if (step?.Lesson?.Module == null)
+                return Json(new { success = false });
+
+            var courseId = step.Lesson.Module.CourseId;
+            var course = await _db.Courses.AsNoTracking().FirstOrDefaultAsync(c => c.Id == courseId);
+            var isTeacherReply = course != null && course.AuthorLogin == login;
+
             if (parentCommentId.HasValue)
             {
-                var parent = await _db.Comments.FirstOrDefaultAsync(c => c.Id == parentCommentId.Value && c.StepId == stepId);
+                var parent = await _db.Comments
+                    .AsNoTracking()
+                    .Include(c => c.User)
+                    .FirstOrDefaultAsync(c => c.Id == parentCommentId.Value && c.StepId == stepId);
                 if (parent == null) return Json(new { success = false });
+
+                if (!string.Equals(parent.UserLogin, login, StringComparison.OrdinalIgnoreCase))
+                {
+                    var authorName = isTeacherReply ? "Преподаватель" : (HttpContext.Session.GetString("Username") ?? login);
+                    var courseTitle = course?.Title ?? "курс";
+                    _db.Notifications.Add(new NotificationModel
+                    {
+                        UserLogin = parent.UserLogin,
+                        Title = isTeacherReply ? "Ответ преподавателя" : "Ответ на ваш комментарий",
+                        Body = $"{authorName} ответил(а) вам в курсе «{courseTitle}».",
+                        Url = Url.Action("Index", "Course", new { courseId, stepId })
+                    });
+                }
             }
 
             _db.Comments.Add(new CommentModel

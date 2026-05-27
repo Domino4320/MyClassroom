@@ -1,0 +1,54 @@
+@model List<WebApplication2.Models.NotificationModel>
+@{
+    ViewData["Title"] = "Уведомления";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/notifications.css" asp-append-version="true" />
+}
+
+<div class="page-header">
+    <h1>Уведомления</h1>
+</div>
+
+@Html.AntiForgeryToken()
+
+@if (Model == null || !Model.Any())
+{
+    <div class="notif-empty">
+        <i class="fa-solid fa-bell"></i>
+        <h3>Пока нет уведомлений</h3>
+        <p>Здесь появятся ответы на ваши комментарии и ответы преподавателя.</p>
+    </div>
+}
+else
+{
+    <div class="notif-actions">
+        <button type="button" class="notif-btn notif-btn-ghost" id="markAllReadBtn">Отметить всё прочитанным</button>
+    </div>
+
+    <div class="notif-list">
+        @foreach (var n in Model)
+        {
+            var cardClass = n.IsRead ? "notif-card" : "notif-card notif-card--unread";
+            <a class="@cardClass" href="@(string.IsNullOrWhiteSpace(n.Url) ? "#" : n.Url)" data-notif-id="@n.Id">
+                <div class="notif-title">@n.Title</div>
+                @if (!string.IsNullOrWhiteSpace(n.Body))
+                {
+                    <div class="notif-body">@n.Body</div>
+                }
+                <div class="notif-meta">@n.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</div>
+            </a>
+        }
+    </div>
+}
+
+@section Scripts {
+    <script src="~/js/notifications.js" asp-append-version="true"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            window.initNotificationsPage?.();
+        });
+    </script>
+}
+

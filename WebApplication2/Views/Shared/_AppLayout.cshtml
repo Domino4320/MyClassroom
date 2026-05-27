@@ -26,6 +26,12 @@
     </div>
     <input type="file" id="avatarInput" accept="image/*" style="display:none" />
     <script src="~/js/script_for_main_page.js" asp-append-version="true"></script>
+    <script src="~/js/notifications.js" asp-append-version="true"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            window.initHeaderNotifications?.();
+        });
+    </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

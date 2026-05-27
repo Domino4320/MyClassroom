@@ -12,6 +12,24 @@
             ? Url.Content("~/images/default_avatar.jpg")
             : avatar + "?v=" + DateTime.Now.Ticks;
 
+            @Html.AntiForgeryToken()
+
+            <div class="notif-bell">
+                <button type="button" id="notifBellBtn" class="notif-bell-btn" aria-label="Уведомления">
+                    <i class="fa-solid fa-bell"></i>
+                    <span id="notifBadge" class="notif-badge" style="display:none;">0</span>
+                </button>
+                <div id="notifDropdown" class="notif-dropdown" aria-label="Список уведомлений">
+                    <div class="notif-dd-head">
+                        <div class="notif-dd-titlebar">Уведомления</div>
+                        <button type="button" id="notifMarkAllBtn" class="notif-dd-action">Прочитать всё</button>
+                    </div>
+                    <div id="notifDropdownEmpty" class="notif-dd-empty">Пока нет уведомлений.</div>
+                    <div id="notifDropdownList" class="notif-dd-list"></div>
+                    <a class="notif-dd-footer" href="@Url.Action("Index", "Notifications")">Все уведомления →</a>
+                </div>
+            </div>
+
             <img src="@avatarPath"
                  alt="avatar"
                  id="headerAvatar"
