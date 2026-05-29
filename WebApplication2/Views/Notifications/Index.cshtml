@@ -25,20 +25,47 @@ else
 {
     <div class="notif-actions">
         <button type="button" class="notif-btn notif-btn-ghost" id="markAllReadBtn">Отметить всё прочитанным</button>
+        <button type="button" class="notif-btn notif-btn-danger" id="deleteAllNotifBtn">Очистить все</button>
     </div>
 
-    <div class="notif-list">
+    <div class="notif-list" id="notifList">
         @foreach (var n in Model)
         {
             var cardClass = n.IsRead ? "notif-card" : "notif-card notif-card--unread";
-            <a class="@cardClass" href="@(string.IsNullOrWhiteSpace(n.Url) ? "#" : n.Url)" data-notif-id="@n.Id">
-                <div class="notif-title">@n.Title</div>
-                @if (!string.IsNullOrWhiteSpace(n.Body))
-                {
-                    <div class="notif-body">@n.Body</div>
-                }
-                <div class="notif-meta">@n.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</div>
-            </a>
+            <article class="@cardClass" data-notif-id="@n.Id">
+                <div class="notif-card-body">
+                    @if (!string.IsNullOrWhiteSpace(n.Url))
+                    {
+                        <a class="notif-card-link" href="@n.Url">
+                            <div class="notif-title">@n.Title</div>
+                            @if (!string.IsNullOrWhiteSpace(n.Body))
+                            {
+                                <div class="notif-body">@n.Body</div>
+                            }
+                        </a>
+                    }
+                    else
+                    {
+                        <div class="notif-title">@n.Title</div>
+                        @if (!string.IsNullOrWhiteSpace(n.Body))
+                        {
+                            <div class="notif-body">@n.Body</div>
+                        }
+                    }
+                    <div class="notif-meta">@n.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</div>
+                </div>
+                <div class="notif-card-actions">
+                    @if (!n.IsRead)
+                    {
+                        <button type="button" class="notif-icon-btn" data-action="read" data-id="@n.Id" title="Отметить прочитанным">
+                            <i class="fa-solid fa-check"></i>
+                        </button>
+                    }
+                    <button type="button" class="notif-icon-btn notif-icon-btn--danger" data-action="delete" data-id="@n.Id" title="Удалить">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </div>
+            </article>
         }
     </div>
 }
@@ -51,4 +78,3 @@ else
         });
     </script>
 }
-

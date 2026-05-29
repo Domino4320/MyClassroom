@@ -1,0 +1,420 @@
+/* Путь обучения в сайдбаре */
+.sidebar-progress {
+    padding: 0 20px 16px;
+    border-bottom: 1px solid var(--border-color, #334155);
+}
+
+.sidebar-progress-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 0.78rem;
+    color: var(--text-muted, #94a3b8);
+    font-weight: 600;
+}
+
+.sidebar-progress-bar {
+    height: 6px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.sidebar-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #10b981, #38bdf8);
+    border-radius: 999px;
+    transition: width 0.35s ease;
+}
+
+.lesson-sidebar-title {
+    padding: 6px 20px 4px 28px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #64748b;
+}
+
+.sidebar-steps-path {
+    position: relative;
+    padding: 4px 0 12px 0;
+}
+
+.sidebar-steps-path::before {
+    content: "";
+    position: absolute;
+    left: 31px;
+    top: 8px;
+    bottom: 8px;
+    width: 2px;
+    background: linear-gradient(180deg, #10b981, #334155);
+    border-radius: 2px;
+}
+
+.sidebar-step-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 16px 8px 20px;
+    text-decoration: none;
+    color: #cbd5e1;
+    font-size: 0.86rem;
+    position: relative;
+    z-index: 1;
+    transition: background 0.2s ease;
+    border-left: 3px solid transparent;
+}
+
+.sidebar-step-item:hover:not(.step-locked) {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.sidebar-step-item.step-current {
+    background: rgba(56, 189, 248, 0.12);
+    border-left-color: #38bdf8;
+    color: #38bdf8;
+    font-weight: 600;
+}
+
+.sidebar-step-item.step-done {
+    color: #d1fae5;
+}
+
+.sidebar-step-item.step-locked {
+    opacity: 0.42;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.sidebar-step-dot {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    font-weight: 800;
+    border: 2px solid #475569;
+    background: #1e293b;
+    margin-top: 1px;
+}
+
+.sidebar-step-item.step-done .sidebar-step-dot {
+    background: #10b981;
+    border-color: #10b981;
+    color: #fff;
+}
+
+.sidebar-step-item.step-current .sidebar-step-dot {
+    background: #38bdf8;
+    border-color: #38bdf8;
+    color: #fff;
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.45);
+}
+
+.sidebar-step-body {
+    flex: 1;
+    min-width: 0;
+    line-height: 1.35;
+}
+
+.sidebar-step-title {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sidebar-step-type {
+    font-size: 0.65rem;
+    color: #64748b;
+    margin-top: 2px;
+}
+
+/* Интерактив — студент */
+.interactive-block {
+    margin-top: 24px;
+    padding: 22px;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid #334155;
+    border-radius: 16px;
+}
+
+.interactive-block h3 {
+    color: #38bdf8;
+    margin-bottom: 8px;
+    font-size: 1.05rem;
+}
+
+.interactive-instruction {
+    color: #94a3b8;
+    margin-bottom: 18px;
+    line-height: 1.5;
+}
+
+.interactive-match-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+@media (max-width: 640px) {
+    .interactive-match-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.interactive-col h4 {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #94a3b8;
+    margin-bottom: 10px;
+}
+
+.interactive-term,
+.interactive-def {
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    border-radius: 12px;
+    border: 1px solid #334155;
+    background: rgba(30, 41, 59, 0.8);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+}
+
+.interactive-term:hover,
+.interactive-def:hover {
+    border-color: #38bdf8;
+}
+
+.interactive-term.selected {
+    border-color: #38bdf8;
+    background: rgba(56, 189, 248, 0.15);
+}
+
+.interactive-term.matched {
+    border-color: #10b981;
+    background: rgba(16, 185, 129, 0.1);
+    opacity: 0.65;
+}
+
+.interactive-error-msg {
+    color: #f87171;
+    margin-top: 12px;
+    padding: 12px 14px;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    border-radius: 10px;
+    font-size: 0.9rem;
+}
+
+.interactive-hint {
+    margin: 12px 0 0;
+    font-size: 0.82rem;
+    color: #64748b;
+    line-height: 1.4;
+}
+
+.interactive-actions {
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid #334155;
+}
+
+.interactive-reset-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: 10px;
+    border: 1px solid #475569;
+    background: rgba(30, 41, 59, 0.9);
+    color: #cbd5e1;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s, color 0.2s;
+}
+
+.interactive-reset-btn:hover {
+    border-color: #38bdf8;
+    background: rgba(56, 189, 248, 0.12);
+    color: #e0f2fe;
+}
+
+.interactive-def.matched {
+    border-color: #10b981;
+    background: rgba(16, 185, 129, 0.12);
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+.interactive-order-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.interactive-order-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    margin-bottom: 8px;
+    background: rgba(30, 41, 59, 0.9);
+    border: 1px solid #334155;
+    border-radius: 12px;
+    cursor: grab;
+    user-select: none;
+    font-weight: 600;
+}
+
+.interactive-order-item:active {
+    cursor: grabbing;
+}
+
+.interactive-order-item.dragging {
+    opacity: 0.5;
+}
+
+.interactive-order-handle {
+    color: #94a3b8;
+    font-size: 1.1rem;
+}
+
+.interactive-tf-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.interactive-tf-row {
+    padding: 16px;
+    border-radius: 14px;
+    border: 1px solid #334155;
+    background: rgba(30, 41, 59, 0.85);
+}
+
+.interactive-tf-text {
+    margin-bottom: 12px;
+    line-height: 1.5;
+    font-weight: 600;
+}
+
+.interactive-tf-btns {
+    display: flex;
+    gap: 10px;
+}
+
+.interactive-tf-btn {
+    flex: 1;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 2px solid #334155;
+    background: transparent;
+    color: #e2e8f0;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s ease;
+}
+
+.interactive-tf-btn:hover {
+    border-color: #475569;
+}
+
+.interactive-tf-btn.selected {
+    border-color: #38bdf8;
+    background: rgba(56, 189, 248, 0.15);
+    color: #38bdf8;
+}
+
+.interactive-tf-btn.selected[data-val="true"] {
+    border-color: #10b981;
+    background: rgba(16, 185, 129, 0.15);
+    color: #6ee7b7;
+}
+
+.interactive-tf-btn.selected[data-val="false"] {
+    border-color: #ef4444;
+    background: rgba(239, 68, 68, 0.12);
+    color: #fca5a5;
+}
+
+/* Конструктор — интерактив */
+.interactive-constructor label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: var(--text-muted, #94a3b8);
+}
+
+.interactive-constructor select,
+.interactive-constructor textarea,
+.interactive-constructor input[type="text"] {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border, #334155);
+    background: var(--bg-dark, #0f172a);
+    color: inherit;
+    font-family: inherit;
+}
+
+.interactive-pair-row,
+.interactive-item-row,
+.interactive-stmt-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.interactive-pair-row input,
+.interactive-item-row input,
+.interactive-stmt-row input {
+    flex: 1;
+}
+
+.interactive-stmt-row select {
+    width: 110px;
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid var(--border, #334155);
+    background: var(--bg-dark, #0f172a);
+    color: inherit;
+}
+
+.interactive-row-remove {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 8px;
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    cursor: pointer;
+    font-size: 1.2rem;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.interactive-item-num {
+    width: 24px;
+    color: var(--text-muted, #94a3b8);
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.card-created-date {
+    display: block;
+    color: #78909c;
+    font-size: 0.8rem;
+    margin-top: 6px;
+}

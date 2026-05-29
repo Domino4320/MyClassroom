@@ -9,7 +9,8 @@ namespace WebApplication2.Models
         Text,
         Video,
         Quiz,
-        Code
+        Code,
+        Interactive
     }
 
     public class CourseModel

@@ -343,7 +343,10 @@ namespace WebApplication2.Controllers
                 EarnedPointsInCourse = earnedPointsInCourse,
                 MaxPointsInCourse = maxPointsInCourse,
                 BookmarkedStepId = courseBookmark?.StepId,
-                IsCurrentStepBookmarked = isBookmarkStep
+                IsCurrentStepBookmarked = isBookmarkStep,
+                TimelineTotalCount = allStepsSorted.Count,
+                TimelineCompletedCount = allStepsSorted.Count(s => completedStepIds.Contains(s.Id)),
+                TimelineSteps = BuildTimelineSteps(allStepsSorted, completedStepIds, currentStep.Id, courseBookmark?.StepId, modules)
             };
 
             return View(viewModel);
@@ -352,7 +355,7 @@ namespace WebApplication2.Controllers
         // --- ЗАВЕРШЕНИЕ ШАГА (AJAX) ---
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CompleteStep(int stepId, [FromForm] List<int> selectedOptionIds, [FromForm] string? manualAnswer)
+        public async Task<IActionResult> CompleteStep(int stepId, [FromForm] List<int> selectedOptionIds, [FromForm] string? manualAnswer, [FromForm] string? interactiveAnswer)
         {
             var login = HttpContext.Session.GetString("Login");
             if (string.IsNullOrEmpty(login)) return Json(new { success = false, message = "Сессия истекла" });
@@ -372,28 +375,40 @@ namespace WebApplication2.Controllers
                     if (string.IsNullOrWhiteSpace(manualAnswer))
                         return Json(new { success = false, message = "Введите текст ответа!" });
 
-                    // Если уже есть активная работа на проверке — не создаем дубликат
+                    var stepAlreadyCompleted = await _db.Progress.AnyAsync(p =>
+                        p.StepId == stepId && p.UserLogin == login && p.IsCompleted);
+
+                    if (stepAlreadyCompleted)
+                    {
+                        var nextWhenDone = await GetNextStepIdAsync(currentStep.Lesson.Module.CourseId, stepId);
+                        return Json(new
+                        {
+                            success = true,
+                            alreadyCompleted = true,
+                            message = "Ответ уже проверен. Переход к следующему шагу...",
+                            nextStepId = nextWhenDone
+                        });
+                    }
+
                     var hasPending = await _db.StepSubmissions.AnyAsync(s =>
                         s.StepId == stepId &&
                         s.UserLogin == login &&
                         s.IsPending);
 
-                    if (!hasPending)
-                    {
-                        // Сохраняем ответ на проверку
-                        var submission = new StepSubmissionModel
-                        {
-                            StepId = stepId,
-                            UserLogin = login,
-                            UserAnswerText = manualAnswer,
-                            IsPending = true,
-                            SubmittedAt = DateTime.UtcNow
-                        };
-                        _db.StepSubmissions.Add(submission);
-                        await _db.SaveChangesAsync();
-                    }
+                    if (hasPending)
+                        return Json(new { success = true, pendingReview = true });
 
-                    // ВАЖНО: ручная проверка НЕ засчитывает шаг, пока преподаватель не выставит баллы
+                    var submission = new StepSubmissionModel
+                    {
+                        StepId = stepId,
+                        UserLogin = login,
+                        UserAnswerText = manualAnswer,
+                        IsPending = true,
+                        SubmittedAt = DateTime.UtcNow
+                    };
+                    _db.StepSubmissions.Add(submission);
+                    await _db.SaveChangesAsync();
+
                     return Json(new { success = true, pendingReview = true });
                 }
                 else if (!string.IsNullOrWhiteSpace(currentStep.CorrectTextAnswer))
@@ -450,6 +465,14 @@ namespace WebApplication2.Controllers
                     }
                 }
             }
+            else if (currentStep.Type == StepType.Interactive)
+            {
+                if (!InteractiveStepHelper.TryValidateConfig(currentStep.TextContent, out var configError))
+                    return Json(new { success = false, message = configError ?? "Задание не настроено." });
+
+                if (!InteractiveStepHelper.TryValidate(currentStep.TextContent, interactiveAnswer, out var interactiveError))
+                    return Json(new { success = false, message = interactiveError ?? "Неверный ответ." });
+            }
 
             // Обновляем прогресс
             var progress = await _db.Progress.FirstOrDefaultAsync(p => p.StepId == stepId && p.UserLogin == login);
@@ -470,19 +493,22 @@ namespace WebApplication2.Controllers
             }
             await _db.SaveChangesAsync();
 
-            // Ищем следующий ID для перехода
+            var nextId = await GetNextStepIdAsync(currentStep.Lesson.Module.CourseId, stepId);
+            return Json(new { success = true, nextStepId = nextId });
+        }
+
+        private async Task<int?> GetNextStepIdAsync(int courseId, int stepId)
+        {
             var allIds = await _db.Modules
-                .Where(m => m.CourseId == currentStep.Lesson.Module.CourseId)
+                .Where(m => m.CourseId == courseId)
                 .OrderBy(m => m.Order)
                 .SelectMany(m => m.Lessons.OrderBy(l => l.Order)
-                    .SelectMany(l => l.Steps.OrderBy(s => s.Order)))
+                    .SelectMany(l => l.Steps.OrderBy(s => s.Order).ThenBy(s => s.Id)))
                 .Select(s => s.Id)
                 .ToListAsync();
 
-            int idx = allIds.IndexOf(stepId);
-            int? nextId = (idx >= 0 && idx < allIds.Count - 1) ? allIds[idx + 1] : null;
-
-            return Json(new { success = true, nextStepId = nextId });
+            var idx = allIds.IndexOf(stepId);
+            return idx >= 0 && idx < allIds.Count - 1 ? allIds[idx + 1] : null;
         }
 
         // --- ДОБАВЛЕНИЕ ОТЗЫВА (AJAX) ---
@@ -636,6 +662,48 @@ namespace WebApplication2.Controllers
             await _db.SaveChangesAsync();
 
             return RedirectToAction("Details", new { id = courseInDb.Id });
+        }
+
+        private static List<CourseTimelineStepViewModel> BuildTimelineSteps(
+            List<StepModel> allStepsSorted,
+            List<int> completedStepIds,
+            int currentStepId,
+            int? bookmarkedStepId,
+            List<ModuleModel> modules)
+        {
+            var moduleTitleByStep = new Dictionary<int, string>();
+            foreach (var module in modules)
+            {
+                foreach (var lesson in module.Lessons ?? new List<LessonModel>())
+                {
+                    foreach (var step in lesson.Steps ?? new List<StepModel>())
+                        moduleTitleByStep[step.Id] = module.Title;
+                }
+            }
+
+            var result = new List<CourseTimelineStepViewModel>();
+            for (var i = 0; i < allStepsSorted.Count; i++)
+            {
+                var step = allStepsSorted[i];
+                var isCompleted = completedStepIds.Contains(step.Id);
+                var isCurrent = step.Id == currentStepId;
+                var isBookmark = bookmarkedStepId.HasValue && bookmarkedStepId.Value == step.Id;
+                var prevDone = i == 0 || completedStepIds.Contains(allStepsSorted[i - 1].Id);
+                var isLocked = !isCompleted && !isCurrent && !isBookmark && !prevDone;
+
+                result.Add(new CourseTimelineStepViewModel
+                {
+                    StepId = step.Id,
+                    Title = string.IsNullOrWhiteSpace(step.Title) ? $"Шаг {i + 1}" : step.Title!,
+                    Type = step.Type,
+                    ModuleTitle = moduleTitleByStep.GetValueOrDefault(step.Id, ""),
+                    IsCompleted = isCompleted,
+                    IsCurrent = isCurrent,
+                    IsLocked = isLocked
+                });
+            }
+
+            return result;
         }
     }
 }

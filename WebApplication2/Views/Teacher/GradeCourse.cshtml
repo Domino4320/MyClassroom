@@ -1,247 +1,404 @@
 ﻿@model IEnumerable<WebApplication2.Controllers.GradingViewModel>
 
 @{
+    Layout = null;
     ViewData["Title"] = "Проверка работ";
+    var pendingCount = Model?.Count() ?? 0;
 }
 
-<style>
-    body {
-        background-color: #0a0f1a;
-        color: #e3f2fd;
-        font-family: 'Segoe UI', sans-serif;
-    }
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Проверка: @ViewBag.CourseTitle</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --card-hover: #243044;
+            --border: #334155;
+            --text: #f8fafc;
+            --muted: #94a3b8;
+            --accent: #38bdf8;
+            --success: #10b981;
+            --danger: #f87171;
+        }
 
-    .grading-header {
-        padding: 40px 0;
-        background: linear-gradient(180deg, #162031 0%, #0a0f1a 100%);
-        border-bottom: 1px solid rgba(79, 195, 247, 0.1);
-        margin-bottom: 30px;
-    }
+        * { box-sizing: border-box; }
 
-    .submission-card {
-        background: #162031;
-        border-radius: 20px;
-        border: 1px solid rgba(79, 195, 247, 0.15);
-        padding: 25px;
-        margin-bottom: 25px;
-        transition: all 0.3s ease;
-        position: relative;
-    }
+        html, body {
+            margin: 0;
+            padding: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.5;
+        }
+
+        .page {
+            max-width: 920px;
+            margin: 0 auto;
+            padding: 28px 20px 80px;
+        }
+
+        .page-top {
+            margin-bottom: 32px;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 600;
+            padding: 8px 14px;
+            margin: 0 0 16px -14px;
+            border-radius: 10px;
+            transition: color 0.2s, background 0.2s;
+        }
+
+        .back-link:hover {
+            color: var(--accent);
+            background: rgba(56, 189, 248, 0.08);
+        }
+
+        .page-title {
+            font-size: clamp(1.5rem, 4vw, 2rem);
+            font-weight: 800;
+            margin: 0 0 8px;
+            letter-spacing: -0.02em;
+        }
+
+        .page-subtitle {
+            margin: 0;
+            color: var(--muted);
+            font-size: 0.95rem;
+        }
+
+        .page-subtitle strong {
+            color: var(--text);
+            font-weight: 700;
+        }
+
+        .submission-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 24px;
+            margin-bottom: 20px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
 
         .submission-card:hover {
-            border-color: rgba(79, 195, 247, 0.4);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            border-color: rgba(56, 189, 248, 0.35);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
         }
 
-    .student-info {
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        margin-bottom: 20px;
-    }
+        .card-head {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            margin-bottom: 22px;
+            padding-bottom: 18px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
 
-    .avatar-placeholder {
-        width: 45px;
-        height: 45px;
-        background: #1e293b;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #4fc3f7;
-        font-weight: bold;
-        border: 1px solid rgba(79, 195, 247, 0.3);
-    }
+        .avatar {
+            width: 48px;
+            height: 48px;
+            flex-shrink: 0;
+            background: rgba(56, 189, 248, 0.12);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+            font-weight: 800;
+            font-size: 1.1rem;
+        }
 
-    .badge-step {
-        background: rgba(79, 195, 247, 0.1);
-        color: #4fc3f7;
-        font-size: 0.75rem;
-        padding: 4px 12px;
-        border-radius: 20px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
+        .card-head-main {
+            flex: 1;
+            min-width: 0;
+        }
 
-    .answer-box {
-        background: rgba(0, 0, 0, 0.2);
-        border-radius: 12px;
-        padding: 20px;
-        margin: 15px 0;
-        border-left: 4px solid #4fc3f7;
-        line-height: 1.6;
-    }
+        .student-login {
+            font-weight: 700;
+            font-size: 1.05rem;
+            margin-bottom: 4px;
+        }
 
-    .reference-box {
-        background: rgba(16, 185, 129, 0.05);
-        border-radius: 12px;
-        padding: 15px;
-        margin-bottom: 20px;
-        border: 1px dashed rgba(16, 185, 129, 0.3);
-        font-size: 0.9rem;
-    }
+        .submitted-at {
+            font-size: 0.85rem;
+            color: var(--muted);
+        }
 
-    .grading-controls {
-        display: grid;
-        grid-template-columns: 120px 1fr auto;
-        gap: 15px;
-        align-items: flex-end;
-        margin-top: 25px;
-        padding-top: 20px;
-        border-top: 1px solid rgba(255,255,255,0.05);
-    }
+        .step-badge {
+            flex-shrink: 0;
+            max-width: 45%;
+            text-align: right;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--accent);
+            background: rgba(56, 189, 248, 0.1);
+            border: 1px solid rgba(56, 189, 248, 0.25);
+            padding: 8px 12px;
+            border-radius: 10px;
+            line-height: 1.35;
+        }
 
-    .input-dark {
-        background: #0f172a;
-        border: 1px solid rgba(79, 195, 247, 0.2);
-        color: white;
-        padding: 10px 15px;
-        border-radius: 10px;
-        width: 100%;
-        transition: 0.3s;
-    }
+        .field-block {
+            margin-bottom: 18px;
+        }
 
-        .input-dark:focus {
-            border-color: #4fc3f7;
+        .field-label {
+            display: block;
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+
+        .answer-box {
+            background: rgba(15, 23, 42, 0.65);
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--accent);
+            border-radius: 12px;
+            padding: 16px 18px;
+            white-space: pre-wrap;
+            word-break: break-word;
+            line-height: 1.6;
+        }
+
+        .reference-box {
+            background: rgba(16, 185, 129, 0.06);
+            border: 1px dashed rgba(16, 185, 129, 0.35);
+            border-radius: 12px;
+            padding: 14px 18px;
+            white-space: pre-wrap;
+            word-break: break-word;
+            font-size: 0.95rem;
+            line-height: 1.55;
+        }
+
+        .grading-form {
+            display: grid;
+            grid-template-columns: 110px 1fr auto;
+            gap: 14px;
+            align-items: end;
+            margin-top: 22px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        @@media (max-width: 720px) {
+            .grading-form {
+                grid-template-columns: 1fr;
+            }
+
+            .step-badge {
+                max-width: 100%;
+                text-align: left;
+                margin-top: 8px;
+            }
+
+            .card-head {
+                flex-wrap: wrap;
+            }
+        }
+
+        .input-field {
+            width: 100%;
+            background: #0f172a;
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 11px 14px;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .input-field:focus {
             outline: none;
-            box-shadow: 0 0 0 3px rgba(79, 195, 247, 0.1);
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.12);
         }
 
-    .btn-submit-grade {
-        background: linear-gradient(135deg, #10b981, #059669);
-        color: white;
-        border: none;
-        padding: 10px 25px;
-        border-radius: 10px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: 0.3s;
-    }
-
-        .btn-submit-grade:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(16, 185, 129, 0.4);
+        .btn-grade {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: #fff;
+            border: none;
+            padding: 12px 22px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: transform 0.15s, box-shadow 0.2s;
         }
 
-    .empty-state {
-        text-align: center;
-        padding: 100px 0;
-        color: #90a4ae;
-    }
-</style>
+        .btn-grade:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(16, 185, 129, 0.35);
+        }
 
-<div class="grading-header">
-    <div class="container">
-        <a href="javascript:history.back()" class="text-decoration-none" style="color: #4fc3f7; font-size: 0.9rem;">
-            <i class="bi bi-arrow-left"></i> Вернуться назад
-        </a>
-        <h1 class="mt-3">Проверка работ: @ViewBag.CourseTitle</h1>
-        <p class="text-muted">Всего ответов, ожидающих проверки: <span class="text-white">@Model.Count()</span></p>
-    </div>
-</div>
+        .empty-state {
+            text-align: center;
+            padding: 72px 24px;
+            color: var(--muted);
+            border: 1px dashed var(--border);
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.02);
+        }
 
-<div class="container pb-5">
-    @if (!Model.Any())
-    {
-        <div class="empty-state">
-            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 20px; opacity: 0.5;">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                <polyline points="22 4 12 14.01 9 11.01"></polyline>
-            </svg>
-            <h3>Все чисто!</h3>
-            <p>На текущий момент нет ответов, требующих ручной проверки.</p>
-        </div>
-    }
-    else
-    {
-        @foreach (var item in Model)
-        {
-            <div class="submission-card" id="submission-@item.SubmissionId">
-                <div class="student-info">
-                    <div class="avatar-placeholder">
-                        @item.StudentLogin.Substring(0, 1).ToUpper()
-                    </div>
-                    <div>
-                        <div style="font-weight: 600; font-size: 1.1rem;">@@@item.StudentLogin</div>
-                        <div class="text-muted" style="font-size: 0.85rem;">Прислано: @item.SubmittedAt.ToString("g")</div>
-                    </div>
-                    <div class="ms-auto">
-                        <span class="badge-step">@item.LessonTitle / @item.StepTitle</span>
-                    </div>
-                </div>
+        .empty-state i {
+            font-size: 2.5rem;
+            color: var(--success);
+            opacity: 0.6;
+            margin-bottom: 16px;
+        }
 
-                <div class="answer-label" style="font-size: 0.8rem; color: #90a4ae; margin-left: 5px;">ОТВЕТ СТУДЕНТА:</div>
-                <div class="answer-box">
-                    @item.UserAnswer
-                </div>
-
-                @if (!string.IsNullOrEmpty(item.ReferenceAnswer))
+        .empty-state h3 {
+            color: var(--text);
+            margin: 0 0 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <header class="page-top">
+            <a class="back-link" href="/Teacher/GradingCenter">
+                <i class="fa-solid fa-arrow-left"></i>
+                К центру проверки
+            </a>
+            <h1 class="page-title">@ViewBag.CourseTitle</h1>
+            <p class="page-subtitle">
+                @if (pendingCount > 0)
                 {
-                    <div class="reference-box">
-                        <strong style="color: #10b981; font-size: 0.8rem; display: block; margin-bottom: 5px;">ЭТАЛОННЫЙ ОТВЕТ:</strong>
-                        @item.ReferenceAnswer
-                    </div>
+                    <text>Ожидают проверки: <strong>@pendingCount</strong> @(pendingCount == 1 ? "ответ" : pendingCount < 5 ? "ответа" : "ответов")</text>
                 }
+                else
+                {
+                    <text>Все ответы по этому курсу проверены</text>
+                }
+            </p>
+        </header>
 
-                <div class="grading-controls">
-                    <div>
-                        <label style="font-size: 0.8rem; color: #90a4ae; display: block; margin-bottom: 5px;">Баллы (max: @item.MaxPoints)</label>
-                        <input type="number" id="grade-@item.SubmissionId" class="input-dark"
-                               min="0" max="@item.MaxPoints" value="@item.MaxPoints" />
-                    </div>
-                    <div>
-                        <label style="font-size: 0.8rem; color: #90a4ae; display: block; margin-bottom: 5px;">Комментарий для студента</label>
-                        <input type="text" id="comment-@item.SubmissionId" class="input-dark"
-                               placeholder="Напишите фидбек..." />
-                    </div>
-                    <button class="btn-submit-grade" onclick="submitGrade(@item.SubmissionId)">
-                        Подтвердить
-                    </button>
-                </div>
+        @if (!Model.Any())
+        {
+            <div class="empty-state">
+                <div><i class="fa-solid fa-circle-check"></i></div>
+                <h3>Всё проверено</h3>
+                <p>Нет ответов, ожидающих ручной проверки по этому курсу.</p>
             </div>
         }
-    }
-</div>
+        else
+        {
+            @foreach (var item in Model)
+            {
+                <article class="submission-card" id="submission-@item.SubmissionId">
+                    <div class="card-head">
+                        <div class="avatar">@item.StudentLogin.Substring(0, 1).ToUpper()</div>
+                        <div class="card-head-main">
+                            <div class="student-login">@item.StudentLogin</div>
+                            <div class="submitted-at">
+                                <i class="fa-regular fa-clock"></i>
+                                @item.SubmittedAt.ToString("dd.MM.yyyy HH:mm")
+                            </div>
+                        </div>
+                        <div class="step-badge">@item.LessonTitle · @item.StepTitle</div>
+                    </div>
 
-@section Scripts {
+                    <div class="field-block">
+                        <span class="field-label">Ответ студента</span>
+                        <div class="answer-box">@item.UserAnswer</div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(item.ReferenceAnswer))
+                    {
+                        <div class="field-block">
+                            <span class="field-label">Эталонный ответ</span>
+                            <div class="reference-box">@item.ReferenceAnswer</div>
+                        </div>
+                    }
+
+                    <div class="grading-form">
+                        <div>
+                            <label class="field-label" for="grade-@item.SubmissionId">Баллы (макс. @item.MaxPoints)</label>
+                            <input type="number" id="grade-@item.SubmissionId" class="input-field"
+                                   min="0" max="@item.MaxPoints" value="@item.MaxPoints" />
+                        </div>
+                        <div>
+                            <label class="field-label" for="comment-@item.SubmissionId">Комментарий</label>
+                            <input type="text" id="comment-@item.SubmissionId" class="input-field"
+                                   placeholder="Комментарий для студента (необязательно)" />
+                        </div>
+                        <button type="button" class="btn-grade" onclick="submitGrade(@item.SubmissionId)">
+                            <i class="fa-solid fa-check"></i> Подтвердить
+                        </button>
+                    </div>
+                </article>
+            }
+        }
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         async function submitGrade(id) {
-            const grade = document.getElementById(`grade-${id}`).value;
+            const gradeInput = document.getElementById(`grade-${id}`);
+            const grade = parseInt(gradeInput?.value, 10);
             const comment = document.getElementById(`comment-${id}`).value;
 
-            const data = {
-                submissionId: id,
-                grade: parseInt(grade),
-                comment: comment
-            };
+            if (Number.isNaN(grade) || grade < 0) {
+                Swal.fire('Ошибка', 'Баллы не могут быть отрицательными.', 'error');
+                if (gradeInput) gradeInput.focus();
+                return;
+            }
 
             try {
                 const response = await fetch('/Teacher/SubmitGrade', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(data)
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        submissionId: id,
+                        grade: grade,
+                        comment: comment
+                    })
                 });
 
                 if (response.ok) {
                     const card = document.getElementById(`submission-${id}`);
-                    card.style.transform = "translateX(100px)";
-                    card.style.opacity = "0";
+                    card.style.transition = 'opacity 0.3s, transform 0.3s';
+                    card.style.opacity = '0';
+                    card.style.transform = 'translateX(24px)';
                     setTimeout(() => {
                         card.remove();
-                        if (document.querySelectorAll('.submission-card').length === 0) {
-                            location.reload(); // Перезагружаем, чтобы показать пустой стейт
+                        if (!document.querySelectorAll('.submission-card').length) {
+                            location.reload();
+                        } else {
+                            const subtitle = document.querySelector('.page-subtitle');
+                            const left = document.querySelectorAll('.submission-card').length;
+                            if (subtitle) {
+                                subtitle.innerHTML = `Ожидают проверки: <strong>${left}</strong> ${left === 1 ? 'ответ' : left < 5 ? 'ответа' : 'ответов'}`;
+                            }
                         }
                     }, 300);
                 } else {
                     Swal.fire('Ошибка', 'Не удалось сохранить оценку', 'error');
                 }
-            } catch (error) {
-                console.error('Error:', error);
+            } catch {
                 Swal.fire('Ошибка', 'Произошла сетевая ошибка', 'error');
             }
         }
     </script>
-}
+</body>
+</html>

@@ -90,15 +90,15 @@ namespace WebApplication2.Controllers
             if (course == null) return NotFound();
             if (course.AuthorLogin != userLogin) return Forbid();
 
+            if (data.Grade < 0)
+                return BadRequest("Баллы не могут быть отрицательными.");
+
             var grade = Math.Clamp(data.Grade, 0, submission.Step.MaxPoints);
             submission.EarnedPoints = grade;
-            submission.TeacherComment = data.Comment;
+            submission.TeacherComment = data.Comment ?? "";
             submission.IsPending = false;
-            submission.IsCorrect = grade > 0; // Считаем пройденным, если баллов > 0
+            submission.IsCorrect = grade > 0;
 
-            // Обновляем прогресс пользователя:
-            // - если баллы > 0 -> шаг засчитан
-            // - если 0 -> шаг не засчитан, переход дальше заблокирован
             var progress = await _context.UserProgress
                 .FirstOrDefaultAsync(p => p.UserLogin == submission.UserLogin && p.StepId == submission.StepId);
 
@@ -119,6 +119,10 @@ namespace WebApplication2.Controllers
                     progress.IsCompleted = true;
                     progress.CompletedAt = DateTime.UtcNow;
                 }
+            }
+            else if (progress != null)
+            {
+                progress.IsCompleted = false;
             }
 
             await _context.SaveChangesAsync();

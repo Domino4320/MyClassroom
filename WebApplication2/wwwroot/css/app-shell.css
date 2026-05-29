@@ -194,14 +194,43 @@ body {
 }
 
 .notif-dd-item {
-    padding: 12px 14px;
-    text-decoration: none;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px 10px 8px 0;
     color: inherit;
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .notif-dd-item:hover {
     background: rgba(79, 195, 247, 0.08);
+}
+
+.notif-dd-link {
+    flex: 1;
+    min-width: 0;
+    padding: 4px 0 4px 14px;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+
+.notif-dd-delete {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    margin-top: 4px;
+    margin-right: 6px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+}
+
+.notif-dd-delete:hover {
+    background: rgba(239, 68, 68, 0.15);
+    color: #fca5a5;
 }
 
 .notif-dd-item--unread {

@@ -106,6 +106,38 @@ namespace WebApplication2.Controllers
             await _db.SaveChangesAsync();
             return Json(new { success = true });
         }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var login = GetLogin();
+            if (string.IsNullOrEmpty(login))
+                return Json(new { success = false });
+
+            var n = await _db.Notifications.FirstOrDefaultAsync(x => x.Id == id && x.UserLogin == login);
+            if (n == null) return Json(new { success = false });
+
+            _db.Notifications.Remove(n);
+            await _db.SaveChangesAsync();
+            return Json(new { success = true });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteAll()
+        {
+            var login = GetLogin();
+            if (string.IsNullOrEmpty(login))
+                return Json(new { success = false });
+
+            var items = await _db.Notifications.Where(n => n.UserLogin == login).ToListAsync();
+            if (items.Count == 0) return Json(new { success = true });
+
+            _db.Notifications.RemoveRange(items);
+            await _db.SaveChangesAsync();
+            return Json(new { success = true });
+        }
     }
 }
 

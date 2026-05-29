@@ -10,6 +10,7 @@
     <meta charset="UTF-8">
     <title>Проектирование: @Model.CourseTitle</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="~/css/course-learn-features.css" asp-append-version="true" />
     <style>
         :root {
             --primary: #4fc3f7;
@@ -191,6 +192,41 @@
             font-weight: 800;
         }
 
+        .step-card-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .step-order-controls {
+            display: flex;
+            gap: 4px;
+        }
+
+        .btn-step-order {
+            background: rgba(79, 195, 247, 0.1);
+            border: 1px solid var(--border);
+            color: var(--primary);
+            border-radius: 6px;
+            width: 28px;
+            height: 28px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .btn-step-order:hover:not(:disabled) {
+            background: rgba(79, 195, 247, 0.22);
+        }
+
+        .btn-step-order:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+        }
+
         .quiz-editor-box {
             background: rgba(0,0,0,0.2);
             padding: 20px;
@@ -211,11 +247,39 @@
             cursor: not-allowed;
         }
 
-        .quiz-error-msg {
+        .quiz-error-msg,
+        .step-field-error {
             color: var(--danger);
             font-size: 0.85rem;
-            margin-top: 10px;
+            margin-top: 8px;
             display: block;
+            line-height: 1.4;
+        }
+
+        .lesson-form-error {
+            background: rgba(255, 69, 58, 0.12);
+            border: 1px solid rgba(255, 69, 58, 0.45);
+            color: #ff8a80;
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+
+        .lesson-form-success {
+            background: rgba(76, 175, 80, 0.12);
+            border: 1px solid rgba(76, 175, 80, 0.45);
+            color: #a5d6a7;
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+
+        input.input-invalid,
+        textarea.input-invalid {
+            border-color: var(--danger) !important;
+            box-shadow: 0 0 0 2px rgba(255, 69, 58, 0.2);
         }
 
         .settings-grid {
@@ -277,7 +341,7 @@
                     <button class="btn btn-outline" onclick="publishCourse(@Model.CourseId)" style="border-color: #4caf50; color: #4caf50;">
                         <i class="bi bi-send"></i> Опубликовать
                     </button>
-                    <button class="btn btn-primary" onclick="saveCurrentLesson(true, true)">
+                    <button class="btn btn-primary" onclick="saveCurrentLesson(true)">
                         <i class="bi bi-cloud-check"></i> Сохранить урок
                     </button>
                 </div>
@@ -286,8 +350,12 @@
                 <div class="content-card">
                     <div style="margin-bottom: 30px;">
                         <label>Заголовок урока</label>
-                        <input type="text" id="editLessonName">
+                        <input type="text" id="editLessonName" oninput="clearLessonTitleError()">
+                        <div id="lesson-title-error" class="step-field-error" style="display:none;"></div>
                     </div>
+
+                    <div id="lesson-form-error" class="lesson-form-error" style="display:none;" role="alert"></div>
+                    <div id="lesson-form-success" class="lesson-form-success" style="display:none;" role="status"></div>
 
                     <div id="stepsContainer"></div>
 
@@ -295,14 +363,275 @@
                         <button class="btn btn-outline" onclick="addNewStep('Text')"><i class="bi bi-text-paragraph"></i> + Текст</button>
                         <button class="btn btn-outline" onclick="addNewStep('Video')"><i class="bi bi-play-btn"></i> + Видео</button>
                         <button class="btn btn-outline" onclick="addNewStep('Quiz')"><i class="bi bi-check2-square"></i> + Тест</button>
+                        <button class="btn btn-outline" onclick="addNewStep('Interactive')"><i class="bi bi-puzzle"></i> + Интерактив</button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
+    <script src="~/js/interactive-step-editor.js" asp-append-version="true"></script>
     <script>
         let currentLessonId = null;
+
+        function escapeForTemplate(value) {
+            return String(value ?? "")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#39;")
+                .replace(/`/g, "&#96;")
+                .replace(/\$/g, "&#36;");
+        }
+
+        function showInlineError(elementId, message) {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+            if (message) {
+                el.innerHTML = `<i class="bi bi-exclamation-triangle"></i> ${message}`;
+                el.style.display = 'block';
+            } else {
+                el.innerHTML = '';
+                el.style.display = 'none';
+            }
+        }
+
+        function showLessonFormError(message) {
+            const success = document.getElementById('lesson-form-success');
+            const error = document.getElementById('lesson-form-error');
+            if (success) success.style.display = 'none';
+            if (error) {
+                if (message) {
+                    error.innerHTML = `<i class="bi bi-exclamation-triangle"></i> ${message}`;
+                    error.style.display = 'block';
+                } else {
+                    error.innerHTML = '';
+                    error.style.display = 'none';
+                }
+            }
+        }
+
+        function showLessonFormSuccess(message) {
+            const error = document.getElementById('lesson-form-error');
+            const success = document.getElementById('lesson-form-success');
+            if (error) error.style.display = 'none';
+            if (success) {
+                success.textContent = message || '';
+                success.style.display = message ? 'block' : 'none';
+                if (message) {
+                    setTimeout(() => { success.style.display = 'none'; }, 3500);
+                }
+            }
+        }
+
+        function clearLessonTitleError() {
+            const input = document.getElementById('editLessonName');
+            showInlineError('lesson-title-error', '');
+            input?.classList.remove('input-invalid');
+        }
+
+        function clearStepFieldError(stepId, prefix) {
+            showInlineError(`${prefix}-${stepId}`, '');
+            const card = document.querySelector(`.step-card[data-step-id="${stepId}"]`);
+            if (!card) return;
+            const videoInput = card.querySelector('.step-video');
+            if (videoInput) {
+                videoInput.classList.remove('input-invalid');
+            }
+            const titleInput = card.querySelector('.step-title');
+            if (titleInput) titleInput.classList.remove('input-invalid');
+            const textInput = card.querySelector('.step-content');
+            if (textInput) textInput.classList.remove('input-invalid');
+            if (!card.querySelector('.step-field-error[style*="block"]')) {
+                card.style.borderColor = 'var(--border)';
+            }
+        }
+
+        function resetStepCardErrors(stepCard) {
+            stepCard.style.borderColor = 'var(--border)';
+            stepCard.querySelectorAll('.step-field-error').forEach(el => {
+                el.style.display = 'none';
+                el.innerHTML = '';
+            });
+            stepCard.querySelectorAll('.input-invalid').forEach(el => el.classList.remove('input-invalid'));
+        }
+
+        function markStepInvalid(stepCard, fieldErrorId, message, inputEl) {
+            stepCard.style.borderColor = 'var(--danger)';
+            showInlineError(fieldErrorId, message);
+            if (inputEl) inputEl.classList.add('input-invalid');
+            return message;
+        }
+
+        function getQuizCorrectTextInput(stepCard, stepId) {
+            const isManual = stepCard.querySelector('.step-manual-check')?.value === 'true';
+            if (isManual) {
+                return document.getElementById(`manual-quiz-settings-${stepId}`)?.querySelector('.step-correct-text') ?? null;
+            }
+            const mode = stepCard.querySelector('.step-auto-mode')?.value || 'options';
+            if (mode === 'text') {
+                return document.getElementById(`auto-quiz-text-box-${stepId}`)?.querySelector('.step-correct-text') ?? null;
+            }
+            return null;
+        }
+
+        function validateLessonForm() {
+            let isValid = true;
+            let summary = '';
+
+            showLessonFormError('');
+
+            const stepCards = document.querySelectorAll('.step-card');
+            if (stepCards.length === 0) {
+                showLessonFormError('Добавьте хотя бы один шаг в урок.');
+                return { isValid: false, summary: 'Добавьте хотя бы один шаг в урок.' };
+            }
+
+            const lessonTitleInput = document.getElementById('editLessonName');
+            const lessonTitle = (lessonTitleInput?.value || '').trim();
+            if (!lessonTitle) {
+                isValid = false;
+                summary = summary || 'Укажите заголовок урока.';
+                lessonTitleInput?.classList.add('input-invalid');
+                showInlineError('lesson-title-error', 'Укажите заголовок урока.');
+            } else {
+                clearLessonTitleError();
+            }
+
+            document.querySelectorAll('.step-card').forEach(stepCard => {
+                resetStepCardErrors(stepCard);
+
+                const stepId = stepCard.getAttribute('data-step-id');
+                const stepType = String(stepCard.getAttribute('data-step-type') ?? '');
+                const titleInput = stepCard.querySelector('.step-title');
+                const stepTitle = (titleInput?.value || '').trim();
+
+                if (!stepTitle) {
+                    isValid = false;
+                    summary = summary || 'У каждого шага должен быть заголовок.';
+                    markStepInvalid(stepCard, `step-title-error-${stepId}`, 'Укажите заголовок шага.', titleInput);
+                }
+
+                if (stepType === '0' || stepType === '3') {
+                    const textarea = stepCard.querySelector('.step-content');
+                    const textValue = (textarea?.value || '').trim();
+                    if (!textValue || textValue === 'Введите текст...') {
+                        isValid = false;
+                        summary = summary || 'Заполните текстовый контент во всех текстовых шагах.';
+                        markStepInvalid(stepCard, `text-error-${stepId}`, 'Введите содержимое шага.', textarea);
+                    }
+                }
+
+                if (stepType === '1') {
+                    const videoInput = stepCard.querySelector('.step-video');
+                    const videoValue = (videoInput?.value || '').trim();
+                    const hasValidVideoUrl = videoValue.length > 0 && /^https?:\/\/\S+$/i.test(videoValue);
+                    if (!hasValidVideoUrl) {
+                        isValid = false;
+                        summary = summary || 'Укажите корректные ссылки на видео (http/https).';
+                        markStepInvalid(stepCard, `video-error-${stepId}`, 'Укажите корректную ссылку на видео.', videoInput);
+                    }
+                }
+
+                if (stepType === '2') {
+                    const manualSelect = stepCard.querySelector('.step-manual-check');
+                    const isManual = manualSelect ? manualSelect.value === 'true' : false;
+                    const errorSpanId = `quiz-error-${stepId}`;
+                    const pointsInput = stepCard.querySelector('.step-points');
+                    const points = parseInt(pointsInput?.value, 10);
+
+                    if (!points || points < 1) {
+                        isValid = false;
+                        summary = summary || 'Укажите количество баллов для каждого теста.';
+                        markStepInvalid(stepCard, errorSpanId, 'Укажите количество баллов (минимум 1).', pointsInput);
+                    }
+
+                    if (!isManual) {
+                        const mode = stepCard.querySelector('.step-auto-mode')?.value || 'options';
+                        if (mode === 'text') {
+                            const textInput = getQuizCorrectTextInput(stepCard, stepId);
+                            const textValue = (textInput?.value || '').trim();
+                            if (!textValue) {
+                                isValid = false;
+                                summary = summary || 'Заполните незаполненные поля в тестах.';
+                                markStepInvalid(stepCard, errorSpanId, 'Введите правильный текстовый ответ.', textInput);
+                            }
+                        } else {
+                            const container = document.getElementById(`quiz-options-${stepId}`);
+                            if (container) {
+                                const optionRows = [...container.querySelectorAll('.quiz-option-row')];
+                                const inputType = stepCard.querySelector('.step-is-multiple')?.checked ? 'checkbox' : 'radio';
+
+                                if (optionRows.length < 2) {
+                                    isValid = false;
+                                    summary = summary || 'В каждом тесте должно быть минимум 2 варианта ответа.';
+                                    markStepInvalid(stepCard, errorSpanId, 'Добавьте минимум 2 варианта ответа.');
+                                }
+
+                                const emptyOption = optionRows
+                                    .map(row => row.querySelector('input[type="text"]'))
+                                    .find(i => !(i?.value || '').trim());
+                                if (emptyOption) {
+                                    isValid = false;
+                                    summary = summary || 'Заполните незаполненные поля в тестах.';
+                                    markStepInvalid(stepCard, errorSpanId, 'Заполните текст всех вариантов ответа.', emptyOption);
+                                }
+
+                                const correctCount = optionRows.filter(row =>
+                                    row.querySelector(`input[type="${inputType}"]`)?.checked
+                                ).length;
+                                if (correctCount === 0) {
+                                    isValid = false;
+                                    summary = summary || 'Отметьте правильный вариант в каждом тесте.';
+                                    markStepInvalid(stepCard, errorSpanId, 'Отметьте хотя бы один правильный вариант.');
+                                }
+                            } else {
+                                isValid = false;
+                                summary = summary || 'Настройте варианты ответа в тестах.';
+                                markStepInvalid(stepCard, errorSpanId, 'Добавьте варианты ответа.');
+                            }
+                        }
+                    } else {
+                        const textInput = getQuizCorrectTextInput(stepCard, stepId);
+                        const textValue = (textInput?.value || '').trim();
+                        if (!textValue) {
+                            isValid = false;
+                            summary = summary || 'Заполните незаполненные поля в тестах.';
+                            markStepInvalid(stepCard, errorSpanId, 'Введите эталонный ответ для ручной проверки.', textInput);
+                        }
+                    }
+                }
+
+                if (stepType === '4') {
+                    if (!window.InteractiveStepEditor) {
+                        isValid = false;
+                        summary = summary || 'Редактор интерактивных заданий не загружен.';
+                        markStepInvalid(stepCard, `interactive-error-${stepId}`, 'Редактор интерактивных заданий не загружен.');
+                    } else {
+                        const message = window.InteractiveStepEditor.validateFromCard(stepCard);
+                        if (message) {
+                            isValid = false;
+                            summary = summary || 'Заполните все интерактивные задания.';
+                            markStepInvalid(stepCard, `interactive-error-${stepId}`, message);
+                        }
+                    }
+                }
+            });
+
+            if (!isValid) {
+                showLessonFormError(summary || 'Исправьте ошибки в форме урока.');
+            }
+
+            return { isValid, summary };
+        }
+
+        function scrollToFirstError() {
+            const target = document.querySelector(
+                '#lesson-form-error[style*="block"], #lesson-title-error[style*="block"], .step-field-error:not([style*="none"])'
+            );
+            (target || document.getElementById('lesson-form-error'))?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
 
         function setActiveLesson(element) {
             document.querySelectorAll('.lesson-item').forEach(el => el.classList.remove('active'));
@@ -341,7 +670,180 @@
             document.getElementById('currentLessonTitle').innerText = lesson.title;
             document.getElementById('editLessonName').value = lesson.title;
 
+            showLessonFormError('');
+            showLessonFormSuccess('');
+            clearLessonTitleError();
+
             renderSteps(lesson.steps);
+            updateStepOrderButtons();
+        }
+
+        function getStepTypeLabel(type) {
+            if (type === 0) return "Текст";
+            if (type === 1) return "Video";
+            if (type === 2) return "Тест";
+            if (type === 4) return "Интерактив";
+            if (type === 3) return "Код (устар.)";
+            return "Шаг";
+        }
+
+        function clearStepsContainerPlaceholder() {
+            const container = document.getElementById('stepsContainer');
+            if (!container.querySelector('.step-card')) {
+                container.innerHTML = '';
+            }
+        }
+
+        function createStepCardElement(step) {
+            const stepDiv = document.createElement('div');
+            stepDiv.className = 'step-card';
+            stepDiv.setAttribute('data-step-id', step.id);
+            stepDiv.setAttribute('data-step-type', String(step.type));
+
+            const typeLabel = getStepTypeLabel(step.type);
+            const autoQuizMode = (!step.isManualCheck && (step.correctTextAnswer || '').trim().length > 0) ? 'text' : 'options';
+            const safeTitle = escapeForTemplate(step.title || '');
+            const safeTextContent = escapeForTemplate(step.textContent || '');
+            const safeVideoUrl = escapeForTemplate(step.videoUrl || '');
+            const safeCorrectText = escapeForTemplate(step.correctTextAnswer || '');
+
+            stepDiv.innerHTML = `
+                <div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:center;">
+                    <span class="badge-type">${typeLabel}</span>
+                    <div class="step-card-actions">
+                        <div class="step-order-controls">
+                            <button type="button" class="btn-step-order" data-step-id="${step.id}" data-dir="up" onclick="moveStep(${step.id}, 'up')" title="Переместить выше"><i class="bi bi-chevron-up"></i></button>
+                            <button type="button" class="btn-step-order" data-step-id="${step.id}" data-dir="down" onclick="moveStep(${step.id}, 'down')" title="Переместить ниже"><i class="bi bi-chevron-down"></i></button>
+                        </div>
+                        <i class="bi bi-x-circle" style="cursor:pointer; color:var(--danger);" onclick="deleteStep(${step.id})"></i>
+                    </div>
+                </div>
+                <label>Заголовок шага</label>
+                <input type="text" value="${safeTitle}" class="step-title" data-id="${step.id}" oninput="clearStepFieldError(${step.id}, 'step-title-error')">
+                <span id="step-title-error-${step.id}" class="step-field-error" style="display:none;"></span>
+
+                ${step.type === 2 ? `
+                <div class="settings-grid">
+                    <div>
+                        <label>Макс. баллов</label>
+                        <input type="number" class="step-points" data-id="${step.id}" value="${step.maxPoints || 1}" min="1">
+                    </div>
+                    <div>
+                        <label>Тип проверки</label>
+                        <select class="step-manual-check" data-id="${step.id}" onchange="toggleCheckMode(${step.id}, this.value)">
+                            <option value="false" ${!step.isManualCheck ? 'selected' : ''}>Автоматическая</option>
+                            <option value="true" ${step.isManualCheck ? 'selected' : ''}>Вручную (текст)</option>
+                        </select>
+                    </div>
+                </div>` : ''}
+
+                <div style="margin-top:15px;">
+                    ${step.type === 0 || step.type === 3 ? `
+                        <textarea rows="6" class="step-content" data-id="${step.id}" oninput="clearStepFieldError(${step.id}, 'text-error')">${safeTextContent}</textarea>
+                        <span id="text-error-${step.id}" class="step-field-error" style="display:none;"></span>` : ''}
+                    ${step.type === 1 ? `
+                        <input type="text" class="step-video" data-id="${step.id}" value="${safeVideoUrl}" placeholder="Ссылка на видео (YouTube / RuTube / любая https-ссылка)" oninput="clearStepFieldError(${step.id}, 'video-error')">
+                        <span id="video-error-${step.id}" class="step-field-error" style="display:none;"></span>` : ''}
+                    ${step.type === 4 ? `
+                        <div id="interactive-editor-${step.id}" class="interactive-editor-mount"></div>
+                        <span id="interactive-error-${step.id}" class="quiz-error-msg" style="display:none;"></span>` : ''}
+                    ${step.type === 2 ? `
+                        <div class="quiz-editor-box">
+                            <div id="auto-quiz-settings-${step.id}" style="display: ${step.isManualCheck ? 'none' : 'block'};">
+                                <div style="margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid var(--border);">
+                                    <label>Формат ответа</label>
+                                    <select class="step-auto-mode" data-id="${step.id}" onchange="toggleAutoQuizMode(${step.id}, this.value)">
+                                        <option value="options" ${autoQuizMode === 'options' ? 'selected' : ''}>Варианты ответа</option>
+                                        <option value="text" ${autoQuizMode === 'text' ? 'selected' : ''}>Текстовый ответ</option>
+                                    </select>
+                                </div>
+                                <div style="margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid var(--border);">
+                                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                                        <input type="checkbox" class="step-is-multiple" data-id="${step.id}" ${step.isMultipleChoice ? 'checked' : ''} onchange="toggleMultipleChoice(${step.id}, this.checked)">
+                                        <span>Множественный выбор</span>
+                                    </label>
+                                </div>
+                                <div id="auto-quiz-options-box-${step.id}" style="display:${autoQuizMode === 'options' ? 'block' : 'none'};">
+                                    <div id="quiz-options-${step.id}"></div>
+                                    <button class="btn btn-outline" style="width:100%; margin-top:10px;" onclick="addOption(${step.id})">+ Добавить вариант</button>
+                                </div>
+                                <div id="auto-quiz-text-box-${step.id}" style="display:${autoQuizMode === 'text' ? 'block' : 'none'};">
+                                    <label>Правильный ответ (точное совпадение)</label>
+                                    <textarea class="step-correct-text" data-id="${step.id}" rows="3" placeholder="Например: 42" oninput="this.closest('.step-card').style.borderColor='var(--border)'">${safeCorrectText}</textarea>
+                                </div>
+                            </div>
+                            <div id="manual-quiz-settings-${step.id}" style="display: ${step.isManualCheck ? 'block' : 'none'};">
+                                <label>Эталонный ответ (для учителя)</label>
+                                <textarea class="step-correct-text" data-id="${step.id}" rows="3" placeholder="Опишите, каким должен быть правильный ответ..." oninput="this.closest('.step-card').style.borderColor='var(--border)'">${safeCorrectText}</textarea>
+                            </div>
+                            <span id="quiz-error-${step.id}" class="quiz-error-msg" style="display:none;"><i class="bi bi-exclamation-triangle"></i> Настройте правильные ответы!</span>
+                        </div>` : ''}
+                </div>`;
+
+            return stepDiv;
+        }
+
+        async function initStepCardWidgets(stepDiv, step) {
+            if (step.type === 2) {
+                await loadQuizOptions(step.id, step.isMultipleChoice);
+            }
+            if (step.type === 4 && window.InteractiveStepEditor) {
+                const mount = stepDiv.querySelector(`#interactive-editor-${step.id}`);
+                if (mount) {
+                    window.InteractiveStepEditor.render(mount, step.id, step.textContent || "");
+                }
+            }
+        }
+
+        async function appendStepCard(step) {
+            clearStepsContainerPlaceholder();
+            const container = document.getElementById('stepsContainer');
+            const stepDiv = createStepCardElement(step);
+            container.appendChild(stepDiv);
+            await initStepCardWidgets(stepDiv, step);
+            updateStepOrderButtons();
+            stepDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function updateStepOrderButtons() {
+            const cards = [...document.querySelectorAll('#stepsContainer .step-card')];
+            cards.forEach((card, index) => {
+                const stepId = card.getAttribute('data-step-id');
+                const upBtn = card.querySelector(`.btn-step-order[data-step-id="${stepId}"][data-dir="up"]`);
+                const downBtn = card.querySelector(`.btn-step-order[data-step-id="${stepId}"][data-dir="down"]`);
+                if (upBtn) upBtn.disabled = index === 0;
+                if (downBtn) downBtn.disabled = index === cards.length - 1;
+            });
+        }
+
+        async function moveStep(stepId, direction) {
+            const container = document.getElementById('stepsContainer');
+            const cards = [...container.querySelectorAll('.step-card')];
+            const index = cards.findIndex(card => card.getAttribute('data-step-id') === String(stepId));
+            if (index < 0) return;
+
+            const targetIndex = direction === 'up' ? index - 1 : index + 1;
+            if (targetIndex < 0 || targetIndex >= cards.length) return;
+
+            const card = cards[index];
+            const targetCard = cards[targetIndex];
+            if (direction === 'up') {
+                container.insertBefore(card, targetCard);
+            } else {
+                container.insertBefore(targetCard, card);
+            }
+
+            updateStepOrderButtons();
+
+            const saved = await saveCurrentLesson(false);
+            if (!saved) {
+                if (direction === 'up') {
+                    container.insertBefore(targetCard, card);
+                } else {
+                    container.insertBefore(card, targetCard);
+                }
+                updateStepOrderButtons();
+            }
         }
 
         function renderSteps(steps) {
@@ -349,78 +851,14 @@
             container.innerHTML = '';
 
             if (!steps || steps.length === 0) {
-                container.innerHTML = '<div style="text-align:center; padding: 20px; color: var(--danger); border: 1px dashed var(--danger); border-radius: 12px;">В этом уроке еще нет ни одного шага. Добавьте контент ниже.</div>';
+                container.innerHTML = '<div data-empty-steps="true" style="text-align:center; padding: 20px; color: var(--danger); border: 1px dashed var(--danger); border-radius: 12px;">В этом уроке еще нет ни одного шага. Добавьте контент ниже.</div>';
                 return;
             }
 
             steps.forEach((step) => {
-                const stepDiv = document.createElement('div');
-                stepDiv.className = 'step-card';
-                stepDiv.setAttribute('data-step-id', step.id);
-                stepDiv.setAttribute('data-step-type', step.type);
-                const typeLabel = step.type === 0 ? "Текст" : step.type === 1 ? "Video" : "Тест";
-                const autoQuizMode = (!step.isManualCheck && (step.correctTextAnswer || '').trim().length > 0) ? 'text' : 'options';
-
-                stepDiv.innerHTML = `
-                                    <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
-                                        <span class="badge-type">${typeLabel}</span>
-                                        <i class="bi bi-x-circle" style="cursor:pointer; color:var(--danger);" onclick="deleteStep(${step.id})"></i>
-                                    </div>
-                                    <label>Заголовок шага</label>
-                                    <input type="text" value="${step.title || ''}" class="step-title" data-id="${step.id}">
-
-                                    ${step.type === 2 ? `
-                                    <div class="settings-grid">
-                                        <div>
-                                            <label>Макс. баллов</label>
-                                            <input type="number" class="step-points" data-id="${step.id}" value="${step.maxPoints || 1}" min="1">
-                                        </div>
-                                        <div>
-                                            <label>Тип проверки</label>
-                                            <select class="step-manual-check" data-id="${step.id}" onchange="toggleCheckMode(${step.id}, this.value)">
-                                                <option value="false" ${!step.isManualCheck ? 'selected' : ''}>Автоматическая</option>
-                                                <option value="true" ${step.isManualCheck ? 'selected' : ''}>Вручную (текст)</option>
-                                            </select>
-                                        </div>
-                                    </div>` : ''}
-
-                                    <div style="margin-top:15px;">
-                                        ${step.type === 0 ? `<textarea rows="6" class="step-content" data-id="${step.id}">${step.textContent || ''}</textarea>` : ''}
-                                        ${step.type === 1 ? `<input type="text" class="step-video" data-id="${step.id}" value="${step.videoUrl || ''}" placeholder="Ссылка на видео (YouTube / RuTube / любая https-ссылка)">` : ''}
-                                        ${step.type === 2 ? `
-                                            <div class="quiz-editor-box">
-                                                <div id="auto-quiz-settings-${step.id}" style="display: ${step.isManualCheck ? 'none' : 'block'};">
-                                                    <div style="margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid var(--border);">
-                                                        <label>Формат ответа</label>
-                                                        <select class="step-auto-mode" data-id="${step.id}" onchange="toggleAutoQuizMode(${step.id}, this.value)">
-                                                            <option value="options" ${autoQuizMode === 'options' ? 'selected' : ''}>Варианты ответа</option>
-                                                            <option value="text" ${autoQuizMode === 'text' ? 'selected' : ''}>Текстовый ответ</option>
-                                                        </select>
-                                                    </div>
-                                                    <div style="margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid var(--border);">
-                                                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
-                                                            <input type="checkbox" class="step-is-multiple" data-id="${step.id}" ${step.isMultipleChoice ? 'checked' : ''} onchange="toggleMultipleChoice(${step.id}, this.checked)">
-                                                            <span>Множественный выбор</span>
-                                                        </label>
-                                                    </div>
-                                                    <div id="auto-quiz-options-box-${step.id}" style="display:${autoQuizMode === 'options' ? 'block' : 'none'};">
-                                                        <div id="quiz-options-${step.id}"></div>
-                                                        <button class="btn btn-outline" style="width:100%; margin-top:10px;" onclick="addOption(${step.id})">+ Добавить вариант</button>
-                                                    </div>
-                                                    <div id="auto-quiz-text-box-${step.id}" style="display:${autoQuizMode === 'text' ? 'block' : 'none'};">
-                                                        <label>Правильный ответ (точное совпадение)</label>
-                                                        <textarea class="step-correct-text" data-id="${step.id}" rows="3" placeholder="Например: 42" oninput="this.closest('.step-card').style.borderColor='var(--border)'">${step.correctTextAnswer || ''}</textarea>
-                                                    </div>
-                                                </div>
-                                                <div id="manual-quiz-settings-${step.id}" style="display: ${step.isManualCheck ? 'block' : 'none'};">
-                                                    <label>Эталонный ответ (для учителя)</label>
-                                                    <textarea class="step-correct-text" data-id="${step.id}" rows="3" placeholder="Опишите, каким должен быть правильный ответ..." oninput="this.closest('.step-card').style.borderColor='var(--border)'">${step.correctTextAnswer || ''}</textarea>
-                                                </div>
-                                                <span id="quiz-error-${step.id}" class="quiz-error-msg" style="display:none;"><i class="bi bi-exclamation-triangle"></i> Настройте правильные ответы!</span>
-                                            </div>` : ''}
-                                    </div>`;
+                const stepDiv = createStepCardElement(step);
                 container.appendChild(stepDiv);
-                if (step.type === 2) loadQuizOptions(step.id, step.isMultipleChoice);
+                initStepCardWidgets(stepDiv, step);
             });
         }
 
@@ -466,101 +904,69 @@
             }
         }
 
-        async function saveCurrentLesson(showAlert = false, runValidation = false) {
+        async function syncQuizOptionsFromDom() {
+            const tasks = [];
+            document.querySelectorAll('.step-card[data-step-type="2"]').forEach(stepCard => {
+                const stepId = stepCard.getAttribute('data-step-id');
+                const isManual = stepCard.querySelector('.step-manual-check')?.value === 'true';
+                const autoMode = stepCard.querySelector('.step-auto-mode')?.value || 'options';
+                if (isManual || autoMode === 'text') return;
+
+                const container = document.getElementById(`quiz-options-${stepId}`);
+                if (!container) return;
+
+                const inputType = stepCard.querySelector('.step-is-multiple')?.checked ? 'checkbox' : 'radio';
+                container.querySelectorAll('.quiz-option-row').forEach(row => {
+                    const id = row.getAttribute('data-opt-id');
+                    const isCorrect = row.querySelector(`input[type="${inputType}"]`)?.checked || false;
+                    const text = row.querySelector('input[type="text"]')?.value || '';
+                    tasks.push(
+                        fetch(`/CourseConstructor/UpdateQuizOption?id=${id}&text=${encodeURIComponent(text)}&isCorrect=${isCorrect}`, { method: 'POST' })
+                    );
+                });
+            });
+            if (tasks.length > 0) {
+                await Promise.all(tasks);
+            }
+        }
+
+        async function saveCurrentLesson(showSuccessMessage = false) {
             if (!currentLessonId) return true;
 
-            if (runValidation) {
-                let isValid = true;
-                const quizSteps = document.querySelectorAll('.step-card[data-step-type="2"]');
-                const videoSteps = document.querySelectorAll('.step-card[data-step-type="1"]');
+            await syncQuizOptionsFromDom();
 
-                quizSteps.forEach(stepCard => {
-                    const stepId = stepCard.getAttribute('data-step-id');
-                    const manualSelect = stepCard.querySelector('.step-manual-check');
-                    const isManual = manualSelect ? manualSelect.value === "true" : false;
-                    const errorSpan = document.getElementById(`quiz-error-${stepId}`);
-
-                    if (!isManual) {
-                        const mode = stepCard.querySelector('.step-auto-mode')?.value || 'options';
-                        if (mode === 'text') {
-                            const textInput = stepCard.querySelector('.step-correct-text');
-                            const textValue = textInput ? textInput.value.trim() : "";
-                            if (textValue.length < 1) {
-                                isValid = false;
-                                stepCard.style.borderColor = 'var(--danger)';
-                                if (errorSpan) {
-                                    errorSpan.innerText = "Введите правильный текстовый ответ!";
-                                    errorSpan.style.display = 'block';
-                                }
-                            }
-                        } else {
-                            const container = document.getElementById(`quiz-options-${stepId}`);
-                            if (container) {
-                                const correctCount = container.querySelectorAll('input[type="radio"]:checked, input[type="checkbox"]:checked').length;
-                                if (correctCount === 0) {
-                                    isValid = false;
-                                    stepCard.style.borderColor = 'var(--danger)';
-                                    if (errorSpan) {
-                                        errorSpan.innerText = "Выберите хотя бы один правильный вариант!";
-                                        errorSpan.style.display = 'block';
-                                    }
-                                }
-                            }
-                        }
-                    } else {
-                        const textInput = stepCard.querySelector('.step-correct-text');
-                        const textValue = textInput ? textInput.value.trim() : "";
-                        if (textValue.length < 2) {
-                            isValid = false;
-                            stepCard.style.borderColor = 'var(--danger)';
-                            if (errorSpan) {
-                                errorSpan.innerText = "Введите эталонный ответ!";
-                                errorSpan.style.display = 'block';
-                            }
-                        }
-                    }
-                });
-
-                videoSteps.forEach(stepCard => {
-                    const videoInput = stepCard.querySelector('.step-video');
-                    const videoValue = (videoInput?.value || '').trim();
-                    if (videoInput) {
-                        const hasValidVideoUrl = videoValue.length > 0 && /^https?:\/\/\S+$/i.test(videoValue);
-                        if (!hasValidVideoUrl) {
-                            isValid = false;
-                            stepCard.style.borderColor = 'var(--danger)';
-                            videoInput.style.borderColor = 'var(--danger)';
-                            videoInput.style.boxShadow = '0 0 0 2px rgba(255, 69, 58, 0.2)';
-                        } else {
-                            videoInput.style.borderColor = 'var(--border)';
-                            videoInput.style.boxShadow = 'none';
-                        }
-                    }
-                });
-
-                if (!isValid) {
-                    alert("Заполните обязательные поля: тесты и ссылки для видео.");
-                    return false;
-                }
+            const validation = validateLessonForm();
+            if (!validation.isValid) {
+                scrollToFirstError();
+                return false;
             }
 
             const steps = [];
             document.querySelectorAll('.step-card').forEach(card => {
                 const id = card.getAttribute('data-step-id');
+                const stepType = String(card.getAttribute('data-step-type') ?? '');
                 const multCheck = card.querySelector(`.step-is-multiple`);
                 const manualCheckSelect = card.querySelector(`.step-manual-check`);
+                const isManual = manualCheckSelect?.value === 'true';
                 const autoMode = card.querySelector(`.step-auto-mode`)?.value || 'options';
-                const correctText = card.querySelector(`.step-correct-text`)?.value || "";
+                const correctTextInput = getQuizCorrectTextInput(card, id);
+                const correctText = correctTextInput?.value || "";
+                const titleInput = card.querySelector('.step-title');
+
+                let textContent = card.querySelector(`textarea.step-content`)?.value || "";
+                if (stepType === "4" && window.InteractiveStepEditor) {
+                    textContent = window.InteractiveStepEditor.serialize(card);
+                }
 
                 steps.push({
-                    id: parseInt(id),
-                    title: card.querySelector('.step-title').value,
-                    textContent: card.querySelector(`textarea.step-content`)?.value || "",
+                    id: parseInt(id, 10),
+                    title: titleInput ? titleInput.value : "",
+                    textContent: textContent,
                     videoUrl: card.querySelector(`input.step-video`)?.value || "",
                     isMultipleChoice: multCheck ? multCheck.checked : false,
-                    isManualCheck: manualCheckSelect ? (manualCheckSelect.value === "true") : false,
-                    correctTextAnswer: (autoMode === 'options' && !(manualCheckSelect ? (manualCheckSelect.value === "true") : false)) ? "" : correctText,
-                    maxPoints: parseInt(card.querySelector('.step-points')?.value) || 1
+                    isManualCheck: isManual,
+                    correctTextAnswer: (!isManual && autoMode === 'options') ? "" : correctText,
+                    maxPoints: parseInt(card.querySelector('.step-points')?.value, 10) || 1
                 });
             });
 
@@ -574,31 +980,60 @@
                 })
             });
 
-            if (response.ok && showAlert) alert("Сохранено!");
-            return response.ok;
+            if (!response.ok) {
+                const errText = await response.text();
+                showLessonFormError(errText || 'Не удалось сохранить урок. Проверьте заполнение полей.');
+                scrollToFirstError();
+                return false;
+            }
+
+            showLessonFormSuccess(showSuccessMessage ? 'Урок сохранён.' : '');
+            return true;
         }
 
         async function addNewStep(type) {
             if (!currentLessonId) {
-                alert("Сначала выберите урок!");
+                showLessonFormError('Сначала выберите урок в левой панели.');
                 return;
             }
-            await saveCurrentLesson(false, false);
-            const response = await fetch(`/CourseConstructor/AddStep?lessonId=${currentLessonId}&type=${type}`, { method: 'POST' });
-            if (response.ok) {
-                const newStep = await response.json();
-                if (type === 'Quiz') {
-                    await fetch(`/CourseConstructor/AddQuizOption?stepId=${newStep.id}`, { method: 'POST' });
-                    await fetch(`/CourseConstructor/AddQuizOption?stepId=${newStep.id}`, { method: 'POST' });
-                }
-                loadLessonEditor(currentLessonId);
+
+            const hasExistingSteps = document.querySelectorAll('#stepsContainer .step-card').length > 0;
+            if (hasExistingSteps) {
+                const saved = await saveCurrentLesson(false);
+                if (!saved) return;
             }
+
+            const response = await fetch(`/CourseConstructor/AddStep?lessonId=${currentLessonId}&type=${type}`, { method: 'POST' });
+            if (!response.ok) {
+                const errText = await response.text();
+                showLessonFormError(errText || 'Не удалось добавить шаг.');
+                return;
+            }
+
+            const newStep = await response.json();
+            if (type === 'Quiz') {
+                await fetch(`/CourseConstructor/AddQuizOption?stepId=${newStep.id}`, { method: 'POST' });
+                await fetch(`/CourseConstructor/AddQuizOption?stepId=${newStep.id}`, { method: 'POST' });
+            }
+
+            await appendStepCard(newStep);
+            showLessonFormSuccess('');
         }
 
         async function deleteStep(stepId) {
             if (!confirm("Удалить шаг?")) return;
             const response = await fetch(`/CourseConstructor/DeleteStep/${stepId}`, { method: 'POST' });
-            if (response.ok) loadLessonEditor(currentLessonId);
+            if (!response.ok) return;
+
+            const card = document.querySelector(`.step-card[data-step-id="${stepId}"]`);
+            card?.remove();
+
+            const container = document.getElementById('stepsContainer');
+            if (!container.querySelector('.step-card')) {
+                container.innerHTML = '<div data-empty-steps="true" style="text-align:center; padding: 20px; color: var(--danger); border: 1px dashed var(--danger); border-radius: 12px;">В этом уроке еще нет ни одного шага. Добавьте контент ниже.</div>';
+            } else {
+                updateStepOrderButtons();
+            }
         }
 
         async function loadQuizOptions(stepId, isMultipleChoice) {
@@ -656,26 +1091,25 @@
         }
 
         async function toggleMultipleChoice(stepId, isMultiple) {
-            await saveCurrentLesson(false, false);
             loadQuizOptions(stepId, isMultiple);
         }
 
         async function publishCourse(courseId) {
             if (document.querySelectorAll('.lesson-item').length === 0) {
-                alert("Курс пуст!");
+                showLessonFormError('Курс пуст: добавьте хотя бы один урок.');
                 return;
             }
-            const saved = await saveCurrentLesson(false, true);
+            const saved = await saveCurrentLesson(false);
             if (!saved) return;
             if (!confirm("Опубликовать курс?")) return;
 
             const response = await fetch(`/CourseConstructor/PublishCourse?id=${courseId}`, { method: 'POST' });
             if (response.ok) {
-                alert("Курс опубликован!");
-                window.location.href = '/MyCourses/Index';
+                showLessonFormSuccess('Курс опубликован!');
+                setTimeout(() => { window.location.href = '/MyCourses/Index'; }, 800);
             } else {
                 const txt = await response.text();
-                alert("Ошибка: " + txt);
+                showLessonFormError(txt || 'Не удалось опубликовать курс.');
             }
         }
     </script>

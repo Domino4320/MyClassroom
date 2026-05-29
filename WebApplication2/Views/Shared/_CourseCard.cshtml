@@ -263,6 +263,10 @@
         <span class="cat-badge">@Model.Category</span>
         <h3 class="card-course-title">@Model.Title</h3>
         <span class="card-author-handle">@@@Model.AuthorUsername</span>
+        @if (WebApplication2.Models.CourseDisplayHelper.HasValidCreatedAt(Model.CreatedAt))
+        {
+            <span class="card-created-date">Создан @Model.CreatedAt.ToLocalTime().ToString("dd MMMM yyyy", new System.Globalization.CultureInfo("ru-RU"))</span>
+        }
         <p style="color: #b0bec5; font-size: 0.9rem; margin-top: 10px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
             @Model.Description
         </p>

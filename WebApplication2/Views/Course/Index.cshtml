@@ -7,6 +7,22 @@
     // Состояние текущего шага
     var isStepCompleted = Model.CompletedStepIds.Contains(Model.CurrentStep.Id);
     var isQuiz = Model.CurrentStep.Type == WebApplication2.Models.StepType.Quiz;
+    var isInteractive = Model.CurrentStep.Type == WebApplication2.Models.StepType.Interactive;
+
+    var tlPercent = Model.TimelineTotalCount > 0
+        ? (int)Math.Round(100.0 * Model.TimelineCompletedCount / Model.TimelineTotalCount)
+        : 0;
+
+    var timelineMap = Model.TimelineSteps.ToDictionary(t => t.StepId);
+
+    string StepTypeLabel(WebApplication2.Models.StepType t) => t switch
+    {
+        WebApplication2.Models.StepType.Text => "Текст",
+        WebApplication2.Models.StepType.Video => "Видео",
+        WebApplication2.Models.StepType.Quiz => "Тест",
+        WebApplication2.Models.StepType.Interactive => "Интерактив",
+        _ => "Шаг"
+    };
 
     // Тест может быть:
     // - ручная проверка (IsManualCheck=true) -> текстовый ответ
@@ -17,6 +33,8 @@
 
     var hasPendingManual = isManualCheckQuiz && Model.HasPendingManualSubmission;
     var submission = Model.LatestSubmission;
+    var hasReviewedManual = isManualCheckQuiz && submission != null && !submission.IsPending;
+    var manualInputLocked = hasPendingManual || (isManualCheckQuiz && isStepCompleted);
 
     var courseEarnedPoints = Model.EarnedPointsInCourse;
     var courseMaxPoints = Model.MaxPointsInCourse;
@@ -497,6 +515,13 @@
             #feedback-msg.error {
                 background: rgba(239, 68, 68, 0.1);
                 color: var(--accent-red);
+                border: 1px solid rgba(239, 68, 68, 0.35);
+            }
+
+            #feedback-msg.success {
+                background: rgba(16, 185, 129, 0.12);
+                color: #6ee7b7;
+                border: 1px solid rgba(16, 185, 129, 0.35);
             }
 
         .review-state {
@@ -575,6 +600,8 @@
         }
 
     </style>
+
+    <link rel="stylesheet" href="~/css/course-learn-features.css" asp-append-version="true" />
 </head>
 <body>
 
@@ -592,13 +619,28 @@
             </div>
             <div style="margin-top: 10px; color: var(--text-muted); font-size: 0.8rem; display:flex; gap:14px; flex-wrap:wrap;">
                 <span style="display:inline-flex; align-items:center; gap:6px;">
-                    <span style="width:9px; height:9px; border-radius: 3px; background: var(--accent-green); display:inline-block;"></span> Пройдено
+                    <span style="width:9px; height:9px; border-radius: 50%; background: var(--accent-green); display:inline-block;"></span> Пройдено
                 </span>
                 <span style="display:inline-flex; align-items:center; gap:6px;">
-                    <span style="width:9px; height:9px; border-radius: 3px; background: #64748b; display:inline-block;"></span> Не пройдено
+                    <span style="width:9px; height:9px; border-radius: 50%; background: var(--accent-blue); display:inline-block;"></span> Текущий
+                </span>
+                <span style="display:inline-flex; align-items:center; gap:6px;">
+                    <span style="width:9px; height:9px; border-radius: 50%; background: #64748b; display:inline-block;"></span> Доступно
                 </span>
             </div>
         </div>
+        @if (Model.TimelineTotalCount > 0)
+        {
+            <div class="sidebar-progress">
+                <div class="sidebar-progress-head">
+                    <span>Прогресс курса</span>
+                    <span>@Model.TimelineCompletedCount / @Model.TimelineTotalCount · @tlPercent%</span>
+                </div>
+                <div class="sidebar-progress-bar">
+                    <div class="sidebar-progress-fill" style="width: @tlPercent%;"></div>
+                </div>
+            </div>
+        }
         <div class="modules-container">
             @foreach (var module in Model.AllModules.OrderBy(m => m.Order))
             {
@@ -613,16 +655,49 @@
                             <span>@(moduleCompleted ? "Пройден" : "Не пройден")</span>
                         </span>
                     </div>
-                    @foreach (var lesson in module.Lessons.OrderBy(l => l.Order))
+                    @foreach (var lesson in (module.Lessons ?? new List<WebApplication2.Models.LessonModel>()).OrderBy(l => l.Order))
                     {
-                        var firstStepId = lesson.Steps.OrderBy(s => s.Order).FirstOrDefault()?.Id ?? 0;
-                        var lessonSteps = lesson.Steps?.ToList() ?? new List<WebApplication2.Models.StepModel>();
-                        var lessonCompleted = lessonSteps.Any() && lessonSteps.All(s => Model.CompletedStepIds.Contains(s.Id));
-                        <a href="?courseId=@Model.CourseId&stepId=@firstStepId"  
-                           class="lesson-item @(lesson.Id == Model.CurrentStep.LessonId ? "active" : "") @(lessonCompleted ? "done" : "todo")">
-                            @lesson.Title
-                            <span class="lesson-status">@(lessonCompleted ? "✓" : "○")</span>
-                        </a>
+                        var lessonSteps = (lesson.Steps ?? new List<WebApplication2.Models.StepModel>()).OrderBy(s => s.Order).ToList();
+                        if (!lessonSteps.Any()) { continue; }
+
+                        <div class="lesson-sidebar-title">@lesson.Title</div>
+                        <div class="sidebar-steps-path">
+                            @foreach (var step in lessonSteps)
+                            {
+                                timelineMap.TryGetValue(step.Id, out var tlInfo);
+                                var isDone = Model.CompletedStepIds.Contains(step.Id);
+                                var isCurrent = step.Id == Model.CurrentStep.Id;
+                                var isLocked = tlInfo?.IsLocked ?? false;
+
+                                var stepClass = "sidebar-step-item";
+                                if (isLocked) stepClass += " step-locked";
+                                else if (isCurrent) stepClass += " step-current";
+                                else if (isDone) stepClass += " step-done";
+
+                                var dotLabel = isDone ? "✓" : isCurrent ? "●" : isLocked ? "·" : "○";
+
+                                if (isLocked)
+                                {
+                                    <div class="@stepClass">
+                                        <span class="sidebar-step-dot">@dotLabel</span>
+                                        <span class="sidebar-step-body">
+                                            <span class="sidebar-step-title" title="@step.Title">@step.Title</span>
+                                            <span class="sidebar-step-type">@StepTypeLabel(step.Type)</span>
+                                        </span>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <a href="?courseId=@Model.CourseId&stepId=@step.Id" class="@stepClass">
+                                        <span class="sidebar-step-dot">@dotLabel</span>
+                                        <span class="sidebar-step-body">
+                                            <span class="sidebar-step-title" title="@step.Title">@step.Title</span>
+                                            <span class="sidebar-step-type">@StepTypeLabel(step.Type)</span>
+                                        </span>
+                                    </a>
+                                }
+                            }
+                        </div>
                     }
                 </div>
             }
@@ -668,7 +743,16 @@
                     </div>
                 }
 
-                <div class="html-text">@Html.Raw(Model.CurrentStep.TextContent)</div>
+                @if (!isInteractive && !string.IsNullOrEmpty(Model.CurrentStep.TextContent))
+                {
+                    <div class="html-text">@Html.Raw(Model.CurrentStep.TextContent)</div>
+                }
+
+                @if (isInteractive)
+                {
+                    <div id="interactive-root"></div>
+                    <script type="application/json" id="interactive-config">@Html.Raw(Model.CurrentStep.TextContent)</script>
+                }
 
                 @if (isQuiz)
                 {
@@ -688,7 +772,7 @@
                                 }
                                 <textarea id="manualAnswer" class="manual-textarea"  
                                           placeholder="Напишите здесь ваше решение или ответ..."  
-                                @(isStepCompleted || hasPendingManual ? "disabled" : "")></textarea>
+                                @(manualInputLocked ? "disabled" : "")></textarea>
 
                                 @if (hasPendingManual)
                                 {
@@ -697,14 +781,22 @@
                                         Пока проверка не завершена, перейти дальше нельзя.
                                     </div>
                                 }
-                                else if (isManualCheckQuiz && submission != null && !submission.IsPending)
+                                else if (hasReviewedManual)
                                 {
                                     <div class="review-result">
-                                        <div class="score">Результат проверки: @submission.EarnedPoints / @submission.MaxPoints</div>
+                                        <div class="score">Результат проверки: @submission!.EarnedPoints / @submission.MaxPoints</div>
                                         <div style="color: var(--text-muted); font-size: 0.9rem;">Проверено: @submission.SubmittedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</div>
                                         @if (!string.IsNullOrWhiteSpace(submission.TeacherComment))
                                         {
                                             <div class="comment">@submission.TeacherComment</div>
+                                        }
+                                        @if (!isStepCompleted)
+                                        {
+                                            <p style="margin-top:12px;color:var(--accent-blue);">Баллы не набраны — отправьте ответ ещё раз.</p>
+                                        }
+                                        else
+                                        {
+                                            <p style="margin-top:12px;color:#6ee7b7;">Шаг засчитан. Нажмите «Следующий шаг», чтобы продолжить.</p>
                                         }
                                     </div>
                                 }
@@ -726,9 +818,10 @@
                                 }
                             </div>
                         }
-                        <div id="feedback-msg"></div>
                     </div>
                 }
+
+                <div id="feedback-msg"></div>
 
                 <div class="action-footer">
                     @if (Model.IsLastStep && isStepCompleted)
@@ -746,7 +839,7 @@
                             {
                                 <span>Ожидает проверки</span>
                             }
-                            else if (isQuiz)
+                            else if (isQuiz || isInteractive)
                             {
                                 <span>Проверить</span>
                             }
@@ -820,11 +913,14 @@
         </div>
     </main>
 
+    <script src="~/js/course-learn-features.js" asp-append-version="true"></script>
+
     <script>
         const STEP_DATA = {
             id: @Model.CurrentStep.Id,
             courseId: @Model.CourseId,
             isQuiz: @isQuiz.ToString().ToLower(),
+            isInteractive: @isInteractive.ToString().ToLower(),
             isTextInputQuiz: @isTextInputQuiz.ToString().ToLower(),
             hasPendingManual: @hasPendingManual.ToString().ToLower(),
             isCompleted: @isStepCompleted.ToString().ToLower(),
@@ -841,6 +937,14 @@
                 parent.classList.toggle('selected', e.target.checked);
             }
         });
+
+        if (STEP_DATA.isInteractive) {
+            const root = document.getElementById('interactive-root');
+            const configEl = document.getElementById('interactive-config');
+            if (root && configEl && window.CourseLearnFeatures) {
+                window.CourseLearnFeatures.initInteractive(root, configEl.textContent);
+            }
+        }
 
         async function processStep() {
             const btn = document.getElementById('main-btn');
@@ -865,7 +969,28 @@
             const params = new URLSearchParams();
             params.append('stepId', STEP_DATA.id);
 
-            if (STEP_DATA.isQuiz) {
+            if (STEP_DATA.isInteractive) {
+                const root = document.getElementById('interactive-root');
+                const configEl = document.getElementById('interactive-config');
+                const configJson = configEl ? configEl.textContent : '';
+                const clientErr = window.CourseLearnFeatures.validateInteractiveClient(root, configJson);
+                if (clientErr) {
+                    const fb = document.getElementById('feedback-msg');
+                    fb.className = 'error';
+                    fb.innerText = clientErr;
+                    fb.style.display = 'block';
+                    return;
+                }
+                const answer = window.CourseLearnFeatures.getInteractiveAnswer(root);
+                if (!answer || (typeof answer === 'object' && answer.incomplete)) {
+                    const fb = document.getElementById('feedback-msg');
+                    fb.className = 'error';
+                    fb.innerText = 'Выполните задание полностью.';
+                    fb.style.display = 'block';
+                    return;
+                }
+                params.append('interactiveAnswer', answer);
+            } else if (STEP_DATA.isQuiz) {
                 if (STEP_DATA.isTextInputQuiz) {
                     const text = document.getElementById('manualAnswer').value.trim();
                     if (!text) return alert("Пожалуйста, введите ответ перед отправкой.");
@@ -891,12 +1016,50 @@
 
                 const result = await response.json();
 
+                const fb = document.getElementById('feedback-msg');
+
                 if (result.success) {
-                    location.reload();
+                    const goNext = () => {
+                        if (result.nextStepId) {
+                            window.location.href = `?courseId=${STEP_DATA.courseId}&stepId=${result.nextStepId}`;
+                        } else {
+                            window.location.href = `/Course/Details/${STEP_DATA.courseId}`;
+                        }
+                    };
+
+                    if (result.pendingReview) {
+                        fb.className = 'success';
+                        fb.innerText = 'Ответ отправлен на проверку преподавателю. Дождитесь оценки, чтобы перейти дальше.';
+                        fb.style.display = 'block';
+                        btn.disabled = true;
+                        btn.querySelector('span').innerText = 'Ожидает проверки';
+                        return;
+                    }
+
+                    if (result.alreadyCompleted) {
+                        fb.className = 'success';
+                        fb.innerText = result.message || 'Ответ уже проверен. Переход к следующему шагу...';
+                        fb.style.display = 'block';
+                        setTimeout(goNext, 1200);
+                        return;
+                    }
+
+                    fb.className = 'success';
+                    if (result.nextStepId) {
+                        fb.innerText = '✓ Верно! Переход к следующему шагу...';
+                    } else {
+                        fb.innerText = '✓ Отлично! Вы завершили этот раздел курса.';
+                    }
+                    fb.style.display = 'block';
+                    btn.querySelector('span').innerText = 'Готово';
+                    setTimeout(goNext, result.nextStepId ? 1400 : 2000);
                 } else {
-                    const fb = document.getElementById('feedback-msg');
                     fb.className = 'error';
-                    fb.innerText = result.message || "Неверный ответ. Попробуйте еще раз!";
+                    let errMsg = result.message || "Неверный ответ. Попробуйте еще раз!";
+                    if (STEP_DATA.isInteractive) {
+                        errMsg += " Исправьте ответ или нажмите кнопку сброса под заданием.";
+                    }
+                    fb.innerText = errMsg;
                     fb.style.display = 'block';
                     btn.disabled = false;
                 }

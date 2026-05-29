@@ -46,6 +46,8 @@ namespace WebApplication2.Controllers
                         };
 
             var model = await query.ToListAsync();
+            foreach (var card in model)
+                card.CreatedAt = CourseDisplayHelper.NormalizeCreatedAt(card.CreatedAt);
 
             ViewData["Title"] = "Библиотека курсов";
             return View(model);

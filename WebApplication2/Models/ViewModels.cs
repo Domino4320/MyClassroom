@@ -31,6 +31,21 @@
 
         public int? BookmarkedStepId { get; set; }
         public bool IsCurrentStepBookmarked { get; set; }
+
+        public List<CourseTimelineStepViewModel> TimelineSteps { get; set; } = new();
+        public int TimelineCompletedCount { get; set; }
+        public int TimelineTotalCount { get; set; }
+    }
+
+    public class CourseTimelineStepViewModel
+    {
+        public int StepId { get; set; }
+        public string Title { get; set; } = "";
+        public StepType Type { get; set; }
+        public string ModuleTitle { get; set; } = "";
+        public bool IsCompleted { get; set; }
+        public bool IsCurrent { get; set; }
+        public bool IsLocked { get; set; }
     }
 
     public class StepSubmissionViewModel
@@ -59,5 +74,7 @@
         public bool IsManualCheck { get; set; }
         public string? CorrectTextAnswer { get; set; }
         public int MaxPoints { get; set; }
+        public string? CodeTemplate { get; set; }
+        public string? ExpectedOutput { get; set; }
     }
 }

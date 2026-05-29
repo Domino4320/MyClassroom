@@ -14,15 +14,6 @@ namespace WebApplication2.Controllers
             _db = db;
         }
 
-        private static bool IsValidVideoUrl(string? videoUrl)
-        {
-            if (string.IsNullOrWhiteSpace(videoUrl))
-                return false;
-
-            return Uri.TryCreate(videoUrl.Trim(), UriKind.Absolute, out var uri)
-                   && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
-        }
-
         // Вспомогательный метод для проверки прав доступа и состояния курса
         private async Task<(CourseModel? course, string? error)> GetValidCourse(int courseId, bool checkPublished = true)
         {
@@ -114,28 +105,56 @@ namespace WebApplication2.Controllers
             {
                 "Video" => StepType.Video,
                 "Quiz" => StepType.Quiz,
+                "Interactive" => StepType.Interactive,
                 _ => StepType.Text
             };
 
-            int nextOrder = (await _db.Steps.Where(s => s.LessonId == lessonId).MaxAsync(s => (int?)s.Order) ?? 0) + 1;
+            int nextOrder = await _db.Steps.CountAsync(s => s.LessonId == lessonId);
+
+            var defaultInteractiveJson = """
+                {"kind":"match","instruction":"Сопоставьте термины с определениями","pairs":[{"left":"HTML","right":"Разметка"},{"left":"CSS","right":"Стили"}]}
+                """;
 
             var newStep = new StepModel
             {
                 LessonId = lessonId,
                 Type = stepType,
-                Title = type switch { "Video" => "Видео-урок", "Quiz" => "Тест", _ => "Новая лекция" },
+                Title = type switch
+                {
+                    "Video" => "Видео-урок",
+                    "Quiz" => "Тест",
+                    "Interactive" => "Интерактивное задание",
+                    _ => "Новая лекция"
+                },
                 Order = nextOrder,
-                TextContent = stepType == StepType.Text ? "Введите текст..." : "",
+                TextContent = stepType switch
+                {
+                    StepType.Text => "Введите текст...",
+                    StepType.Interactive => defaultInteractiveJson,
+                    _ => ""
+                },
                 VideoUrl = "",
                 IsMultipleChoice = false,
                 IsManualCheck = false,
                 CorrectTextAnswer = "",
-                MaxPoints = 1
+                MaxPoints = stepType == StepType.Quiz ? 1 : 0
             };
 
             _db.Steps.Add(newStep);
             await _db.SaveChangesAsync();
-            return Ok(new { id = newStep.Id, type = (int)newStep.Type });
+            return Ok(new
+            {
+                id = newStep.Id,
+                type = (int)newStep.Type,
+                title = newStep.Title,
+                textContent = newStep.TextContent ?? "",
+                videoUrl = newStep.VideoUrl ?? "",
+                isMultipleChoice = newStep.IsMultipleChoice,
+                isManualCheck = newStep.IsManualCheck,
+                correctTextAnswer = newStep.CorrectTextAnswer ?? "",
+                maxPoints = newStep.MaxPoints,
+                order = newStep.Order
+            });
         }
 
         [HttpGet]
@@ -147,13 +166,15 @@ namespace WebApplication2.Controllers
             return Json(new
             {
                 title = lesson.Title,
-                steps = lesson.Steps.OrderBy(s => s.Order).Select(s => new
+                steps = lesson.Steps.OrderBy(s => s.Order).ThenBy(s => s.Id).Select(s => new
                 {
                     id = s.Id,
                     title = s.Title,
                     type = (int)s.Type,
                     textContent = s.TextContent ?? "",
                     videoUrl = s.VideoUrl ?? "",
+                    codeTemplate = s.CodeTemplate ?? "",
+                    expectedOutput = s.ExpectedOutput ?? "",
                     isMultipleChoice = s.IsMultipleChoice,
                     isManualCheck = s.IsManualCheck,
                     correctTextAnswer = s.CorrectTextAnswer ?? "",
@@ -173,30 +194,29 @@ namespace WebApplication2.Controllers
 
             if (lesson == null) return NotFound();
 
-            // Проверка прав (через модуль курса)
             var module = await _db.Modules.FindAsync(lesson.ModuleId);
             var (course, error) = await GetValidCourse(module!.CourseId);
             if (error != null) return BadRequest(error);
 
+            var validationError = await CourseContentValidator.ValidateLessonAsync(lesson, model.Title, model.Steps, _db);
+            if (validationError != null) return BadRequest(validationError);
+
             lesson.Title = model.Title;
 
-            foreach (var stepDto in model.Steps)
+            for (var i = 0; i < model.Steps.Count; i++)
             {
-                var existingStep = lesson.Steps.FirstOrDefault(s => s.Id == stepDto.Id);
-                if (existingStep?.Type == StepType.Video && !IsValidVideoUrl(stepDto.VideoUrl))
-                {
-                    return BadRequest("Для шага типа «Видео» обязательно укажите корректную ссылку (http/https).");
-                }
-            }
-
-            foreach (var stepDto in model.Steps)
-            {
+                var stepDto = model.Steps[i];
                 var step = lesson.Steps.FirstOrDefault(s => s.Id == stepDto.Id);
                 if (step != null)
                 {
+                    step.Order = i;
                     step.Title = stepDto.Title ?? step.Title;
-                    step.TextContent = stepDto.TextContent ?? "";
+                    step.TextContent = step.Type == StepType.Interactive
+                        ? InteractiveStepHelper.NormalizeConfigJson(stepDto.TextContent)
+                        : (stepDto.TextContent ?? "");
                     step.VideoUrl = stepDto.VideoUrl ?? "";
+                    step.CodeTemplate = stepDto.CodeTemplate ?? step.CodeTemplate;
+                    step.ExpectedOutput = stepDto.ExpectedOutput ?? step.ExpectedOutput;
                     step.IsMultipleChoice = stepDto.IsMultipleChoice;
                     step.IsManualCheck = stepDto.IsManualCheck;
                     step.CorrectTextAnswer = stepDto.CorrectTextAnswer ?? "";
@@ -305,13 +325,10 @@ namespace WebApplication2.Controllers
                 .Include(c => c.Modules).ThenInclude(m => m.Lessons).ThenInclude(l => l.Steps)
                 .FirstOrDefaultAsync(c => c.Id == id);
 
-            var allLessons = courseWithData!.Modules.SelectMany(m => m.Lessons).ToList();
-            if (!allLessons.Any()) return BadRequest("В курсе должен быть хотя бы один урок.");
-            if (allLessons.Any(l => !l.Steps.Any())) return BadRequest("Все уроки должны содержать хотя бы один шаг контента.");
-            if (allLessons.SelectMany(l => l.Steps).Any(s => s.Type == StepType.Video && !IsValidVideoUrl(s.VideoUrl)))
-                return BadRequest("В шаге типа «Видео» заполните корректную ссылку (http/https).");
+            var publishError = await CourseContentValidator.ValidateCourseForPublishAsync(courseWithData!, _db);
+            if (publishError != null) return BadRequest(publishError);
 
-            courseWithData.IsPublished = true;
+            courseWithData!.IsPublished = true;
             await _db.SaveChangesAsync();
             return Ok();
         }
