@@ -35,6 +35,22 @@
         public List<CourseTimelineStepViewModel> TimelineSteps { get; set; } = new();
         public int TimelineCompletedCount { get; set; }
         public int TimelineTotalCount { get; set; }
+
+        public int CurrentLessonId { get; set; }
+        public string CurrentLessonTitle { get; set; } = "";
+        public List<LessonMaterialViewModel> LessonMaterials { get; set; } = new();
+        public bool ShowLessonFeedbackPrompt { get; set; }
+        public int? NextStepIdInCourse { get; set; }
+    }
+
+    public class LessonMaterialViewModel
+    {
+        public int Id { get; set; }
+        public LessonMaterialKind Kind { get; set; }
+        public string Title { get; set; } = "";
+        public string? FileName { get; set; }
+        public string? Url { get; set; }
+        public string? DownloadUrl { get; set; }
     }
 
     public class CourseTimelineStepViewModel

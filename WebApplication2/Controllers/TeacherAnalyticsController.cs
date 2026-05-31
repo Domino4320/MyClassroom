@@ -82,6 +82,64 @@ namespace WebApplication2.Controllers
                 }
             });
         }
+
+        [HttpGet]
+        public async Task<IActionResult> LessonFeedbackStats(int courseId)
+        {
+            var login = HttpContext.Session.GetString("Login");
+            if (string.IsNullOrEmpty(login))
+                return Unauthorized();
+
+            var course = await _db.Courses.AsNoTracking().FirstOrDefaultAsync(c => c.Id == courseId);
+            if (course == null) return NotFound();
+            if (!string.Equals(course.AuthorLogin, login, StringComparison.OrdinalIgnoreCase)) return Forbid();
+
+            var lessons = await _db.Lessons
+                .AsNoTracking()
+                .Where(l => l.Module.CourseId == courseId)
+                .OrderBy(l => l.Module.Order)
+                .ThenBy(l => l.Order)
+                .Select(l => new { l.Id, l.Title, ModuleTitle = l.Module.Title })
+                .ToListAsync();
+
+            var lessonIds = lessons.Select(l => l.Id).ToList();
+
+            var feedbackRows = await _db.LessonFeedbacks
+                .AsNoTracking()
+                .Where(f => lessonIds.Contains(f.LessonId))
+                .GroupBy(f => f.LessonId)
+                .Select(g => new
+                {
+                    LessonId = g.Key,
+                    Count = g.Count(),
+                    AvgDifficulty = g.Average(x => x.Difficulty),
+                    AvgClarity = g.Average(x => x.Clarity),
+                    AvgInterest = g.Average(x => x.Interest)
+                })
+                .ToListAsync();
+
+            var byLesson = feedbackRows.ToDictionary(x => x.LessonId);
+
+            return Json(new
+            {
+                courseId,
+                courseTitle = course.Title,
+                lessons = lessons.Select(l =>
+                {
+                    byLesson.TryGetValue(l.Id, out var stats);
+                    return new
+                    {
+                        lessonId = l.Id,
+                        lessonTitle = l.Title,
+                        moduleTitle = l.ModuleTitle,
+                        responses = stats?.Count ?? 0,
+                        avgDifficulty = stats == null ? (double?)null : Math.Round(stats.AvgDifficulty, 1),
+                        avgClarity = stats == null ? (double?)null : Math.Round(stats.AvgClarity, 1),
+                        avgInterest = stats == null ? (double?)null : Math.Round(stats.AvgInterest, 1)
+                    };
+                })
+            });
+        }
     }
 }
 

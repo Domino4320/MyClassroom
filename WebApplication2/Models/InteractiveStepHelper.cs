@@ -11,6 +11,18 @@ namespace WebApplication2.Models
             public List<MatchPair>? Pairs { get; set; }
             public List<string>? Items { get; set; }
             public List<TrueFalseStatement>? Statements { get; set; }
+            public string? Template { get; set; }
+            public List<string>? Blanks { get; set; }
+            public string? Question { get; set; }
+            public List<ImageChoiceOption>? Options { get; set; }
+            public string? CorrectOptionId { get; set; }
+        }
+
+        public class ImageChoiceOption
+        {
+            public string Id { get; set; } = "";
+            public string Label { get; set; } = "";
+            public string ImageUrl { get; set; } = "";
         }
 
         public class MatchPair
@@ -55,7 +67,9 @@ namespace WebApplication2.Models
             {
                 ["match"] = "Сопоставьте термины с определениями",
                 ["sequence"] = "Расставьте элементы в правильном порядке",
-                ["truefalse"] = "Определите, какие утверждения верны, а какие нет"
+                ["truefalse"] = "Определите, какие утверждения верны, а какие нет",
+                ["fillblanks"] = "Заполните пропуски в тексте",
+                ["imagechoice"] = "Выберите правильный вариант по картинке"
             };
 
             var instruction = (config.Instruction ?? "").Trim();
@@ -125,6 +139,51 @@ namespace WebApplication2.Models
                 return true;
             }
 
+            if (kind == "fillblanks")
+            {
+                var template = (config.Template ?? "").Trim();
+                var blanks = config.Blanks?.Where(b => !string.IsNullOrWhiteSpace(b)).ToList() ?? new List<string>();
+                if (string.IsNullOrWhiteSpace(template) || !template.Contains("___"))
+                {
+                    error = "В тексте должен быть хотя бы один пропуск «___».";
+                    return false;
+                }
+
+                var gapCount = CountBlanksInTemplate(template);
+                if (blanks.Count != gapCount)
+                {
+                    error = $"Количество ответов ({blanks.Count}) должно совпадать с числом пропусков ({gapCount}).";
+                    return false;
+                }
+
+                return true;
+            }
+
+            if (kind == "imagechoice")
+            {
+                var options = config.Options?.Where(o => !string.IsNullOrWhiteSpace(o.ImageUrl)).ToList() ?? new List<ImageChoiceOption>();
+                if (options.Count < 2)
+                {
+                    error = "Добавьте минимум 2 варианта с картинками.";
+                    return false;
+                }
+
+                if (options.Count > InteractiveImageHelper.MaxImagesPerAssignment)
+                {
+                    error = $"Не более {InteractiveImageHelper.MaxImagesPerAssignment} картинок в задании.";
+                    return false;
+                }
+
+                if (string.IsNullOrWhiteSpace(config.CorrectOptionId) ||
+                    options.All(o => !string.Equals(o.Id, config.CorrectOptionId, StringComparison.Ordinal)))
+                {
+                    error = "Отметьте правильный вариант.";
+                    return false;
+                }
+
+                return true;
+            }
+
             error = "Неизвестный тип интерактивного задания.";
             return false;
         }
@@ -156,6 +215,12 @@ namespace WebApplication2.Models
 
                 if (kind == "truefalse")
                     return ValidateTrueFalse(config, root, out error);
+
+                if (kind == "fillblanks")
+                    return ValidateFillBlanks(config, root, out error);
+
+                if (kind == "imagechoice")
+                    return ValidateImageChoice(config, root, out error);
 
                 return ValidateMatch(config, root, out error);
             }
@@ -266,6 +331,83 @@ namespace WebApplication2.Models
             }
 
             return true;
+        }
+
+        private static bool ValidateFillBlanks(InteractiveConfig config, JsonElement root, out string? error)
+        {
+            error = null;
+            var expected = config.Blanks?.Select(Normalize).ToList() ?? new List<string>();
+            if (expected.Count == 0)
+            {
+                error = "Задание не настроено.";
+                return false;
+            }
+
+            if (!root.TryGetProperty("blanks", out var blanksEl) || blanksEl.ValueKind != JsonValueKind.Array)
+            {
+                error = "Заполните все пропуски.";
+                return false;
+            }
+
+            var userBlanks = blanksEl.EnumerateArray().Select(x => Normalize(x.GetString())).ToList();
+            if (userBlanks.Count != expected.Count)
+            {
+                error = "Заполните все пропуски.";
+                return false;
+            }
+
+            for (var i = 0; i < expected.Count; i++)
+            {
+                if (!string.Equals(userBlanks[i], expected[i], StringComparison.Ordinal))
+                {
+                    error = "Не все пропуски заполнены верно. Попробуйте ещё раз.";
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static bool ValidateImageChoice(InteractiveConfig config, JsonElement root, out string? error)
+        {
+            error = null;
+            if (string.IsNullOrWhiteSpace(config.CorrectOptionId))
+            {
+                error = "Задание не настроено.";
+                return false;
+            }
+
+            if (!root.TryGetProperty("selectedId", out var selectedEl))
+            {
+                error = "Выберите вариант.";
+                return false;
+            }
+
+            var selected = (selectedEl.GetString() ?? "").Trim();
+            if (!string.Equals(selected, config.CorrectOptionId.Trim(), StringComparison.Ordinal))
+            {
+                error = "Неверный вариант. Попробуйте ещё раз.";
+                return false;
+            }
+
+            return true;
+        }
+
+        private static int CountBlanksInTemplate(string template)
+        {
+            var count = 0;
+            var idx = 0;
+            while (idx < template.Length)
+            {
+                if (template.AsSpan(idx).StartsWith("___"))
+                {
+                    count++;
+                    idx += 3;
+                    continue;
+                }
+                idx++;
+            }
+            return count;
         }
 
         private static string Normalize(string? s) => (s ?? "").Trim().ToLowerInvariant();

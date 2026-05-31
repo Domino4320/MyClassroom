@@ -85,6 +85,8 @@ namespace WebApplication2.Models
         public ModuleModel Module { get; set; }
 
         public List<StepModel> Steps { get; set; } = new();
+
+        public List<LessonMaterialModel> Materials { get; set; } = new();
     }
 
     public class StepModel

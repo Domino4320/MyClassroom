@@ -1,0 +1,181 @@
+.lf-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 9998;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+}
+
+.lf-modal-backdrop.open {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.lf-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -48%);
+    width: min(420px, 92vw);
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 16px;
+    padding: 20px 22px;
+    z-index: 9999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s, transform 0.2s;
+    color: #e2e8f0;
+    font-family: Inter, system-ui, sans-serif;
+}
+
+.lf-modal.open {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translate(-50%, -50%);
+}
+
+.lf-stats-modal {
+    width: min(720px, 94vw);
+}
+
+.lf-modal-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.lf-modal-title {
+    font-size: 1.15rem;
+    margin: 0;
+}
+
+.lf-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 1.5rem;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.lf-lesson-name {
+    color: #94a3b8;
+    font-size: 0.9rem;
+    margin: 0 0 16px;
+}
+
+.lf-row {
+    margin-bottom: 14px;
+}
+
+.lf-label {
+    display: block;
+    font-size: 0.85rem;
+    color: #cbd5e1;
+    margin-bottom: 6px;
+}
+
+.lf-stars {
+    display: flex;
+    gap: 6px;
+}
+
+.lf-star {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: 1px solid #475569;
+    background: #0f172a;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+
+.lf-star.active {
+    background: rgba(56, 189, 248, 0.2);
+    border-color: #38bdf8;
+    color: #38bdf8;
+}
+
+.lf-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 18px;
+}
+
+.lf-submit {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 10px;
+    background: #38bdf8;
+    color: #0f172a;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.lf-skip {
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid #475569;
+    background: transparent;
+    color: #94a3b8;
+    cursor: pointer;
+}
+
+.lf-error {
+    color: #f87171;
+    font-size: 0.85rem;
+    margin-top: 10px;
+}
+
+.lf-stats-sub {
+    margin: 4px 0 0;
+    font-size: 0.85rem;
+    color: #94a3b8;
+}
+
+.lf-stats-body {
+    max-height: 60vh;
+    overflow: auto;
+    margin-top: 12px;
+}
+
+.lf-stats-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+
+.lf-stats-table th,
+.lf-stats-table td {
+    padding: 10px 8px;
+    border-bottom: 1px solid #334155;
+    text-align: left;
+}
+
+.lf-stats-table th {
+    color: #94a3b8;
+    font-weight: 600;
+}
+
+.lf-mod {
+    display: block;
+    font-size: 0.75rem;
+    color: #64748b;
+}
+
+.lf-lesson {
+    font-weight: 600;
+}
+
+.lf-empty,
+.lf-loading {
+    color: #94a3b8;
+    font-size: 0.9rem;
+}

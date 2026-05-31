@@ -4,13 +4,21 @@
     const KIND_LABELS = {
         match: "Сопоставление пар",
         sequence: "Последовательность",
-        truefalse: "Верно / Неверно"
+        truefalse: "Верно / Неверно",
+        fillblanks: "Заполнение пропусков",
+        imagechoice: "Выбор картинки"
     };
+
+    const MAX_INTERACTIVE_IMAGES = 6;
+    const MAX_IMAGE_MB = 5;
+    const IMAGE_EXT = [".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp"];
 
     const DEFAULT_INSTRUCTIONS = {
         match: "Сопоставьте термины с определениями",
         sequence: "Расставьте элементы в правильном порядке",
-        truefalse: "Определите, какие утверждения верны, а какие нет"
+        truefalse: "Определите, какие утверждения верны, а какие нет",
+        fillblanks: "Заполните пропуски в тексте",
+        imagechoice: "Выберите правильный вариант по картинке"
     };
 
     window.InteractiveStepEditor = {
@@ -47,6 +55,26 @@
                     { text: "HTML описывает структуру страницы", isTrue: true },
                     { text: "CSS выполняет вычисления на сервере", isTrue: false }
                 ]
+            };
+        }
+        if (k === "fillblanks") {
+            return {
+                kind: "fillblanks",
+                instruction: DEFAULT_INSTRUCTIONS.fillblanks,
+                template: "HTTP — это ___ протокол. Код 404 означает ___.",
+                blanks: ["прикладной", "не найдено"]
+            };
+        }
+        if (k === "imagechoice") {
+            return {
+                kind: "imagechoice",
+                instruction: DEFAULT_INSTRUCTIONS.imagechoice,
+                question: "Какой вариант верный?",
+                options: [
+                    { id: "a", label: "Вариант A", imageUrl: "" },
+                    { id: "b", label: "Вариант B", imageUrl: "" }
+                ],
+                correctOptionId: "a"
             };
         }
         return {
@@ -89,7 +117,16 @@
                 statements: (raw.statements ?? raw.Statements ?? []).map(s => ({
                     text: s?.text ?? s?.Text ?? "",
                     isTrue: !!(s?.isTrue ?? s?.IsTrue)
-                }))
+                })),
+                template: raw.template ?? raw.Template ?? "",
+                blanks: raw.blanks ?? raw.Blanks ?? [],
+                question: raw.question ?? raw.Question ?? "",
+                options: (raw.options ?? raw.Options ?? []).map(o => ({
+                    id: o?.id ?? o?.Id ?? "",
+                    label: o?.label ?? o?.Label ?? "",
+                    imageUrl: o?.imageUrl ?? o?.ImageUrl ?? ""
+                })),
+                correctOptionId: raw.correctOptionId ?? raw.CorrectOptionId ?? ""
             };
             if (!cfg.kind) cfg.kind = "match";
             return normalizeConfig(cfg);
@@ -180,7 +217,168 @@
             });
             list.addEventListener("input", () => syncHidden(container.closest(".interactive-constructor")));
             list.addEventListener("change", () => syncHidden(container.closest(".interactive-constructor")));
+        } else if (kind === "fillblanks") {
+            container.innerHTML = `
+                <label>Текст с пропусками (используйте «___»)</label>
+                <textarea class="interactive-fill-template" rows="4" placeholder="Пример: HTTP — это ___ протокол.">${escapeAttr(config.template || "")}</textarea>
+                <label style="margin-top:10px;display:block;">Ответы по порядку (через строку)</label>
+                <textarea class="interactive-fill-blanks" rows="3" placeholder="Каждый ответ с новой строки">${escapeAttr((config.blanks || []).join("\n"))}</textarea>`;
+            container.querySelectorAll("textarea").forEach(ta => {
+                ta.addEventListener("input", () => syncHidden(container.closest(".interactive-constructor")));
+            });
+        } else if (kind === "imagechoice") {
+            container.innerHTML = `
+                <label>Вопрос (необязательно)</label>
+                <input type="text" class="interactive-img-question" value="${escapeAttr(config.question || "")}" />
+                <p class="interactive-img-hint">До ${MAX_INTERACTIVE_IMAGES} картинок · ${MAX_IMAGE_MB} МБ · ${IMAGE_EXT.join(", ")}</p>
+                <label style="margin-top:8px;display:block;">Варианты с картинками</label>
+                <div class="interactive-img-options-list"></div>
+                <button type="button" class="btn btn-outline interactive-add-img-opt" style="margin-top:8px;width:100%;">+ Вариант</button>`;
+            const list = container.querySelector(".interactive-img-options-list");
+            const wrap = container.closest(".interactive-constructor");
+            (config.options || []).forEach(o => addImageOptionRow(list, o, config.correctOptionId));
+            if (!(config.options || []).length) {
+                addImageOptionRow(list, { id: "a", label: "Вариант A", imageUrl: "" }, config.correctOptionId);
+                addImageOptionRow(list, { id: "b", label: "Вариант B", imageUrl: "" }, config.correctOptionId);
+            }
+            container.querySelector(".interactive-add-img-opt").addEventListener("click", () => {
+                if (list.children.length >= MAX_INTERACTIVE_IMAGES) return;
+                const id = "opt" + Date.now();
+                addImageOptionRow(list, { id, label: "", imageUrl: "" }, "");
+                syncHidden(wrap);
+                updateImageAddButton(wrap);
+            });
+            list.addEventListener("input", () => syncHidden(wrap));
+            list.addEventListener("change", () => syncHidden(wrap));
+            updateImageAddButton(wrap);
         }
+    }
+
+    function updateImageAddButton(wrap) {
+        const btn = wrap?.querySelector(".interactive-add-img-opt");
+        if (!btn) return;
+        const count = wrap.querySelectorAll(".interactive-img-opt-row").length;
+        const atLimit = count >= MAX_INTERACTIVE_IMAGES;
+        btn.disabled = atLimit;
+        btn.classList.toggle("is-disabled", atLimit);
+        btn.textContent = atLimit ? `Лимит: ${MAX_INTERACTIVE_IMAGES} картинок` : "+ Вариант";
+    }
+
+    function imageExtOk(name) {
+        const i = (name || "").lastIndexOf(".");
+        const ext = i >= 0 ? name.slice(i).toLowerCase() : "";
+        return IMAGE_EXT.includes(ext);
+    }
+
+    function updateImagePreview(row) {
+        const url = row.querySelector(".interactive-img-url")?.value?.trim() || "";
+        const img = row.querySelector(".interactive-img-preview");
+        const ph = row.querySelector(".interactive-img-placeholder");
+        if (!img || !ph) return;
+        if (url) {
+            img.src = url;
+            img.style.display = "block";
+            ph.style.display = "none";
+        } else {
+            img.removeAttribute("src");
+            img.style.display = "none";
+            ph.style.display = "block";
+        }
+    }
+
+    async function uploadInteractiveImage(stepId, file, replacePath) {
+        const fd = new FormData();
+        fd.append("file", file);
+        let url = `/CourseConstructor/UploadInteractiveImage?stepId=${encodeURIComponent(stepId)}`;
+        if (replacePath) url += `&replacePath=${encodeURIComponent(replacePath)}`;
+        const res = await fetch(url, { method: "POST", body: fd });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.message || "Ошибка загрузки");
+        return data.imageUrl;
+    }
+
+    async function deleteInteractiveImage(stepId, path) {
+        if (!path || !path.includes("/uploads/interactive/")) return;
+        await fetch(
+            `/CourseConstructor/DeleteInteractiveImage?stepId=${encodeURIComponent(stepId)}&path=${encodeURIComponent(path)}`,
+            { method: "POST" }
+        );
+    }
+
+    function addImageOptionRow(list, opt, correctId) {
+        const wrap = list.closest(".interactive-constructor");
+        const stepId = wrap?.dataset?.stepId;
+        const row = document.createElement("div");
+        row.className = "interactive-img-opt-row";
+        const hasImage = !!(opt.imageUrl || "").trim();
+        row.innerHTML = `
+            <div class="interactive-img-opt-main">
+                <label class="interactive-img-correct-wrap" title="Правильный ответ">
+                    <input type="radio" name="interactive-img-correct-${stepId}" class="interactive-img-correct" value="${escapeAttr(opt.id)}" ${opt.id === correctId ? "checked" : ""}>
+                </label>
+                <input type="text" class="interactive-img-label" placeholder="Подпись" value="${escapeAttr(opt.label || "")}">
+                <input type="hidden" class="interactive-img-url" value="${escapeAttr(opt.imageUrl || "")}">
+                <input type="hidden" class="interactive-img-id" value="${escapeAttr(opt.id || "")}">
+                <div class="interactive-img-preview-box">
+                    <img class="interactive-img-preview" src="${hasImage ? escapeAttr(opt.imageUrl) : ""}" alt="" style="display:${hasImage ? "block" : "none"};" />
+                    <span class="interactive-img-placeholder" style="display:${hasImage ? "none" : "block"};">Нет картинки</span>
+                </div>
+                <label class="btn btn-outline interactive-img-upload-btn">
+                    <input type="file" class="interactive-img-file" accept=".jpg,.jpeg,.png,.gif,.webp,.bmp" hidden />
+                    <span class="interactive-img-upload-text">${hasImage ? "Заменить" : "Загрузить"}</span>
+                </label>
+                <button type="button" class="interactive-row-remove" title="Удалить">×</button>
+            </div>`;
+
+        row.querySelector(".interactive-row-remove").addEventListener("click", async () => {
+            const path = row.querySelector(".interactive-img-url")?.value?.trim();
+            if (path && stepId) await deleteInteractiveImage(stepId, path);
+            row.remove();
+            syncHidden(wrap);
+            updateImageAddButton(wrap);
+        });
+
+        row.querySelector(".interactive-img-label")?.addEventListener("input", () => syncHidden(wrap));
+        row.querySelectorAll(".interactive-img-correct").forEach(r => {
+            r.addEventListener("change", () => syncHidden(wrap));
+        });
+
+        row.querySelector(".interactive-img-file")?.addEventListener("change", async e => {
+            const file = e.target.files?.[0];
+            e.target.value = "";
+            if (!file || !stepId) return;
+
+            if (file.size > MAX_IMAGE_MB * 1024 * 1024) {
+                alert(`Изображение больше ${MAX_IMAGE_MB} МБ`);
+                return;
+            }
+            if (!imageExtOk(file.name)) {
+                alert(`Разрешены: ${IMAGE_EXT.join(", ")}`);
+                return;
+            }
+
+            const oldPath = row.querySelector(".interactive-img-url")?.value?.trim() || "";
+            try {
+                const imageUrl = await uploadInteractiveImage(stepId, file, oldPath || undefined);
+                row.querySelector(".interactive-img-url").value = imageUrl;
+                const uploadText = row.querySelector(".interactive-img-upload-text");
+                if (uploadText) uploadText.textContent = "Заменить";
+                updateImagePreview(row);
+                syncHidden(wrap);
+            } catch (err) {
+                alert(err.message || "Не удалось загрузить");
+            }
+        });
+
+        list.appendChild(row);
+    }
+
+    function countBlanks(template) {
+        let n = 0, i = 0;
+        while (i < template.length) {
+            if (template.slice(i, i + 3) === "___") { n++; i += 3; } else i++;
+        }
+        return n;
     }
 
     function wireInteractiveInput(input, wrap) {
@@ -331,6 +529,24 @@
             return null;
         }
 
+        if (kind === "fillblanks") {
+            const template = (wrap.querySelector(".interactive-fill-template")?.value || "").trim();
+            const blanks = (wrap.querySelector(".interactive-fill-blanks")?.value || "").split("\n").map(s => s.trim()).filter(Boolean);
+            if (!template || !template.includes("___")) return "В тексте должен быть хотя бы один пропуск «___».";
+            const gaps = countBlanks(template);
+            if (blanks.length !== gaps) return `Ответов (${blanks.length}) должно быть столько же, сколько пропусков (${gaps}).`;
+            return null;
+        }
+
+        if (kind === "imagechoice") {
+            const rows = [...wrap.querySelectorAll(".interactive-img-opt-row")];
+            const filled = rows.filter(r => (r.querySelector(".interactive-img-url")?.value || "").trim());
+            if (filled.length < 2) return "Загрузите минимум 2 картинки.";
+            if (filled.length > MAX_INTERACTIVE_IMAGES) return `Не более ${MAX_INTERACTIVE_IMAGES} картинок.`;
+            if (!wrap.querySelector(".interactive-img-correct:checked")) return "Отметьте правильный вариант.";
+            return null;
+        }
+
         return "Неизвестный тип интерактивного задания.";
     }
 
@@ -363,13 +579,35 @@
             return { kind: "sequence", instruction, items };
         }
 
-        const statements = [];
-        wrap.querySelectorAll(".interactive-stmt-row").forEach(row => {
-            const text = row.querySelector(".interactive-stmt-text")?.value?.trim();
-            const isTrue = row.querySelector(".interactive-stmt-truth")?.value === "true";
-            if (text) statements.push({ text, isTrue });
+        if (kind === "truefalse") {
+            const statements = [];
+            wrap.querySelectorAll(".interactive-stmt-row").forEach(row => {
+                const text = row.querySelector(".interactive-stmt-text")?.value?.trim();
+                const isTrue = row.querySelector(".interactive-stmt-truth")?.value === "true";
+                if (text) statements.push({ text, isTrue });
+            });
+            return { kind: "truefalse", instruction, statements };
+        }
+
+        if (kind === "fillblanks") {
+            const template = wrap.querySelector(".interactive-fill-template")?.value?.trim() || "";
+            const blanks = (wrap.querySelector(".interactive-fill-blanks")?.value || "")
+                .split("\n").map(s => s.trim()).filter(Boolean);
+            return { kind: "fillblanks", instruction, template, blanks };
+        }
+
+        const options = [];
+        let correctOptionId = wrap.querySelector(".interactive-img-correct:checked")?.value || "";
+        wrap.querySelectorAll(".interactive-img-opt-row").forEach((row, idx) => {
+            let id = row.querySelector(".interactive-img-id")?.value?.trim();
+            const imageUrl = row.querySelector(".interactive-img-url")?.value?.trim();
+            const label = row.querySelector(".interactive-img-label")?.value?.trim();
+            if (!id) id = "opt" + idx;
+            if (imageUrl) options.push({ id, label: label || ("Вариант " + (idx + 1)), imageUrl });
         });
-        return { kind: "truefalse", instruction, statements };
+        const question = wrap.querySelector(".interactive-img-question")?.value?.trim() || "";
+        if (!correctOptionId && options.length) correctOptionId = options[0].id;
+        return { kind: "imagechoice", instruction, question, options, correctOptionId };
     }
 
     function validateConfig(config) {
@@ -398,6 +636,23 @@
         if (kind === "truefalse") {
             const statements = (config.statements || []).filter(s => (s.text || "").trim());
             if (statements.length === 0) return "Добавьте хотя бы одно утверждение.";
+            return null;
+        }
+
+        if (kind === "fillblanks") {
+            const template = (config.template || "").trim();
+            const blanks = (config.blanks || []).map(b => (b || "").trim()).filter(Boolean);
+            if (!template.includes("___")) return "В тексте должен быть пропуск «___».";
+            const gaps = countBlanks(template);
+            if (blanks.length !== gaps) return "Число ответов должно совпадать с числом пропусков.";
+            return null;
+        }
+
+        if (kind === "imagechoice") {
+            const options = (config.options || []).filter(o => (o.imageUrl || "").trim());
+            if (options.length < 2) return "Загрузите минимум 2 картинки.";
+            if (options.length > MAX_INTERACTIVE_IMAGES) return `Не более ${MAX_INTERACTIVE_IMAGES} картинок.`;
+            if (!config.correctOptionId) return "Отметьте правильный вариант.";
             return null;
         }
 

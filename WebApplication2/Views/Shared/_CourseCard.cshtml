@@ -85,6 +85,11 @@
             background: rgba(16, 185, 129, 0.6);
         }
 
+        .btn-admin-tool.feedback-stats {
+            background: rgba(124, 58, 237, 0.88);
+            color: #f5f3ff;
+        }
+
         .btn-admin-tool.delete {
             background: rgba(244, 67, 54, 0.6);
         }
@@ -226,6 +231,21 @@
                             <path d="M7 15v4" />
                             <path d="M12 11v8" />
                             <path d="M17 7v12" />
+                        </svg>
+                    </button>
+
+                    <button type="button"
+                            class="btn-admin-tool feedback-stats js-lesson-feedback-stats"
+                            title="Оценки уроков"
+                            data-course-id="@Model.Id"
+                            onclick="event.stopPropagation(); return window.openLessonFeedbackStatsFromButton?.(this);">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 19V5" />
+                            <path d="M4 19h16" />
+                            <path d="M8 17v-5" />
+                            <path d="M12 17V8" />
+                            <path d="M16 17v-3" />
+                            <circle cx="18" cy="6" r="2" fill="currentColor" stroke="none" />
                         </svg>
                     </button>
 

@@ -11,11 +11,13 @@ namespace WebApplication2.Controllers
     {
         private readonly ApplicationDBContext _db;
         private readonly CertificatePdfService _certificatePdfService;
+        private readonly IWebHostEnvironment _env;
 
-        public CourseController(ApplicationDBContext db, CertificatePdfService certificatePdfService)
+        public CourseController(ApplicationDBContext db, CertificatePdfService certificatePdfService, IWebHostEnvironment env)
         {
             _db = db;
             _certificatePdfService = certificatePdfService;
+            _env = env;
         }
 
         private async Task<(bool IsEnrolled, bool HasCompletedCourse)> GetCourseCompletionStatusAsync(int courseId, string login)
@@ -240,10 +242,7 @@ namespace WebApplication2.Controllers
                 .OrderBy(m => m.Order)
                 .ToListAsync();
 
-            var allStepsSorted = modules
-                .SelectMany(m => m.Lessons.OrderBy(l => l.Order)
-                    .SelectMany(l => l.Steps.OrderBy(s => s.Order)))
-                .ToList();
+            var allStepsSorted = CourseStepOrdering.FlattenCourseSteps(modules);
 
             if (!allStepsSorted.Any()) return Content("В курсе еще нет контента.");
 
@@ -271,8 +270,12 @@ namespace WebApplication2.Controllers
 
             var isBookmarkStep = courseBookmark != null && courseBookmark.StepId == currentStep.Id;
 
+            int currentIndex = allStepsSorted.FindIndex(s => s.Id == currentStep.Id);
+            int? nextStepIdInCourse = currentIndex >= 0 && currentIndex < allStepsSorted.Count - 1
+                ? allStepsSorted[currentIndex + 1].Id
+                : null;
+
             // Проверка последовательности (нельзя прыгнуть вперед, кроме сохранённой закладки)
-            int currentIndex = allStepsSorted.IndexOf(currentStep);
             if (currentIndex > 0 && !isBookmarkStep)
             {
                 var prevStep = allStepsSorted[currentIndex - 1];
@@ -316,6 +319,37 @@ namespace WebApplication2.Controllers
                 s.Step.IsManualCheck);
 
             var course = await _db.Courses.FindAsync(courseId);
+            var currentLessonId = currentStep.LessonId;
+            var currentLessonTitle = currentStep.Lesson?.Title ?? "Урок";
+
+            var lessonMaterials = await _db.LessonMaterials
+                .AsNoTracking()
+                .Where(m => m.LessonId == currentLessonId)
+                .OrderBy(m => m.Order)
+                .ThenBy(m => m.Id)
+                .Select(m => new LessonMaterialViewModel
+                {
+                    Id = m.Id,
+                    Kind = m.Kind,
+                    Title = m.Title,
+                    FileName = m.FileName,
+                    Url = m.Url,
+                    DownloadUrl = m.Kind == LessonMaterialKind.File
+                        ? Url.Action(nameof(DownloadLessonMaterial), new { id = m.Id })
+                        : null
+                })
+                .ToListAsync();
+
+            var lessonStepIds = await _db.Steps
+                .Where(s => s.LessonId == currentLessonId)
+                .Select(s => s.Id)
+                .ToListAsync();
+
+            var allLessonStepsDone = lessonStepIds.Count > 0 &&
+                                     lessonStepIds.All(id => completedStepIds.Contains(id));
+
+            var hasLessonFeedback = await _db.LessonFeedbacks
+                .AnyAsync(f => f.LessonId == currentLessonId && f.UserLogin == login);
 
             // Баллы по курсу (только тесты)
             var maxPointsInCourse = await _db.Steps
@@ -346,10 +380,119 @@ namespace WebApplication2.Controllers
                 IsCurrentStepBookmarked = isBookmarkStep,
                 TimelineTotalCount = allStepsSorted.Count,
                 TimelineCompletedCount = allStepsSorted.Count(s => completedStepIds.Contains(s.Id)),
-                TimelineSteps = BuildTimelineSteps(allStepsSorted, completedStepIds, currentStep.Id, courseBookmark?.StepId, modules)
+                TimelineSteps = BuildTimelineSteps(allStepsSorted, completedStepIds, currentStep.Id, courseBookmark?.StepId, modules),
+                CurrentLessonId = currentLessonId,
+                CurrentLessonTitle = currentLessonTitle,
+                LessonMaterials = lessonMaterials,
+                ShowLessonFeedbackPrompt = allLessonStepsDone && !hasLessonFeedback && course?.AuthorLogin != login,
+                NextStepIdInCourse = nextStepIdInCourse
             };
 
             return View(viewModel);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> DownloadLessonMaterial(int id)
+        {
+            var login = HttpContext.Session.GetString("Login");
+            if (string.IsNullOrEmpty(login))
+                return RedirectToAction("Index", "Authorization");
+
+            var material = await _db.LessonMaterials
+                .Include(m => m.Lesson)
+                .ThenInclude(l => l.Module)
+                .FirstOrDefaultAsync(m => m.Id == id);
+
+            if (material == null || material.Kind != LessonMaterialKind.File || string.IsNullOrEmpty(material.StoredPath))
+                return NotFound();
+
+            var courseId = material.Lesson.Module.CourseId;
+            var isEnrolled = await _db.Enrollments.AnyAsync(e =>
+                e.CourseId == courseId && e.UserLogin == login);
+            if (!isEnrolled)
+            {
+                var isAuthor = await _db.Courses.AnyAsync(c =>
+                    c.Id == courseId && c.AuthorLogin == login);
+                if (!isAuthor)
+                    return Forbid();
+            }
+
+            var physicalPath = Path.Combine(
+                _env.WebRootPath,
+                material.StoredPath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+
+            if (!System.IO.File.Exists(physicalPath))
+                return NotFound();
+
+            var downloadName = string.IsNullOrWhiteSpace(material.FileName)
+                ? Path.GetFileName(physicalPath)
+                : material.FileName;
+
+            var contentType = LessonMaterialHelper.GetContentType(downloadName);
+            return PhysicalFile(physicalPath, contentType, downloadName);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SubmitLessonFeedback(int lessonId, int difficulty, int clarity, int interest)
+        {
+            var login = HttpContext.Session.GetString("Login");
+            if (string.IsNullOrEmpty(login))
+                return Json(new { success = false, message = "Сессия истекла" });
+
+            if (difficulty is < 1 or > 5 || clarity is < 1 or > 5 || interest is < 1 or > 5)
+                return Json(new { success = false, message = "Оценки должны быть от 1 до 5." });
+
+            var lesson = await _db.Lessons
+                .Include(l => l.Module)
+                .FirstOrDefaultAsync(l => l.Id == lessonId);
+
+            if (lesson == null)
+                return Json(new { success = false, message = "Урок не найден" });
+
+            var isEnrolled = await _db.Enrollments.AnyAsync(e =>
+                e.CourseId == lesson.Module.CourseId && e.UserLogin == login);
+            if (!isEnrolled)
+                return Json(new { success = false, message = "Нет доступа к курсу" });
+
+            var lessonStepIds = await _db.Steps.Where(s => s.LessonId == lessonId).Select(s => s.Id).ToListAsync();
+            if (lessonStepIds.Count == 0)
+                return Json(new { success = false, message = "В уроке нет шагов" });
+
+            var completedCount = await _db.Progress
+                .Where(p => p.UserLogin == login && p.IsCompleted && lessonStepIds.Contains(p.StepId))
+                .Select(p => p.StepId)
+                .Distinct()
+                .CountAsync();
+
+            if (completedCount < lessonStepIds.Count)
+                return Json(new { success = false, message = "Сначала завершите все шаги урока." });
+
+            var existing = await _db.LessonFeedbacks
+                .FirstOrDefaultAsync(f => f.LessonId == lessonId && f.UserLogin == login);
+
+            if (existing == null)
+            {
+                _db.LessonFeedbacks.Add(new LessonFeedbackModel
+                {
+                    LessonId = lessonId,
+                    UserLogin = login,
+                    Difficulty = difficulty,
+                    Clarity = clarity,
+                    Interest = interest,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+            else
+            {
+                existing.Difficulty = difficulty;
+                existing.Clarity = clarity;
+                existing.Interest = interest;
+                existing.CreatedAt = DateTime.UtcNow;
+            }
+
+            await _db.SaveChangesAsync();
+            return Json(new { success = true });
         }
 
         // --- ЗАВЕРШЕНИЕ ШАГА (AJAX) ---
@@ -494,21 +637,52 @@ namespace WebApplication2.Controllers
             await _db.SaveChangesAsync();
 
             var nextId = await GetNextStepIdAsync(currentStep.Lesson.Module.CourseId, stepId);
-            return Json(new { success = true, nextStepId = nextId });
+
+            var lessonId = currentStep.LessonId;
+            var lessonStepIds = await _db.Steps.Where(s => s.LessonId == lessonId).Select(s => s.Id).ToListAsync();
+            var completedInLesson = await _db.Progress
+                .Where(p => p.UserLogin == login && p.IsCompleted && lessonStepIds.Contains(p.StepId))
+                .Select(p => p.StepId)
+                .Distinct()
+                .CountAsync();
+
+            var lessonJustCompleted = lessonStepIds.Count > 0 && completedInLesson >= lessonStepIds.Count;
+            var promptFeedback = false;
+            string? feedbackLessonTitle = null;
+
+            if (lessonJustCompleted)
+            {
+                var hasFeedback = await _db.LessonFeedbacks
+                    .AnyAsync(f => f.LessonId == lessonId && f.UserLogin == login);
+                if (!hasFeedback)
+                {
+                    promptFeedback = true;
+                    feedbackLessonTitle = currentStep.Lesson?.Title;
+                }
+            }
+
+            return Json(new
+            {
+                success = true,
+                nextStepId = nextId,
+                promptLessonFeedback = promptFeedback,
+                lessonId,
+                lessonTitle = feedbackLessonTitle
+            });
         }
 
         private async Task<int?> GetNextStepIdAsync(int courseId, int stepId)
         {
-            var allIds = await _db.Modules
+            var modules = await _db.Modules
                 .Where(m => m.CourseId == courseId)
+                .Include(m => m.Lessons)
+                    .ThenInclude(l => l.Steps)
                 .OrderBy(m => m.Order)
-                .SelectMany(m => m.Lessons.OrderBy(l => l.Order)
-                    .SelectMany(l => l.Steps.OrderBy(s => s.Order).ThenBy(s => s.Id)))
-                .Select(s => s.Id)
                 .ToListAsync();
 
-            var idx = allIds.IndexOf(stepId);
-            return idx >= 0 && idx < allIds.Count - 1 ? allIds[idx + 1] : null;
+            var allSteps = CourseStepOrdering.FlattenCourseSteps(modules);
+            var idx = allSteps.FindIndex(s => s.Id == stepId);
+            return idx >= 0 && idx < allSteps.Count - 1 ? allSteps[idx + 1].Id : null;
         }
 
         // --- ДОБАВЛЕНИЕ ОТЗЫВА (AJAX) ---

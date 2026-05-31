@@ -8,10 +8,23 @@ namespace WebApplication2.Controllers
     public class CourseConstructorController : Controller
     {
         private readonly ApplicationDBContext _db;
+        private readonly IWebHostEnvironment _env;
 
-        public CourseConstructorController(ApplicationDBContext db)
+        public CourseConstructorController(ApplicationDBContext db, IWebHostEnvironment env)
         {
             _db = db;
+            _env = env;
+        }
+
+        private async Task<(LessonModel? lesson, CourseModel? course, string? error)> GetValidLesson(int lessonId)
+        {
+            var lesson = await _db.Lessons.Include(l => l.Module).FirstOrDefaultAsync(l => l.Id == lessonId);
+            if (lesson == null) return (null, null, "Урок не найден.");
+
+            var (course, error) = await GetValidCourse(lesson.Module.CourseId);
+            if (error != null) return (lesson, null, error);
+
+            return (lesson, course, null);
         }
 
         // Вспомогательный метод для проверки прав доступа и состояния курса
@@ -237,6 +250,62 @@ namespace WebApplication2.Controllers
         }
 
         [HttpPost]
+        public async Task<IActionResult> RenameModule([FromQuery] int moduleId, [FromQuery] string title)
+        {
+            var module = await _db.Modules.FindAsync(moduleId);
+            if (module == null) return NotFound();
+
+            var (course, error) = await GetValidCourse(module.CourseId);
+            if (error != null) return BadRequest(error);
+
+            var trimmed = (title ?? "").Trim();
+            if (string.IsNullOrWhiteSpace(trimmed))
+                return BadRequest("Название не может быть пустым.");
+
+            module.Title = trimmed;
+            await _db.SaveChangesAsync();
+            return Ok();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> RenameLesson([FromQuery] int lessonId, [FromQuery] string title)
+        {
+            var lesson = await _db.Lessons.Include(l => l.Module).FirstOrDefaultAsync(l => l.Id == lessonId);
+            if (lesson == null) return NotFound();
+
+            var (course, error) = await GetValidCourse(lesson.Module.CourseId);
+            if (error != null) return BadRequest(error);
+
+            var trimmed = (title ?? "").Trim();
+            if (string.IsNullOrWhiteSpace(trimmed))
+                return BadRequest("Название не может быть пустым.");
+
+            lesson.Title = trimmed;
+            await _db.SaveChangesAsync();
+            return Ok(new { title = lesson.Title });
+        }
+
+        [HttpPost]
+        [Route("CourseConstructor/DeleteModule/{id}")]
+        public async Task<IActionResult> DeleteModule(int id)
+        {
+            var module = await _db.Modules
+                .Include(m => m.Lessons)
+                .FirstOrDefaultAsync(m => m.Id == id);
+            if (module == null) return NotFound();
+
+            var (course, error) = await GetValidCourse(module.CourseId);
+            if (error != null) return BadRequest(error);
+
+            foreach (var lesson in module.Lessons)
+                await DeleteLessonMaterialFilesAsync(lesson.Id);
+
+            _db.Modules.Remove(module);
+            await _db.SaveChangesAsync();
+            return Ok();
+        }
+
+        [HttpPost]
         [Route("CourseConstructor/DeleteLesson/{id}")]
         public async Task<IActionResult> DeleteLesson(int id)
         {
@@ -246,9 +315,34 @@ namespace WebApplication2.Controllers
             var (course, error) = await GetValidCourse(lesson.Module.CourseId);
             if (error != null) return BadRequest(error);
 
+            await DeleteLessonMaterialFilesAsync(id);
+
             _db.Lessons.Remove(lesson);
             await _db.SaveChangesAsync();
             return Ok();
+        }
+
+        private async Task DeleteLessonMaterialFilesAsync(int lessonId)
+        {
+            var fileMaterials = await _db.LessonMaterials
+                .Where(m => m.LessonId == lessonId && m.Kind == LessonMaterialKind.File)
+                .ToListAsync();
+
+            foreach (var material in fileMaterials)
+            {
+                if (!string.IsNullOrEmpty(material.StoredPath))
+                {
+                    var physical = Path.Combine(_env.WebRootPath, material.StoredPath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+                    if (System.IO.File.Exists(physical))
+                        System.IO.File.Delete(physical);
+                }
+            }
+
+            var lessonDir = Path.Combine(_env.WebRootPath, "uploads", "lesson-materials", lessonId.ToString());
+            if (Directory.Exists(lessonDir))
+            {
+                try { Directory.Delete(lessonDir, recursive: true); } catch { /* ignore */ }
+            }
         }
 
         [HttpPost]
@@ -261,9 +355,94 @@ namespace WebApplication2.Controllers
             var (course, error) = await GetValidCourse(step.Lesson.Module.CourseId);
             if (error != null) return BadRequest(error);
 
+            DeleteInteractiveImageFolder(id);
             _db.Steps.Remove(step);
             await _db.SaveChangesAsync();
             return Ok();
+        }
+
+        [HttpPost]
+        [RequestSizeLimit(InteractiveImageHelper.MaxFileBytes)]
+        public async Task<IActionResult> UploadInteractiveImage(int stepId, IFormFile file, string? replacePath = null)
+        {
+            var step = await _db.Steps.Include(s => s.Lesson).ThenInclude(l => l.Module)
+                .FirstOrDefaultAsync(s => s.Id == stepId);
+            if (step == null) return NotFound();
+
+            var (_, error) = await GetValidCourse(step.Lesson.Module.CourseId);
+            if (error != null) return BadRequest(new { message = error });
+
+            if (step.Type != StepType.Interactive)
+                return BadRequest(new { message = "Загрузка картинок только для интерактивных шагов." });
+
+            if (file == null || file.Length == 0)
+                return BadRequest(new { message = "Выберите файл изображения." });
+
+            if (file.Length > InteractiveImageHelper.MaxFileBytes)
+                return BadRequest(new { message = "Изображение слишком большое (максимум 5 МБ)." });
+
+            if (!InteractiveImageHelper.IsAllowedExtension(file.FileName))
+                return BadRequest(new { message = "Разрешены .jpg, .jpeg, .png, .gif, .webp, .bmp" });
+
+            var config = InteractiveStepHelper.ParseConfig(step.TextContent);
+            var currentCount = config?.Options?.Count(o => !string.IsNullOrWhiteSpace(o.ImageUrl)) ?? 0;
+            var isReplace = InteractiveImageHelper.IsStoredInteractivePath(stepId, replacePath);
+
+            if (!isReplace && currentCount >= InteractiveImageHelper.MaxImagesPerAssignment)
+                return BadRequest(new { message = $"Максимум {InteractiveImageHelper.MaxImagesPerAssignment} картинок в задании." });
+
+            var ext = Path.GetExtension(file.FileName);
+            var uploadDir = Path.Combine(_env.WebRootPath, "uploads", "interactive", stepId.ToString());
+            Directory.CreateDirectory(uploadDir);
+
+            var storedFileName = $"{Guid.NewGuid():N}{ext.ToLowerInvariant()}";
+            var physicalPath = Path.Combine(uploadDir, storedFileName);
+            await using (var stream = new FileStream(physicalPath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            if (isReplace)
+            {
+                var oldPhysical = InteractiveImageHelper.TryGetPhysicalPath(_env, replacePath);
+                if (oldPhysical != null && System.IO.File.Exists(oldPhysical) &&
+                    !string.Equals(oldPhysical, physicalPath, StringComparison.OrdinalIgnoreCase))
+                {
+                    System.IO.File.Delete(oldPhysical);
+                }
+            }
+
+            var webPath = $"/uploads/interactive/{stepId}/{storedFileName}";
+            return Json(new { imageUrl = webPath });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> DeleteInteractiveImage(int stepId, [FromQuery] string path)
+        {
+            var step = await _db.Steps.Include(s => s.Lesson).ThenInclude(l => l.Module)
+                .FirstOrDefaultAsync(s => s.Id == stepId);
+            if (step == null) return NotFound();
+
+            var (_, error) = await GetValidCourse(step.Lesson.Module.CourseId);
+            if (error != null) return BadRequest(error);
+
+            if (!InteractiveImageHelper.IsStoredInteractivePath(stepId, path))
+                return BadRequest(new { message = "Некорректный путь к файлу." });
+
+            var physical = InteractiveImageHelper.TryGetPhysicalPath(_env, path);
+            if (physical != null && System.IO.File.Exists(physical))
+                System.IO.File.Delete(physical);
+
+            return Ok();
+        }
+
+        private void DeleteInteractiveImageFolder(int stepId)
+        {
+            var dir = Path.Combine(_env.WebRootPath, "uploads", "interactive", stepId.ToString());
+            if (Directory.Exists(dir))
+            {
+                try { Directory.Delete(dir, recursive: true); } catch { /* ignore */ }
+            }
         }
 
         [HttpGet]
@@ -332,5 +511,204 @@ namespace WebApplication2.Controllers
             await _db.SaveChangesAsync();
             return Ok();
         }
+
+        [HttpGet]
+        public async Task<IActionResult> GetLessonMaterials(int lessonId)
+        {
+            var (lesson, _, error) = await GetValidLesson(lessonId);
+            if (error != null) return BadRequest(error);
+            if (lesson == null) return NotFound();
+
+            var items = await _db.LessonMaterials
+                .AsNoTracking()
+                .Where(m => m.LessonId == lessonId)
+                .OrderBy(m => m.Order)
+                .ThenBy(m => m.Id)
+                .ToListAsync();
+
+            return Json(items.Select(m => new
+            {
+                m.Id,
+                kind = (int)m.Kind,
+                m.Title,
+                m.FileName,
+                url = m.Url,
+                downloadUrl = m.Kind == LessonMaterialKind.File && m.StoredPath != null
+                    ? Url.Action(nameof(CourseController.DownloadLessonMaterial), "Course", new { id = m.Id })
+                    : null
+            }));
+        }
+
+        [HttpPost]
+        [RequestSizeLimit(LessonMaterialHelper.MaxFileBytes)]
+        public async Task<IActionResult> UploadLessonMaterial(int lessonId, IFormFile file, string? title)
+        {
+            var (lesson, _, error) = await GetValidLesson(lessonId);
+            if (error != null) return BadRequest(new { message = error });
+            if (lesson == null) return NotFound();
+
+            if (file == null || file.Length == 0)
+                return BadRequest(new { message = "Выберите файл." });
+
+            if (file.Length > LessonMaterialHelper.MaxFileBytes)
+                return BadRequest(new { message = "Файл слишком большой (максимум 100 МБ)." });
+
+            if (!LessonMaterialHelper.IsAllowedExtension(file.FileName))
+                return BadRequest(new { message = "Разрешены только .pptx, .docx, .pdf, .xlsx, .txt" });
+
+            var fileCount = await _db.LessonMaterials.CountAsync(m =>
+                m.LessonId == lessonId && m.Kind == LessonMaterialKind.File);
+            if (fileCount >= LessonMaterialHelper.MaxFilesPerLesson)
+                return BadRequest(new { message = $"Максимум {LessonMaterialHelper.MaxFilesPerLesson} файлов на урок." });
+
+            var safeName = LessonMaterialHelper.SanitizeFileName(file.FileName);
+            var uploadDir = Path.Combine(_env.WebRootPath, "uploads", "lesson-materials", lessonId.ToString());
+            Directory.CreateDirectory(uploadDir);
+
+            var storedFileName = $"{Guid.NewGuid():N}_{safeName}";
+            var physicalPath = Path.Combine(uploadDir, storedFileName);
+            await using (var stream = new FileStream(physicalPath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            var nextOrder = (await _db.LessonMaterials.Where(m => m.LessonId == lessonId).MaxAsync(m => (int?)m.Order) ?? 0) + 1;
+            var displayTitle = string.IsNullOrWhiteSpace(title) ? Path.GetFileNameWithoutExtension(safeName) : title.Trim();
+            var webPath = $"/uploads/lesson-materials/{lessonId}/{storedFileName}";
+
+            var material = new LessonMaterialModel
+            {
+                LessonId = lessonId,
+                Kind = LessonMaterialKind.File,
+                Title = displayTitle,
+                FileName = safeName,
+                StoredPath = webPath,
+                Order = nextOrder
+            };
+
+            _db.LessonMaterials.Add(material);
+            await _db.SaveChangesAsync();
+
+            return Json(new
+            {
+                material.Id,
+                kind = (int)material.Kind,
+                material.Title,
+                material.FileName,
+                url = (string?)null,
+                downloadUrl = Url.Action(nameof(CourseController.DownloadLessonMaterial), "Course", new { id = material.Id })
+            });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> AddLessonLink([FromBody] AddLessonLinkDto dto)
+        {
+            if (dto == null || dto.LessonId <= 0)
+                return BadRequest(new { message = "Некорректные данные." });
+
+            var (lesson, _, error) = await GetValidLesson(dto.LessonId);
+            if (error != null) return BadRequest(new { message = error });
+            if (lesson == null) return NotFound();
+
+            if (!LessonMaterialHelper.IsValidHttpUrl(dto.Url))
+                return BadRequest(new { message = "Укажите корректную ссылку (http или https)." });
+
+            var linkCount = await _db.LessonMaterials.CountAsync(m =>
+                m.LessonId == dto.LessonId && m.Kind == LessonMaterialKind.Link);
+            if (linkCount >= LessonMaterialHelper.MaxLinksPerLesson)
+                return BadRequest(new { message = $"Максимум {LessonMaterialHelper.MaxLinksPerLesson} ссылок на урок." });
+
+            var linkTitle = (dto.Title ?? "").Trim();
+            if (string.IsNullOrWhiteSpace(linkTitle))
+                linkTitle = dto.Url!.Trim();
+
+            var nextOrder = (await _db.LessonMaterials.Where(m => m.LessonId == dto.LessonId).MaxAsync(m => (int?)m.Order) ?? 0) + 1;
+            var material = new LessonMaterialModel
+            {
+                LessonId = dto.LessonId,
+                Kind = LessonMaterialKind.Link,
+                Title = linkTitle,
+                Url = dto.Url!.Trim(),
+                Order = nextOrder
+            };
+
+            _db.LessonMaterials.Add(material);
+            await _db.SaveChangesAsync();
+
+            return Json(new
+            {
+                material.Id,
+                kind = (int)material.Kind,
+                material.Title,
+                fileName = (string?)null,
+                url = material.Url,
+                downloadUrl = (string?)null
+            });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> UpdateLessonMaterial([FromBody] UpdateLessonMaterialDto dto)
+        {
+            if (dto == null || dto.Id <= 0)
+                return BadRequest(new { message = "Некорректные данные." });
+
+            var material = await _db.LessonMaterials
+                .Include(m => m.Lesson)
+                .ThenInclude(l => l.Module)
+                .FirstOrDefaultAsync(m => m.Id == dto.Id);
+
+            if (material == null) return NotFound();
+
+            var (_, error) = await GetValidCourse(material.Lesson.Module.CourseId);
+            if (error != null) return BadRequest(new { message = error });
+
+            var caption = (dto.Title ?? "").Trim();
+            if (string.IsNullOrWhiteSpace(caption))
+                return BadRequest(new { message = "Укажите подпись." });
+
+            material.Title = caption;
+            await _db.SaveChangesAsync();
+
+            return Json(new { id = material.Id, title = material.Title });
+        }
+
+        [HttpPost]
+        [Route("CourseConstructor/DeleteLessonMaterial/{id}")]
+        public async Task<IActionResult> DeleteLessonMaterial(int id)
+        {
+            var material = await _db.LessonMaterials
+                .Include(m => m.Lesson)
+                .ThenInclude(l => l.Module)
+                .FirstOrDefaultAsync(m => m.Id == id);
+
+            if (material == null) return NotFound();
+
+            var (_, error) = await GetValidCourse(material.Lesson.Module.CourseId);
+            if (error != null) return BadRequest(error);
+
+            if (material.Kind == LessonMaterialKind.File && !string.IsNullOrEmpty(material.StoredPath))
+            {
+                var physical = Path.Combine(_env.WebRootPath, material.StoredPath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+                if (System.IO.File.Exists(physical))
+                    System.IO.File.Delete(physical);
+            }
+
+            _db.LessonMaterials.Remove(material);
+            await _db.SaveChangesAsync();
+            return Ok();
+        }
+    }
+
+    public class AddLessonLinkDto
+    {
+        public int LessonId { get; set; }
+        public string? Title { get; set; }
+        public string? Url { get; set; }
+    }
+
+    public class UpdateLessonMaterialDto
+    {
+        public int Id { get; set; }
+        public string? Title { get; set; }
     }
 }

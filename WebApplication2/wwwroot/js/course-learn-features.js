@@ -28,7 +28,9 @@
         const DEFAULT_INSTRUCTIONS = {
             match: "Сопоставьте термины с определениями",
             sequence: "Расставьте элементы в правильном порядке",
-            truefalse: "Определите, какие утверждения верны, а какие нет"
+            truefalse: "Определите, какие утверждения верны, а какие нет",
+            fillblanks: "Заполните пропуски в тексте",
+            imagechoice: "Выберите правильный вариант по картинке"
         };
 
         const instruction = (cfg.instruction ?? cfg.Instruction ?? "").trim();
@@ -41,7 +43,12 @@
                 : instruction,
             pairs: [],
             items: [],
-            statements: []
+            statements: [],
+            template: "",
+            blanks: [],
+            question: "",
+            options: [],
+            correctOptionId: ""
         };
 
         const rawPairs = cfg.pairs ?? cfg.Pairs ?? [];
@@ -70,6 +77,24 @@
                 }))
                 .filter(s => s.text);
         }
+
+        normalized.template = String(cfg.template ?? cfg.Template ?? "").trim();
+        const rawBlanks = cfg.blanks ?? cfg.Blanks ?? [];
+        if (Array.isArray(rawBlanks)) {
+            normalized.blanks = rawBlanks.map(b => String(b ?? "").trim()).filter(Boolean);
+        }
+        normalized.question = String(cfg.question ?? cfg.Question ?? "").trim();
+        const rawOptions = cfg.options ?? cfg.Options ?? [];
+        if (Array.isArray(rawOptions)) {
+            normalized.options = rawOptions
+                .map(o => ({
+                    id: String(o?.id ?? o?.Id ?? "").trim(),
+                    label: String(o?.label ?? o?.Label ?? "").trim(),
+                    imageUrl: String(o?.imageUrl ?? o?.ImageUrl ?? "").trim()
+                }))
+                .filter(o => o.id && o.imageUrl);
+        }
+        normalized.correctOptionId = String(cfg.correctOptionId ?? cfg.CorrectOptionId ?? "").trim();
 
         return normalized;
     }
@@ -116,7 +141,9 @@
             match: "Сопоставление пар",
             sequence: "Расставьте по порядку",
             order: "Расставьте по порядку",
-            truefalse: "Верно или неверно?"
+            truefalse: "Верно или неверно?",
+            fillblanks: "Заполните пропуски",
+            imagechoice: "Выбор картинки"
         };
         const kind = config.kind;
 
@@ -157,6 +184,24 @@
                 block.appendChild(err);
             } else {
                 renderTrueFalse(block, config, container);
+            }
+        } else if (kind === "fillblanks") {
+            if (!config.template || !config.blanks.length) {
+                const err = document.createElement("p");
+                err.className = "interactive-error-msg";
+                err.textContent = "Задание не настроено.";
+                block.appendChild(err);
+            } else {
+                renderFillBlanks(block, config, container);
+            }
+        } else if (kind === "imagechoice") {
+            if ((config.options || []).length < 2) {
+                const err = document.createElement("p");
+                err.className = "interactive-error-msg";
+                err.textContent = "Задание не настроено.";
+                block.appendChild(err);
+            } else {
+                renderImageChoice(block, config, container);
             }
         } else {
             block.innerHTML += "<p class=\"interactive-error-msg\">Неизвестный тип задания.</p>";
@@ -330,6 +375,69 @@
         appendResetButton(block, container, "↻ Сбросить ответы");
     }
 
+    function renderFillBlanks(block, config, container) {
+        const parts = config.template.split("___");
+        const wrap = document.createElement("div");
+        wrap.className = "interactive-fill-wrap";
+        const inputs = [];
+
+        parts.forEach((part, i) => {
+            if (part) {
+                const span = document.createElement("span");
+                span.className = "interactive-fill-text";
+                span.textContent = part;
+                wrap.appendChild(span);
+            }
+            if (i < parts.length - 1) {
+                const inp = document.createElement("input");
+                inp.type = "text";
+                inp.className = "interactive-fill-input";
+                inp.autocomplete = "off";
+                inp.placeholder = "…";
+                inputs.push(inp);
+                wrap.appendChild(inp);
+            }
+        });
+
+        block._fillInputs = inputs;
+        block.appendChild(wrap);
+        appendResetButton(block, container, "↻ Очистить ответы");
+    }
+
+    function renderImageChoice(block, config, container) {
+        if (config.question) {
+            const q = document.createElement("p");
+            q.className = "interactive-img-question";
+            q.textContent = config.question;
+            block.appendChild(q);
+        }
+
+        const grid = document.createElement("div");
+        grid.className = "interactive-img-grid";
+        let selectedId = null;
+
+        (config.options || []).forEach(opt => {
+            const card = document.createElement("button");
+            card.type = "button";
+            card.className = "interactive-img-card";
+            card.dataset.id = opt.id;
+            card.innerHTML = `
+                <img src="${escapeAttr(opt.imageUrl)}" alt="${escapeAttr(opt.label || "")}" loading="lazy" />
+                <span>${escapeHtml(opt.label || opt.id)}</span>`;
+            card.addEventListener("click", () => {
+                grid.querySelectorAll(".interactive-img-card").forEach(c => c.classList.remove("selected"));
+                card.classList.add("selected");
+                selectedId = opt.id;
+                block._selectedImageId = selectedId;
+            });
+            grid.appendChild(card);
+        });
+
+        block._selectedImageId = selectedId;
+        block.appendChild(grid);
+        appendResetButton(block, container, "↻ Сбросить выбор");
+    }
+
     function getDragAfterElement(container, y) {
         const els = [...container.querySelectorAll(".interactive-order-item:not(.dragging)")];
         return els.reduce((closest, child) => {
@@ -369,6 +477,18 @@
             return JSON.stringify({ answers });
         }
 
+        if (kind === "fillblanks") {
+            const inputs = block._fillInputs || [];
+            const blanks = inputs.map(inp => (inp.value || "").trim());
+            if (blanks.some(b => !b)) return { incomplete: true };
+            return JSON.stringify({ blanks });
+        }
+
+        if (kind === "imagechoice") {
+            if (!block._selectedImageId) return { incomplete: true };
+            return JSON.stringify({ selectedId: block._selectedImageId });
+        }
+
         return null;
     }
 
@@ -385,11 +505,19 @@
         if (config.kind === "truefalse" && !config.statements.length) {
             return "Задание не настроено. Сообщите преподавателю.";
         }
+        if (config.kind === "fillblanks" && (!config.template || !config.blanks.length)) {
+            return "Задание не настроено. Сообщите преподавателю.";
+        }
+        if (config.kind === "imagechoice" && (config.options || []).length < 2) {
+            return "Задание не настроено. Сообщите преподавателю.";
+        }
 
         const answerStr = getInteractiveAnswer(container);
         if (!answerStr || (typeof answerStr === "object" && answerStr.incomplete)) {
             if (config.kind === "match") return "Сопоставьте все пары.";
             if (config.kind === "truefalse") return "Отметьте все утверждения.";
+            if (config.kind === "fillblanks") return "Заполните все пропуски.";
+            if (config.kind === "imagechoice") return "Выберите вариант.";
             return "Расставьте все элементы.";
         }
 
@@ -418,9 +546,23 @@
             if (got.length !== stmts.length || got.some((v, i) => v !== stmts[i].isTrue)) {
                 return "Не все утверждения верны. Попробуйте ещё раз.";
             }
+        } else if (config.kind === "fillblanks") {
+            const expected = (config.blanks || []).map(b => (b || "").trim().toLowerCase());
+            const got = (answer.blanks || []).map(b => (b || "").trim().toLowerCase());
+            if (got.length !== expected.length || got.some((v, i) => v !== expected[i])) {
+                return "Не все пропуски верны. Попробуйте ещё раз.";
+            }
+        } else if (config.kind === "imagechoice") {
+            if (answer.selectedId !== config.correctOptionId) {
+                return "Неверный вариант. Попробуйте ещё раз.";
+            }
         }
 
         return null;
+    }
+
+    function escapeAttr(s) {
+        return String(s || "").replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
     }
 
     function shuffle(arr) {

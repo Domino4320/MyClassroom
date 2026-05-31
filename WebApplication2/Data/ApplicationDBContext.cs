@@ -28,6 +28,8 @@ namespace WebApplication2.Data
         public DbSet<ForumMessageModel> ForumMessages { get; set; }
         public DbSet<CourseBookmarkModel> CourseBookmarks { get; set; }
         public DbSet<NotificationModel> Notifications { get; set; }
+        public DbSet<LessonMaterialModel> LessonMaterials { get; set; }
+        public DbSet<LessonFeedbackModel> LessonFeedbacks { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -87,6 +89,22 @@ namespace WebApplication2.Data
                 .WithMany()
                 .HasForeignKey(n => n.UserLogin)
                 .HasPrincipalKey(u => u.Login)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<LessonMaterialModel>()
+                .HasOne(m => m.Lesson)
+                .WithMany(l => l.Materials)
+                .HasForeignKey(m => m.LessonId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<LessonFeedbackModel>()
+                .HasIndex(f => new { f.LessonId, f.UserLogin })
+                .IsUnique();
+
+            modelBuilder.Entity<LessonFeedbackModel>()
+                .HasOne(f => f.Lesson)
+                .WithMany()
+                .HasForeignKey(f => f.LessonId)
                 .OnDelete(DeleteBehavior.Cascade);
         }
     }

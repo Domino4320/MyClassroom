@@ -9,6 +9,7 @@
     <link href="~/css/style_for_main_page.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/course_list_page.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/course-analytics-modal.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/lesson-feedback-modal.css" rel="stylesheet" asp-append-version="true" />
 }
 
 <div class="page-header">
@@ -34,9 +35,11 @@
 
 @section Scripts {
     <script src="~/js/course-analytics-modal.js" asp-append-version="true"></script>
+    <script src="~/js/lesson-feedback-modal.js" asp-append-version="true"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             window.initCourseAnalyticsButtons?.();
+            window.initLessonFeedbackStatsButtons?.();
         });
 
         async function deleteCourse(courseId) {

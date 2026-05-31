@@ -85,15 +85,90 @@
                 color: white;
             }
 
-        .delete-lesson-btn {
-            opacity: 0;
-            transition: 0.2s;
-            color: var(--danger);
-            padding: 2px 5px;
+        .module-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 6px;
         }
 
-        .lesson-item:hover .delete-lesson-btn {
+        .module-title-text {
+            color: var(--primary);
+            font-weight: 600;
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .sidebar-actions {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .sidebar-icon-btn {
+            width: 26px;
+            height: 26px;
+            border: none;
+            border-radius: 6px;
+            background: rgba(255,255,255,0.06);
+            color: var(--text-muted);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            font-size: 0.85rem;
+            transition: 0.2s;
+        }
+
+        .sidebar-icon-btn:hover {
+            background: rgba(79, 195, 247, 0.2);
+            color: var(--primary);
+        }
+
+        .sidebar-icon-btn.danger:hover {
+            background: rgba(255, 69, 58, 0.2);
+            color: var(--danger);
+        }
+
+        .lesson-item-actions {
+            display: flex;
+            gap: 2px;
+            opacity: 0;
+            transition: 0.2s;
+            position: relative;
+            z-index: 2;
+            flex-shrink: 0;
+        }
+
+        .sidebar-actions {
+            position: relative;
+            z-index: 2;
+        }
+
+        .lesson-item:hover .lesson-item-actions {
             opacity: 1;
+        }
+
+        .lesson-item.active .lesson-item-actions {
+            opacity: 1;
+        }
+
+        .lesson-item-label {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .lesson-item.active .sidebar-icon-btn {
+            color: rgba(255,255,255,0.85);
+            background: rgba(255,255,255,0.15);
         }
 
         .editor-area {
@@ -129,7 +204,7 @@
             box-shadow: 0 20px 50px rgba(0,0,0,0.4);
         }
 
-        input[type="text"], input[type="number"], textarea, select {
+        input[type="text"], input[type="number"], input[type="url"], textarea, select {
             width: 100%;
             background: rgba(15, 23, 42, 0.6);
             border: 1px solid var(--border);
@@ -288,6 +363,269 @@
             gap: 15px;
             margin-top: 15px;
         }
+
+        .lesson-materials-mount { margin-bottom: 24px; }
+        .lesson-materials-block {
+            padding: 14px 16px;
+            border-radius: 12px;
+            border: 1px dashed var(--border);
+            background: rgba(0,0,0,0.15);
+        }
+        .lesson-materials-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        .lesson-materials-hint { font-size: 0.75rem; color: var(--text-muted); font-weight: 400; }
+        .materials-list { margin-bottom: 10px; }
+        .materials-empty { font-size: 0.85rem; color: var(--text-muted); margin: 0; }
+        .materials-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .materials-row--file {
+            flex-direction: column;
+            align-items: stretch;
+            padding: 10px 12px;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.04);
+        }
+        .materials-file-top {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+        }
+        .materials-file-name {
+            flex: 1;
+            min-width: 0;
+            font-size: 0.88rem;
+            font-weight: 600;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .materials-file-caption-block {
+            width: 100%;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border);
+        }
+        .materials-caption-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-top: 4px;
+        }
+        .materials-caption-row .materials-caption-input {
+            flex: 1;
+            min-width: 0;
+        }
+        .materials-caption-label {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+        }
+        .materials-caption-input {
+            width: 100%;
+            padding: 6px 8px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: rgba(0,0,0,0.2);
+            color: inherit;
+            font-family: inherit;
+            font-size: 0.88rem;
+        }
+        .materials-upload-caption {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px dashed var(--border);
+        }
+        .materials-upload-caption label {
+            display: block;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+        .materials-file-caption {
+            width: 100%;
+            max-width: 360px;
+            padding: 8px 10px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: rgba(0,0,0,0.2);
+            color: inherit;
+            font-family: inherit;
+        }
+        .materials-download-btn {
+            font-size: 0.8rem;
+            padding: 6px 10px;
+            white-space: nowrap;
+        }
+        .materials-caption-save {
+            font-size: 0.8rem;
+            padding: 6px 10px;
+            min-width: 36px;
+        }
+        .materials-link {
+            flex: 1;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            padding: 8px 10px;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.04);
+            color: inherit;
+            text-decoration: none;
+            font-size: 0.88rem;
+        }
+        .materials-link--url {
+            border: 1px solid rgba(167, 139, 250, 0.35);
+            background: linear-gradient(135deg, rgba(124, 58, 237, 0.12), rgba(79, 195, 247, 0.08));
+        }
+        .materials-link--url:hover {
+            border-color: rgba(167, 139, 250, 0.6);
+            background: linear-gradient(135deg, rgba(124, 58, 237, 0.2), rgba(79, 195, 247, 0.12));
+        }
+        .materials-link-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 1rem;
+        }
+        .materials-link--url .materials-link-icon {
+            background: rgba(124, 58, 237, 0.25);
+            color: #c4b5fd;
+        }
+        .materials-link--file .materials-link-icon {
+            background: rgba(79, 195, 247, 0.15);
+        }
+        .materials-link-body { flex: 1; min-width: 0; }
+        .materials-title { display: block; font-weight: 600; }
+        .materials-sub { font-size: 0.75rem; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .materials-open-badge {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #c4b5fd;
+            padding: 4px 8px;
+            border-radius: 999px;
+            background: rgba(124, 58, 237, 0.2);
+            flex-shrink: 0;
+        }
+        .materials-del {
+            width: 28px; height: 28px; border: none; border-radius: 6px;
+            background: rgba(255,69,58,0.15); color: var(--danger); cursor: pointer;
+        }
+        .materials-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+        .materials-limits {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin: 0 0 10px;
+        }
+        .materials-upload-btn.is-disabled,
+        .materials-add-link-btn.is-disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+        .materials-add-link-btn:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+        .materials-link-form {
+            display: none;
+            flex-direction: column;
+            gap: 14px;
+            margin-top: 12px;
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px dashed var(--border);
+            background: rgba(0, 0, 0, 0.15);
+        }
+        .materials-link-form.is-open {
+            display: flex;
+        }
+        .materials-link-field label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+        .materials-link-field input {
+            width: 100%;
+            margin-top: 0;
+        }
+        .materials-link-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .materials-msg { font-size: 0.85rem; margin-top: 8px; color: #a5d6a7; }
+        .materials-msg.is-error { color: #ff8a80; }
+        .interactive-img-hint {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin: 6px 0 0;
+        }
+        .interactive-img-opt-row {
+            margin-bottom: 12px;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: rgba(0,0,0,0.12);
+        }
+        .interactive-img-opt-main {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+        .interactive-img-opt-row .interactive-img-label {
+            flex: 1;
+            min-width: 120px;
+            margin-top: 0;
+        }
+        .interactive-img-preview-box {
+            width: 100px;
+            height: 70px;
+            border-radius: 8px;
+            overflow: hidden;
+            background: rgba(0,0,0,0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .interactive-img-preview {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .interactive-img-placeholder {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-align: center;
+            padding: 4px;
+        }
+        .interactive-img-upload-btn {
+            margin: 0;
+            cursor: pointer;
+            font-size: 0.85rem;
+            padding: 8px 12px;
+        }
+        .interactive-add-img-opt.is-disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+        .interactive-fill-template, .interactive-fill-blanks { width: 100%; }
     </style>
 </head>
 <body>
@@ -306,16 +644,22 @@
             @foreach (var m in Model.Modules.OrderBy(x => x.Order))
             {
                 <div class="module-item" data-module-id="@m.Id">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <strong style="color: var(--primary)">@m.Title</strong>
-                        <i class="bi bi-plus-square-dotted" style="cursor:pointer; font-size: 1.2rem;" onclick="addLesson(@m.Id)"></i>
+                    <div class="module-head">
+                        <span class="module-title-text" title="@m.Title">@m.Title</span>
+                        <div class="sidebar-actions">
+                            <button type="button" class="sidebar-icon-btn js-rename-module" data-module-id="@m.Id" data-module-title="@m.Title" title="Переименовать модуль"><i class="bi bi-pencil"></i></button>
+                            <button type="button" class="sidebar-icon-btn danger js-delete-module" data-module-id="@m.Id" title="Удалить модуль"><i class="bi bi-trash"></i></button>
+                            <button type="button" class="sidebar-icon-btn js-add-lesson" data-module-id="@m.Id" title="Добавить урок"><i class="bi bi-plus-lg"></i></button>
+                        </div>
                     </div>
                     <div class="lessons">
                         @foreach (var l in m.Lessons.OrderBy(x => x.Order))
                         {
-                            <div class="lesson-item" onclick="loadLessonEditor(@l.Id, this)" data-lesson-id="@l.Id">
-                                <span><i class="bi bi-file-earmark-text"></i> @l.Title</span>
-                                <i class="bi bi-trash delete-lesson-btn" onclick="event.stopPropagation(); deleteLesson(@l.Id)"></i>
+                            <div class="lesson-item js-lesson-item" data-lesson-id="@l.Id">
+                                <span class="lesson-item-label" title="@l.Title"><i class="bi bi-file-earmark-text"></i> @l.Title</span>
+                                <div class="lesson-item-actions">
+                                    <button type="button" class="sidebar-icon-btn danger js-delete-lesson" data-lesson-id="@l.Id" title="Удалить урок"><i class="bi bi-trash"></i></button>
+                                </div>
                             </div>
                         }
                     </div>
@@ -357,6 +701,8 @@
                     <div id="lesson-form-error" class="lesson-form-error" style="display:none;" role="alert"></div>
                     <div id="lesson-form-success" class="lesson-form-success" style="display:none;" role="status"></div>
 
+                    <div id="lessonMaterialsMount" class="lesson-materials-mount"></div>
+
                     <div id="stepsContainer"></div>
 
                     <div style="display:flex; gap:15px; margin-top:40px; border-top:1px solid var(--border); padding-top:30px; justify-content: center;">
@@ -371,6 +717,7 @@
     </div>
 
     <script src="~/js/interactive-step-editor.js" asp-append-version="true"></script>
+    <script src="~/js/lesson-materials-editor.js" asp-append-version="true"></script>
     <script>
         let currentLessonId = null;
 
@@ -635,7 +982,66 @@
 
         function setActiveLesson(element) {
             document.querySelectorAll('.lesson-item').forEach(el => el.classList.remove('active'));
-            element.classList.add('active');
+            element?.classList.add('active');
+        }
+
+        function updateSidebarLessonTitle(lessonId, title) {
+            const label = document.querySelector(`.js-lesson-item[data-lesson-id="${lessonId}"] .lesson-item-label`);
+            if (label) {
+                label.innerHTML = `<i class="bi bi-file-earmark-text"></i> ${escapeForTemplate(title)}`;
+                label.title = title;
+            }
+        }
+
+        function initSidebarActions() {
+            const container = document.getElementById('moduleContainer');
+            if (!container || container.dataset.sidebarBound) return;
+            container.dataset.sidebarBound = '1';
+
+            container.addEventListener('click', async (e) => {
+                const deleteLessonBtn = e.target.closest('.js-delete-lesson');
+                if (deleteLessonBtn) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    await deleteLesson(Number(deleteLessonBtn.dataset.lessonId));
+                    return;
+                }
+
+                const deleteModuleBtn = e.target.closest('.js-delete-module');
+                if (deleteModuleBtn) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    await deleteModule(Number(deleteModuleBtn.dataset.moduleId));
+                    return;
+                }
+
+                const renameModuleBtn = e.target.closest('.js-rename-module');
+                if (renameModuleBtn) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    await renameModule(Number(renameModuleBtn.dataset.moduleId), renameModuleBtn.dataset.moduleTitle || '');
+                    return;
+                }
+
+                const addLessonBtn = e.target.closest('.js-add-lesson');
+                if (addLessonBtn) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    await addLesson(Number(addLessonBtn.dataset.moduleId));
+                    return;
+                }
+
+                const lessonItem = e.target.closest('.js-lesson-item');
+                if (lessonItem && !e.target.closest('.lesson-item-actions')) {
+                    await loadLessonEditor(Number(lessonItem.dataset.lessonId), lessonItem);
+                }
+            });
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initSidebarActions);
+        } else {
+            initSidebarActions();
         }
 
         async function addModule() {
@@ -652,10 +1058,28 @@
             if (response.ok) location.reload();
         }
 
+        async function renameModule(moduleId, currentTitle) {
+            const title = prompt("Название модуля:", currentTitle || "");
+            if (title === null) return;
+            const trimmed = title.trim();
+            if (!trimmed) return alert("Название не может быть пустым.");
+            const response = await fetch(`/CourseConstructor/RenameModule?moduleId=${moduleId}&title=${encodeURIComponent(trimmed)}`, { method: 'POST' });
+            if (response.ok) location.reload();
+            else alert((await response.text()) || "Не удалось переименовать модуль.");
+        }
+
+        async function deleteModule(moduleId) {
+            if (!confirm("Удалить модуль и все уроки внутри?")) return;
+            const response = await fetch(`/CourseConstructor/DeleteModule/${moduleId}`, { method: 'POST' });
+            if (response.ok) location.reload();
+            else alert((await response.text()) || "Не удалось удалить модуль.");
+        }
+
         async function deleteLesson(lessonId) {
             if (!confirm("Удалить этот урок?")) return;
             const response = await fetch(`/CourseConstructor/DeleteLesson/${lessonId}`, { method: 'POST' });
             if (response.ok) location.reload();
+            else alert((await response.text()) || "Не удалось удалить урок.");
         }
 
         async function loadLessonEditor(lessonId, element) {
@@ -676,6 +1100,11 @@
 
             renderSteps(lesson.steps);
             updateStepOrderButtons();
+
+            const materialsMount = document.getElementById('lessonMaterialsMount');
+            if (materialsMount && window.LessonMaterialsEditor) {
+                window.LessonMaterialsEditor.mount(lessonId, materialsMount);
+            }
         }
 
         function getStepTypeLabel(type) {
@@ -988,6 +1417,11 @@
             }
 
             showLessonFormSuccess(showSuccessMessage ? 'Урок сохранён.' : '');
+            const lessonTitle = document.getElementById('editLessonName')?.value?.trim() || '';
+            if (lessonTitle) {
+                document.getElementById('currentLessonTitle').innerText = lessonTitle;
+                updateSidebarLessonTitle(currentLessonId, lessonTitle);
+            }
             return true;
         }
 

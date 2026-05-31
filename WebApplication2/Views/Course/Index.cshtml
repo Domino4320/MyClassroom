@@ -602,8 +602,154 @@
     </style>
 
     <link rel="stylesheet" href="~/css/course-learn-features.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/lesson-feedback-modal.css" asp-append-version="true" />
+
+    <style>
+        .lesson-materials-panel {
+            margin: 0 0 24px;
+            padding: 14px 16px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            background: rgba(56, 189, 248, 0.06);
+        }
+        .lesson-materials-panel h3 {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+            margin: 0 0 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        .lesson-materials-list { display: flex; flex-direction: column; gap: 12px; }
+        .lesson-material-entry--file {
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            background: rgba(15, 23, 42, 0.6);
+            overflow: hidden;
+        }
+        .lesson-material-entry--file .lesson-material-item {
+            border: none;
+            border-radius: 0;
+            margin: 0;
+        }
+        .lesson-material-caption {
+            margin: 0;
+            padding: 10px 14px 12px 58px;
+            font-size: 0.88rem;
+            line-height: 1.5;
+            color: #94a3b8;
+            border-top: 1px solid var(--border-color);
+            background: rgba(0, 0, 0, 0.2);
+        }
+        .lesson-material-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: border-color 0.2s, background 0.2s;
+        }
+        .lesson-material-item--file {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+        }
+        .lesson-material-item--file:hover {
+            border-color: var(--accent-blue);
+            background: rgba(56, 189, 248, 0.1);
+        }
+        .lesson-material-item--link {
+            background: linear-gradient(135deg, rgba(124, 58, 237, 0.15), rgba(56, 189, 248, 0.08));
+            border: 1px solid rgba(167, 139, 250, 0.4);
+            color: #e9d5ff;
+        }
+        .lesson-material-item--link:hover {
+            border-color: #a78bfa;
+            background: linear-gradient(135deg, rgba(124, 58, 237, 0.25), rgba(56, 189, 248, 0.12));
+        }
+        .lesson-material-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+        .lesson-material-item--file .lesson-material-icon {
+            background: rgba(56, 189, 248, 0.15);
+        }
+        .lesson-material-item--link .lesson-material-icon {
+            background: rgba(124, 58, 237, 0.35);
+            font-weight: 700;
+        }
+        .lesson-material-body { flex: 1; min-width: 0; }
+        .lesson-material-title { display: block; font-weight: 700; color: inherit; }
+        .lesson-material-sub {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            display: block;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .lesson-material-item--link .lesson-material-sub { color: #c4b5fd; }
+        .lesson-material-badge {
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 5px 10px;
+            border-radius: 999px;
+            background: rgba(124, 58, 237, 0.35);
+            color: #ede9fe;
+            flex-shrink: 0;
+        }
+
+        .learn-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0;
+        }
+        .learn-tab-btn {
+            padding: 10px 18px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            font-family: inherit;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -1px;
+        }
+        .learn-tab-btn.active {
+            color: var(--accent-blue);
+            border-bottom-color: var(--accent-blue);
+        }
+        .learn-tab-panel { display: none; }
+        .learn-tab-panel.active { display: block; }
+        .lesson-materials-tab-empty {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            padding: 20px 0;
+        }
+        .lesson-material-download-badge {
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 5px 10px;
+            border-radius: 999px;
+            background: rgba(56, 189, 248, 0.2);
+            color: #7dd3fc;
+            flex-shrink: 0;
+        }
+    </style>
 </head>
 <body>
+    <input type="hidden" name="__RequestVerificationToken" value="@tokens.RequestToken" />
 
     <aside class="learn-sidebar">
         <div class="back-area">
@@ -657,7 +803,7 @@
                     </div>
                     @foreach (var lesson in (module.Lessons ?? new List<WebApplication2.Models.LessonModel>()).OrderBy(l => l.Order))
                     {
-                        var lessonSteps = (lesson.Steps ?? new List<WebApplication2.Models.StepModel>()).OrderBy(s => s.Order).ToList();
+                        var lessonSteps = (lesson.Steps ?? new List<WebApplication2.Models.StepModel>()).OrderBy(s => s.Order).ThenBy(s => s.Id).ToList();
                         if (!lessonSteps.Any()) { continue; }
 
                         <div class="lesson-sidebar-title">@lesson.Title</div>
@@ -706,7 +852,7 @@
 
     <main class="learn-content">
         <nav class="top-nav">
-            @foreach (var step in Model.CurrentStep.Lesson.Steps.OrderBy(s => s.Order))
+            @foreach (var step in Model.CurrentStep.Lesson.Steps.OrderBy(s => s.Order).ThenBy(s => s.Id))
             {
                 <a href="?courseId=@Model.CourseId&stepId=@step.Id"  
                    class="step-dot @(step.Id == Model.CurrentStep.Id ? "active" : "") @(Model.CompletedStepIds.Contains(step.Id) ? "completed" : "pending")"
@@ -728,6 +874,18 @@
                     </button>
                     <a class="bookmark-link-page" href="@Url.Action("Index", "Bookmarks")">Все закладки</a>
                 </div>
+                <div class="learn-tabs" role="tablist">
+                    <button type="button" class="learn-tab-btn active" data-learn-tab="step" role="tab">Содержание шага</button>
+                    <button type="button" class="learn-tab-btn" data-learn-tab="materials" role="tab">
+                        Материалы
+                        @if (Model.LessonMaterials.Any())
+                        {
+                            <span style="opacity:0.85;">(@Model.LessonMaterials.Count)</span>
+                        }
+                    </button>
+                </div>
+
+                <div id="learn-tab-step" class="learn-tab-panel active" role="tabpanel">
                 <h1 class="step-title">@Model.CurrentStep.Title</h1>
 
                 @if (!string.IsNullOrEmpty(Model.CurrentStep.VideoUrl))
@@ -909,23 +1067,95 @@
                         }
                     </div>
                 </div>
+                </div>
+
+                <div id="learn-tab-materials" class="learn-tab-panel" role="tabpanel">
+                    <h2 class="step-title" style="font-size:1.35rem;margin-bottom:16px;">Материалы · @Model.CurrentLessonTitle</h2>
+                    @if (!Model.LessonMaterials.Any())
+                    {
+                        <p class="lesson-materials-tab-empty">К этому уроку пока не прикреплены файлы и ссылки.</p>
+                    }
+                    else
+                    {
+                        <div class="lesson-materials-list">
+                            @foreach (var m in Model.LessonMaterials)
+                            {
+                                if (m.Kind == WebApplication2.Models.LessonMaterialKind.File)
+                                {
+                                    var href = m.DownloadUrl ?? "#";
+                                    <div class="lesson-material-entry lesson-material-entry--file">
+                                        <a class="lesson-material-item lesson-material-item--file" href="@href" download rel="noopener">
+                                            <span class="lesson-material-icon">📄</span>
+                                            <span class="lesson-material-body">
+                                                <span class="lesson-material-title">@m.FileName</span>
+                                            </span>
+                                            <span class="lesson-material-download-badge">Скачать</span>
+                                        </a>
+                                        @if (!string.IsNullOrWhiteSpace(m.Title))
+                                        {
+                                            <p class="lesson-material-caption">@m.Title</p>
+                                        }
+                                    </div>
+                                }
+                                else
+                                {
+                                    var href = m.Url ?? "#";
+                                    string host = m.Url ?? "";
+                                    try { host = new Uri(m.Url!).Host.Replace("www.", ""); } catch { }
+                                    <a class="lesson-material-item lesson-material-item--link" href="@href" target="_blank" rel="noopener noreferrer">
+                                        <span class="lesson-material-icon">↗</span>
+                                        <span class="lesson-material-body">
+                                            <span class="lesson-material-title">@m.Title</span>
+                                            <span class="lesson-material-sub">@host</span>
+                                        </span>
+                                        <span class="lesson-material-badge">Открыть</span>
+                                    </a>
+                                }
+                            }
+                        </div>
+                    }
+                </div>
             </div>
         </div>
     </main>
 
     <script src="~/js/course-learn-features.js" asp-append-version="true"></script>
+    <script src="~/js/lesson-feedback-modal.js" asp-append-version="true"></script>
 
     <script>
         const STEP_DATA = {
             id: @Model.CurrentStep.Id,
             courseId: @Model.CourseId,
+            lessonId: @Model.CurrentLessonId,
+            lessonTitle: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.CurrentLessonTitle)),
+            showLessonFeedback: @Model.ShowLessonFeedbackPrompt.ToString().ToLower(),
             isQuiz: @isQuiz.ToString().ToLower(),
             isInteractive: @isInteractive.ToString().ToLower(),
             isTextInputQuiz: @isTextInputQuiz.ToString().ToLower(),
             hasPendingManual: @hasPendingManual.ToString().ToLower(),
             isCompleted: @isStepCompleted.ToString().ToLower(),
+            nextStepIdInCourse: @(Model.NextStepIdInCourse.HasValue ? Model.NextStepIdInCourse.Value.ToString() : "null"),
             token: '@tokens.RequestToken'
         };
+
+        function goToNextStep(nextId) {
+            const id = (nextId && nextId > 0) ? nextId : STEP_DATA.nextStepIdInCourse;
+            if (id && id > 0) {
+                window.location.href = `?courseId=${STEP_DATA.courseId}&stepId=${id}`;
+            } else {
+                window.location.href = `/Course/Details/${STEP_DATA.courseId}`;
+            }
+        }
+
+        document.querySelectorAll('.learn-tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tab = btn.dataset.learnTab;
+                document.querySelectorAll('.learn-tab-btn').forEach(b => b.classList.toggle('active', b === btn));
+                document.querySelectorAll('.learn-tab-panel').forEach(p => {
+                    p.classList.toggle('active', p.id === 'learn-tab-' + tab);
+                });
+            });
+        });
 
         // Подсветка выбранных вариантов
         document.addEventListener('change', (e) => {
@@ -949,14 +1179,9 @@
         async function processStep() {
             const btn = document.getElementById('main-btn');
 
-            // 1. Если шаг уже пройден — просто переходим дальше
+            // 1. Если шаг уже пройден — переход по порядку курса (не по точкам урока)
             if (STEP_DATA.isCompleted) {
-                const nextStep = document.querySelector('.step-dot.active + .step-dot');
-                if (nextStep) {
-                    location.href = nextStep.href;
-                } else {
-                    location.href = "/Course/Details/" + STEP_DATA.courseId;
-                }
+                goToNextStep();
                 return;
             }
 
@@ -1019,12 +1244,15 @@
                 const fb = document.getElementById('feedback-msg');
 
                 if (result.success) {
-                    const goNext = () => {
-                        if (result.nextStepId) {
-                            window.location.href = `?courseId=${STEP_DATA.courseId}&stepId=${result.nextStepId}`;
-                        } else {
-                            window.location.href = `/Course/Details/${STEP_DATA.courseId}`;
+                    const resolvedNextId = result.nextStepId && result.nextStepId > 0 ? result.nextStepId : null;
+                    const goNext = () => goToNextStep(resolvedNextId);
+
+                    const maybeFeedbackThenGo = () => {
+                        if (result.promptLessonFeedback && window.openLessonFeedbackModal) {
+                            window.openLessonFeedbackModal(result.lessonId, result.lessonTitle, goNext);
+                            return true;
                         }
+                        return false;
                     };
 
                     if (result.pendingReview) {
@@ -1045,14 +1273,17 @@
                     }
 
                     fb.className = 'success';
-                    if (result.nextStepId) {
+                    if (resolvedNextId || STEP_DATA.nextStepIdInCourse) {
                         fb.innerText = '✓ Верно! Переход к следующему шагу...';
                     } else {
                         fb.innerText = '✓ Отлично! Вы завершили этот раздел курса.';
                     }
                     fb.style.display = 'block';
                     btn.querySelector('span').innerText = 'Готово';
-                    setTimeout(goNext, result.nextStepId ? 1400 : 2000);
+                    const delay = (resolvedNextId || STEP_DATA.nextStepIdInCourse) ? 1400 : 2000;
+                    setTimeout(() => {
+                        if (!maybeFeedbackThenGo()) goNext();
+                    }, delay);
                 } else {
                     fb.className = 'error';
                     let errMsg = result.message || "Неверный ответ. Попробуйте еще раз!";
@@ -1164,6 +1395,12 @@
                 }
             });
         })();
+
+        if (STEP_DATA.showLessonFeedback && window.openLessonFeedbackModal) {
+            setTimeout(() => {
+                window.openLessonFeedbackModal(STEP_DATA.lessonId, STEP_DATA.lessonTitle);
+            }, 500);
+        }
     </script>
 </body>
 </html>
