@@ -1,6 +1,6 @@
 @model WebApplication2.Models.ForumDiscussionModel
 @{
-    ViewData["Title"] = Model.Title;
+    ViewData["Title"] = "MyClassroom";
     var login = Context.Session.GetString("Login");
     var messages = (Model.Messages ?? new List<WebApplication2.Models.ForumMessageModel>())
         .OrderBy(m => m.CreatedAt)

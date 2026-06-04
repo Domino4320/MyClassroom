@@ -23,7 +23,7 @@
 
 .sidebar-progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, #10b981, #38bdf8);
+    background: var(--progress-gradient);
     border-radius: 999px;
     transition: width 0.35s ease;
 }
@@ -49,7 +49,7 @@
     top: 8px;
     bottom: 8px;
     width: 2px;
-    background: linear-gradient(180deg, #10b981, #334155);
+    background: var(--timeline-gradient);
     border-radius: 2px;
 }
 
@@ -72,14 +72,14 @@
 }
 
 .sidebar-step-item.step-current {
-    background: rgba(56, 189, 248, 0.12);
-    border-left-color: #38bdf8;
-    color: #38bdf8;
+    background: var(--status-info-bg);
+    border-left-color: var(--status-info-border);
+    color: var(--status-info-fg);
     font-weight: 600;
 }
 
 .sidebar-step-item.step-done {
-    color: #d1fae5;
+    color: var(--status-success-fg);
 }
 
 .sidebar-step-item.step-locked {
@@ -104,16 +104,16 @@
 }
 
 .sidebar-step-item.step-done .sidebar-step-dot {
-    background: #10b981;
-    border-color: #10b981;
-    color: #fff;
+    background: var(--accent-green);
+    border-color: var(--accent-green);
+    color: var(--text-on-accent);
 }
 
 .sidebar-step-item.step-current .sidebar-step-dot {
-    background: #38bdf8;
-    border-color: #38bdf8;
-    color: #fff;
-    box-shadow: 0 0 10px rgba(56, 189, 248, 0.45);
+    background: var(--accent-main);
+    border-color: var(--accent-main);
+    color: var(--text-on-accent);
+    box-shadow: var(--glow-accent);
 }
 
 .sidebar-step-body {
@@ -491,4 +491,65 @@
 .interactive-img-card.selected {
     border-color: #38bdf8;
     box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.35);
+}
+
+/* Конструктор курса — интерактив и ошибки */
+.constructor-page .interactive-constructor label {
+    color: var(--constructor-muted, var(--accent-strong));
+}
+
+.constructor-page .interactive-constructor select,
+.constructor-page .interactive-constructor textarea,
+.constructor-page .interactive-constructor input[type="text"] {
+    background: var(--input-bg);
+    border: 1.5px solid var(--constructor-border, var(--border-color));
+    color: var(--constructor-text, var(--input-text));
+}
+
+.constructor-page .interactive-stmt-row select {
+    background: var(--input-bg);
+    border: 1.5px solid var(--constructor-border, var(--border-color));
+    color: var(--constructor-text, var(--input-text));
+}
+
+.constructor-page .interactive-pair-row,
+.constructor-page .interactive-item-row,
+.constructor-page .interactive-stmt-row {
+    padding: 4px 0;
+}
+
+.constructor-page .interactive-item-num {
+    color: var(--constructor-muted, var(--accent-main));
+}
+
+.constructor-page .interactive-img-hint,
+.constructor-page .interactive-constructor .interactive-img-hint {
+    color: var(--constructor-muted, var(--text-muted));
+}
+
+html[data-theme="light"] .constructor-page .interactive-constructor label,
+html[data-theme="light"] .constructor-page .interactive-img-hint {
+    color: var(--constructor-muted);
+}
+
+html[data-theme="light"] .constructor-page .interactive-constructor select,
+html[data-theme="light"] .constructor-page .interactive-constructor textarea,
+html[data-theme="light"] .constructor-page .interactive-constructor input[type="text"],
+html[data-theme="light"] .constructor-page .interactive-stmt-row select {
+    background: #ffffff;
+    border-color: var(--constructor-border);
+    color: var(--constructor-text);
+}
+
+html[data-theme="light"] .constructor-page .interactive-img-opt-row {
+    background: var(--constructor-surface);
+    border-color: var(--constructor-border);
+}
+
+html[data-theme="light"] .constructor-page .interactive-img-preview-box {
+    background: var(--constructor-surface-strong);
+}
+
+html[data-theme="light"] .constructor-page .interactive-img-placeholder {
+    color: var(--constructor-muted);
 }

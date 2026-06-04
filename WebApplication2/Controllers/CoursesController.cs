@@ -14,47 +14,73 @@ namespace WebApplication2.Controllers
             _context = context;
         }
 
-        // 1. Страница "Библиотека курсов" (Общий список)
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int page = 1)
         {
-            // Соединяем курсы с пользователями по логину
-            var query = from course in _context.Courses
-                        where course.IsPublished
-                        join user in _context.Users on course.AuthorLogin equals user.Login into userJoin
-                        from author in userJoin.DefaultIfEmpty()
-                        select new CourseCardModel
-                        {
-                            Id = course.Id,
-                            Title = course.Title,
-                            Description = course.Description ?? "Описание отсутствует",
-                            Category = course.Category,
-                            CoverImagePath = course.CoverImagePath ?? "/images/default-course.jpg",
-                            CreatedAt = course.CreatedAt,
-                            IsPublished = course.IsPublished,
+            const int pageSize = CourseListPageViewModel.DefaultPageSize;
+            page = Math.Max(1, page);
 
-                            // Берем Username из UserModel, если нашли, иначе AuthorLogin
-                            AuthorUsername = author != null ? author.Username : (course.AuthorLogin ?? "Аноним"),
+            var published = _context.Courses.Where(c => c.IsPublished);
 
-                            // Берем Avatar из UserModel (поле называется Avatar, а не AvatarPath)
-                            AuthorAvatar = (author != null && !string.IsNullOrEmpty(author.Avatar))
-                                           ? author.Avatar
-                                           : "/images/default_avatar.jpg",
+            var totalCount = await published.CountAsync();
+            var totalPages = totalCount > 0 ? (int)Math.Ceiling(totalCount / (double)pageSize) : 0;
+            if (totalPages > 0 && page > totalPages)
+                return RedirectToAction(nameof(Index), new { page = totalPages });
 
-                            AverageRating = course.Reviews.Any()
-                                ? Math.Round(course.Reviews.Average(r => r.Rating), 1)
-                                : 0
-                        };
+            var items = await (
+                from course in published
+                orderby course.CreatedAt descending
+                join user in _context.Users on course.AuthorLogin equals user.Login into userJoin
+                from author in userJoin.DefaultIfEmpty()
+                select new CourseCardModel
+                {
+                    Id = course.Id,
+                    Title = course.Title,
+                    Description = course.Description ?? "Описание отсутствует",
+                    Category = course.Category,
+                    CoverImagePath = course.CoverImagePath ?? "/images/default-course.jpg",
+                    CreatedAt = course.CreatedAt,
+                    IsPublished = course.IsPublished,
+                    AuthorUsername = author != null ? author.Username : (course.AuthorLogin ?? "Аноним"),
+                    AuthorAvatar = (author != null && !string.IsNullOrEmpty(author.Avatar))
+                        ? author.Avatar
+                        : "/images/default_avatar.jpg",
+                    AverageRating = course.Reviews.Any()
+                        ? Math.Round(course.Reviews.Average(r => r.Rating), 1)
+                        : 0,
+                    RecPercent = course.Reviews.Any()
+                        ? CourseDisplayHelper.GetRecommendationPercent(
+                            course.Reviews.Count,
+                            course.Reviews.Count(r => r.IsRecommended))
+                        : 0
+                })
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
 
-            var model = await query.ToListAsync();
-            foreach (var card in model)
+            foreach (var card in items)
                 card.CreatedAt = CourseDisplayHelper.NormalizeCreatedAt(card.CreatedAt);
 
-            ViewData["Title"] = "Библиотека курсов";
+            var categories = await published
+                .Select(c => c.Category)
+                .Where(c => !string.IsNullOrWhiteSpace(c))
+                .Distinct()
+                .OrderBy(c => c)
+                .ToListAsync();
+
+            var model = new CourseListPageViewModel
+            {
+                Items = items,
+                Page = page,
+                PageSize = pageSize,
+                TotalCount = totalCount,
+                Categories = categories
+            };
+
+            ViewData["Title"] = "MyClassroom";
             return View(model);
         }
 
-        // 2. Страница "Мои курсы" (Личные курсы автора)
-        public async Task<IActionResult> MyCourses()
+        public async Task<IActionResult> MyCourses(int page = 1)
         {
             var userLogin = HttpContext.Session.GetString("Login");
 
@@ -63,29 +89,57 @@ namespace WebApplication2.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            // Здесь мы показываем ВСЕ свои курсы (и черновики, и опубликованные)
-            var myCourses = await _context.Courses
-                .Where(c => c.AuthorLogin == userLogin)
-                .Select(c => new CourseCardModel
-                {
-                    Id = c.Id,
-                    Title = c.Title,
-                    Description = c.Description ?? "Описание отсутствует",
-                    Category = c.Category,
-                    CoverImagePath = c.CoverImagePath ?? "/images/default-course.jpg",
-                    CreatedAt = c.CreatedAt,
-                    IsPublished = c.IsPublished, // Обязательно передаем для скрытия/показа кнопок
+            const int pageSize = CourseListPageViewModel.DefaultPageSize;
+            page = Math.Max(1, page);
 
-                    AuthorUsername = c.AuthorLogin ?? userLogin,
-                    AuthorAvatar = "/images/default_avatar.jpg"
+            var myQuery = _context.Courses.Where(c => c.AuthorLogin == userLogin);
+            var totalCount = await myQuery.CountAsync();
+            var totalPages = totalCount > 0 ? (int)Math.Ceiling(totalCount / (double)pageSize) : 0;
+            if (totalPages > 0 && page > totalPages)
+                return RedirectToAction(nameof(MyCourses), new { page = totalPages });
+
+            var items = await (
+                from course in myQuery
+                orderby course.CreatedAt descending
+                join user in _context.Users on course.AuthorLogin equals user.Login
+                select new CourseCardModel
+                {
+                    Id = course.Id,
+                    Title = course.Title,
+                    Description = course.Description ?? "Описание отсутствует",
+                    Category = course.Category,
+                    CoverImagePath = course.CoverImagePath ?? "/images/default-course.jpg",
+                    CreatedAt = course.CreatedAt,
+                    IsPublished = course.IsPublished,
+                    AuthorUsername = user.Username,
+                    AuthorAvatar = user.Avatar,
+                    AverageRating = course.Reviews.Any()
+                        ? Math.Round(course.Reviews.Average(r => r.Rating), 1)
+                        : 0,
+                    RecPercent = course.Reviews.Any()
+                        ? CourseDisplayHelper.GetRecommendationPercent(
+                            course.Reviews.Count,
+                            course.Reviews.Count(r => r.IsRecommended))
+                        : 0
                 })
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
 
-            // Флаг IsEditable нужен, чтобы в представлении появились кнопки управления
-            ViewData["IsEditable"] = true;
-            ViewData["Title"] = "Мои курсы";
+            foreach (var card in items)
+                card.CreatedAt = CourseDisplayHelper.NormalizeCreatedAt(card.CreatedAt);
 
-            return View("Index", myCourses);
+            var model = new CourseListPageViewModel
+            {
+                Items = items,
+                Page = page,
+                PageSize = pageSize,
+                TotalCount = totalCount
+            };
+
+            ViewData["IsEditable"] = true;
+            ViewData["Title"] = "MyClassroom";
+            return View("Index", model);
         }
     }
 }

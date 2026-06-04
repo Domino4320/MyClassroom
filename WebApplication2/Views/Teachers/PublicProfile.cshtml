@@ -1,7 +1,7 @@
 @model TeacherPublicProfileViewModel
 @inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 @{
-    ViewData["Title"] = Model.Username + " — преподаватель";
+    ViewData["Title"] = "MyClassroom";
     var tokens = Antiforgery.GetAndStoreTokens(Context);
 }
 

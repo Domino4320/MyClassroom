@@ -13,5 +13,11 @@ namespace WebApplication2.Models
         }
 
         public static bool HasValidCreatedAt(DateTime createdAt) => createdAt >= MinValidCreatedAt;
+
+        public static int GetRecommendationPercent(int reviewCount, int recommendedCount)
+        {
+            if (reviewCount <= 0) return 0;
+            return (int)Math.Round(100.0 * recommendedCount / reviewCount, MidpointRounding.AwayFromZero);
+        }
     }
 }

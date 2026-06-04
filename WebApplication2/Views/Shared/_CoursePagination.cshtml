@@ -1,0 +1,37 @@
+@model WebApplication2.Models.CourseListPageViewModel
+
+@if (Model.TotalPages > 1)
+{
+    <nav class="course-pagination" aria-label="Навигация по страницам">
+        @if (Model.HasPrevious)
+        {
+            <a class="course-pagination__btn" href="?page=@(Model.Page - 1)" rel="prev">
+                <i class="fa-solid fa-chevron-left" aria-hidden="true"></i> Назад
+            </a>
+        }
+        else
+        {
+            <span class="course-pagination__btn course-pagination__btn--disabled">
+                <i class="fa-solid fa-chevron-left" aria-hidden="true"></i> Назад
+            </span>
+        }
+
+        <span class="course-pagination__info">
+            Страница <strong>@Model.Page</strong> из <strong>@Model.TotalPages</strong>
+            <span class="course-pagination__count">(@Model.TotalCount курсов)</span>
+        </span>
+
+        @if (Model.HasNext)
+        {
+            <a class="course-pagination__btn" href="?page=@(Model.Page + 1)" rel="next">
+                Вперёд <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+            </a>
+        }
+        else
+        {
+            <span class="course-pagination__btn course-pagination__btn--disabled">
+                Вперёд <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+            </span>
+        }
+    </nav>
+}

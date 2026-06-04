@@ -152,7 +152,7 @@
             </select>
             <label style="margin-top:12px;display:block;">Инструкция для студента</label>
             <textarea class="interactive-instruction" rows="2" placeholder="Что нужно сделать...">${escapeAttr(config.instruction || "")}</textarea>
-            <span id="interactive-instruction-error-${stepId}" class="step-field-error" style="display:none;"></span>
+            <span id="interactive-instruction-error-${stepId}" class="step-field-error interactive-field-error" style="display:none;"></span>
             <div class="interactive-fields" id="interactive-fields-${stepId}"></div>
             <input type="hidden" class="step-interactive-json" data-id="${stepId}" value="">`;
 
@@ -170,8 +170,8 @@
 
         wrap.querySelector(".interactive-instruction").addEventListener("input", () => {
             wrap.querySelector(".interactive-instruction")?.classList.remove("input-invalid");
-            const err = document.getElementById(`interactive-instruction-error-${stepId}`);
-            if (err) err.style.display = "none";
+            wrap.classList.remove("has-validation-error");
+            showInteractiveInlineError(wrap, "interactive-instruction-error", "");
             syncHidden(wrap);
         });
 
@@ -452,7 +452,26 @@
 
     function clearInteractiveFieldErrors(wrap) {
         if (!wrap) return;
+        wrap.classList.remove("has-validation-error");
         wrap.querySelectorAll(".input-invalid").forEach(el => el.classList.remove("input-invalid"));
+        wrap.querySelectorAll(".interactive-field-error").forEach(el => {
+            el.style.display = "none";
+            el.innerHTML = "";
+        });
+    }
+
+    function showInteractiveInlineError(wrap, elementId, message) {
+        if (!wrap) return;
+        const stepId = wrap.dataset.stepId;
+        const el = document.getElementById(`${elementId}-${stepId}`);
+        if (!el) return;
+        if (message) {
+            el.innerHTML = `<i class="bi bi-exclamation-triangle"></i> ${message}`;
+            el.style.display = "block";
+        } else {
+            el.innerHTML = "";
+            el.style.display = "none";
+        }
     }
 
     function validateDom(wrap) {
@@ -466,8 +485,11 @@
 
         if (!instruction) {
             instructionEl?.classList.add("input-invalid");
+            wrap.classList.add("has-validation-error");
+            showInteractiveInlineError(wrap, "interactive-instruction-error", "Введите инструкцию для студента.");
             return "Введите инструкцию для студента.";
         }
+        showInteractiveInlineError(wrap, "interactive-instruction-error", "");
 
         if (kind === "match") {
             const rows = [...wrap.querySelectorAll(".interactive-pair-row")];
@@ -484,12 +506,14 @@
                 if (!left || !right) {
                     if (!left) leftEl?.classList.add("input-invalid");
                     if (!right) rightEl?.classList.add("input-invalid");
+                    wrap.classList.add("has-validation-error");
                     return "Заполните обе части пары или очистите строку.";
                 }
                 completeCount++;
             }
 
             if (completeCount === 0) {
+                wrap.classList.add("has-validation-error");
                 return "Добавьте хотя бы одну заполненную пару.";
             }
             return null;
@@ -507,6 +531,7 @@
             }
 
             if (filled < 2) {
+                wrap.classList.add("has-validation-error");
                 return "Добавьте минимум 2 элемента для упорядочивания.";
             }
             return null;
@@ -524,26 +549,46 @@
             }
 
             if (filled === 0) {
+                wrap.classList.add("has-validation-error");
                 return "Добавьте хотя бы одно утверждение.";
             }
             return null;
         }
 
         if (kind === "fillblanks") {
-            const template = (wrap.querySelector(".interactive-fill-template")?.value || "").trim();
-            const blanks = (wrap.querySelector(".interactive-fill-blanks")?.value || "").split("\n").map(s => s.trim()).filter(Boolean);
-            if (!template || !template.includes("___")) return "В тексте должен быть хотя бы один пропуск «___».";
+            const templateEl = wrap.querySelector(".interactive-fill-template");
+            const blanksEl = wrap.querySelector(".interactive-fill-blanks");
+            const template = (templateEl?.value || "").trim();
+            const blanks = (blanksEl?.value || "").split("\n").map(s => s.trim()).filter(Boolean);
+            if (!template || !template.includes("___")) {
+                templateEl?.classList.add("input-invalid");
+                wrap.classList.add("has-validation-error");
+                return "В тексте должен быть хотя бы один пропуск «___».";
+            }
             const gaps = countBlanks(template);
-            if (blanks.length !== gaps) return `Ответов (${blanks.length}) должно быть столько же, сколько пропусков (${gaps}).`;
+            if (blanks.length !== gaps) {
+                blanksEl?.classList.add("input-invalid");
+                wrap.classList.add("has-validation-error");
+                return `Ответов (${blanks.length}) должно быть столько же, сколько пропусков (${gaps}).`;
+            }
             return null;
         }
 
         if (kind === "imagechoice") {
             const rows = [...wrap.querySelectorAll(".interactive-img-opt-row")];
             const filled = rows.filter(r => (r.querySelector(".interactive-img-url")?.value || "").trim());
-            if (filled.length < 2) return "Загрузите минимум 2 картинки.";
-            if (filled.length > MAX_INTERACTIVE_IMAGES) return `Не более ${MAX_INTERACTIVE_IMAGES} картинок.`;
-            if (!wrap.querySelector(".interactive-img-correct:checked")) return "Отметьте правильный вариант.";
+            if (filled.length < 2) {
+                wrap.classList.add("has-validation-error");
+                return "Загрузите минимум 2 картинки.";
+            }
+            if (filled.length > MAX_INTERACTIVE_IMAGES) {
+                wrap.classList.add("has-validation-error");
+                return `Не более ${MAX_INTERACTIVE_IMAGES} картинок.`;
+            }
+            if (!wrap.querySelector(".interactive-img-correct:checked")) {
+                wrap.classList.add("has-validation-error");
+                return "Отметьте правильный вариант.";
+            }
             return null;
         }
 

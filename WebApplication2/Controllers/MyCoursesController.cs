@@ -14,7 +14,7 @@ namespace WebApplication2.Controllers
             _context = context;
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int page = 1)
         {
             string currentUserLogin = HttpContext.Session.GetString("Login");
 
@@ -23,26 +23,57 @@ namespace WebApplication2.Controllers
                 return RedirectToAction("Index", "Home");
             }
 
-            var myCourses = await (from course in _context.Courses
-                                   join user in _context.Users on course.AuthorLogin equals user.Login
-                                   where course.AuthorLogin == currentUserLogin
-                                   select new CourseCardModel
-                                   {
-                                       Id = course.Id,
-                                       Title = course.Title,
-                                       Description = course.Description,
-                                       Category = course.Category,
-                                       CoverImagePath = course.CoverImagePath,
-                                       CreatedAt = course.CreatedAt,
-                                       AuthorUsername = user.Username,
-                                       AuthorAvatar = user.Avatar,
-                                       IsPublished = course.IsPublished
-                                   }).ToListAsync();
+            const int pageSize = CourseListPageViewModel.DefaultPageSize;
+            page = Math.Max(1, page);
 
-            return View(myCourses);
+            var myQuery = _context.Courses.Where(c => c.AuthorLogin == currentUserLogin);
+            var totalCount = await myQuery.CountAsync();
+            var totalPages = totalCount > 0 ? (int)Math.Ceiling(totalCount / (double)pageSize) : 0;
+            if (totalPages > 0 && page > totalPages)
+                return RedirectToAction(nameof(Index), new { page = totalPages });
+
+            var items = await (
+                from course in myQuery
+                orderby course.CreatedAt descending
+                join user in _context.Users on course.AuthorLogin equals user.Login
+                select new CourseCardModel
+                {
+                    Id = course.Id,
+                    Title = course.Title,
+                    Description = course.Description,
+                    Category = course.Category,
+                    CoverImagePath = course.CoverImagePath,
+                    CreatedAt = course.CreatedAt,
+                    AuthorUsername = user.Username,
+                    AuthorAvatar = user.Avatar,
+                    IsPublished = course.IsPublished,
+                    AverageRating = course.Reviews.Any()
+                        ? Math.Round(course.Reviews.Average(r => r.Rating), 1)
+                        : 0,
+                    RecPercent = course.Reviews.Any()
+                        ? CourseDisplayHelper.GetRecommendationPercent(
+                            course.Reviews.Count,
+                            course.Reviews.Count(r => r.IsRecommended))
+                        : 0
+                })
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            foreach (var card in items)
+                card.CreatedAt = CourseDisplayHelper.NormalizeCreatedAt(card.CreatedAt);
+
+            var model = new CourseListPageViewModel
+            {
+                Items = items,
+                Page = page,
+                PageSize = pageSize,
+                TotalCount = totalCount
+            };
+
+            return View(model);
         }
 
-        // --- НОВЫЙ МЕТОД УДАЛЕНИЯ ---
         [HttpPost]
         [Route("MyCourses/DeleteCourse/{id}")]
         public async Task<IActionResult> DeleteCourse(int id)
@@ -50,7 +81,6 @@ namespace WebApplication2.Controllers
             string currentUserLogin = HttpContext.Session.GetString("Login");
             if (string.IsNullOrEmpty(currentUserLogin)) return Unauthorized();
 
-            // Загружаем курс со всей иерархией
             var course = await _context.Courses
                 .Include(c => c.Modules)
                     .ThenInclude(m => m.Lessons)
@@ -62,14 +92,9 @@ namespace WebApplication2.Controllers
 
             try
             {
-                // 1. Удаляем отзывы (используем то имя таблицы, которое у вас в контексте)
-                // Если таблица называется CourseReviews, оставляем так:
                 var reviews = _context.CourseReviews.Where(r => r.CourseId == id);
                 if (reviews.Any()) _context.CourseReviews.RemoveRange(reviews);
 
-                // 2. Удаляем курс. 
-                // Благодаря Include(...) выше, EF поймет связи и удалит модули/уроки/шаги, 
-                // если в базе настроено каскадное удаление.
                 _context.Courses.Remove(course);
 
                 await _context.SaveChangesAsync();
@@ -77,7 +102,6 @@ namespace WebApplication2.Controllers
             }
             catch (Exception ex)
             {
-                // Если падает из-за внешних ключей, значит нужно удалять шаги вручную:
                 return BadRequest("Ошибка базы данных: " + ex.Message);
             }
         }
@@ -93,7 +117,6 @@ namespace WebApplication2.Controllers
 
             if (course == null) return NotFound();
 
-            // Расчет процентов
             double recPercent = 0;
             if (course.Reviews != null && course.Reviews.Any())
             {
@@ -102,7 +125,6 @@ namespace WebApplication2.Controllers
                 recPercent = (double)recommendedCount / totalReviews * 100;
             }
 
-            // Расчет рейтинга в категории
             var allInCat = await _context.Courses
                 .Where(c => c.Category == course.Category)
                 .Include(c => c.Reviews)

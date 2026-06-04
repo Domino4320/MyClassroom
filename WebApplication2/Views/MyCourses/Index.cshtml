@@ -1,7 +1,7 @@
-﻿@model IEnumerable<CourseCardModel>
+﻿@model WebApplication2.Models.CourseListPageViewModel
 @inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 @{
-    ViewData["Title"] = "MyClassroom - Мои курсы";
+    ViewData["Title"] = "MyClassroom";
     var tokens = Antiforgery.GetAndStoreTokens(Context);
 }
 
@@ -17,9 +17,9 @@
 </div>
 
 <section class="courses-grid">
-    @if (Model != null && Model.Any())
+    @if (Model.Items.Any())
     {
-        @foreach (var course in Model)
+        @foreach (var course in Model.Items)
         {
             @await Html.PartialAsync("_CourseCard", course, new ViewDataDictionary(ViewData) { { "IsEditable", true } })
         }
@@ -32,6 +32,8 @@
         </div>
     }
 </section>
+
+@await Html.PartialAsync("_CoursePagination", Model)
 
 @section Scripts {
     <script src="~/js/course-analytics-modal.js" asp-append-version="true"></script>

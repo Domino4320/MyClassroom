@@ -1,0 +1,124 @@
+/* Центр проверки и страница оценивания */
+.grade-page {
+    --grade-surface: var(--grade-card);
+    --grade-surface-alt: var(--surface-tint);
+    --grade-btn-success-bg: var(--status-success-bg);
+    --grade-btn-success-fg: var(--status-success-fg);
+    --grade-btn-success-border: var(--status-success-border);
+    --grade-info-bg: var(--status-info-bg);
+    --grade-info-fg: var(--status-info-fg);
+    --grade-info-border: var(--status-info-border);
+}
+
+.grade-page .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--grade-info-bg);
+    border: 1px solid var(--grade-info-border);
+    color: var(--grade-info-fg);
+    padding: 8px 12px;
+    border-radius: 999px;
+    font-weight: 800;
+}
+
+.grade-page .btn-go-grade {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid var(--grade-btn-success-border);
+    background: var(--grade-btn-success-bg);
+    color: var(--grade-btn-success-fg);
+    text-decoration: none;
+    font-weight: 800;
+}
+
+.grade-page .btn-go-grade:hover {
+    filter: brightness(1.05);
+}
+
+.grade-page .meta {
+    color: var(--grade-muted);
+}
+
+.grade-page .empty-panel {
+    background: var(--grade-surface-alt);
+    border: 1px dashed var(--border-color);
+}
+
+.grade-page .card-head {
+    border-bottom: 1px solid var(--border-glass);
+}
+
+.grade-page .avatar {
+    background: var(--grade-info-bg);
+    border: 1px solid var(--grade-info-border);
+    color: var(--grade-info-fg);
+}
+
+.grade-page .step-badge {
+    color: var(--grade-info-fg);
+    background: var(--grade-info-bg);
+    border: 1px solid var(--grade-info-border);
+}
+
+.grade-page .answer-box {
+    background: var(--grade-surface-alt);
+    border: 1px solid var(--border-color);
+    border-left: 3px solid var(--accent-main);
+    color: var(--grade-text);
+}
+
+.grade-page .reference-box {
+    background: var(--status-success-bg);
+    border: 1px dashed var(--status-success-border);
+    color: var(--grade-text);
+}
+
+.grade-page .grading-form {
+    border-top: 1px solid var(--border-glass);
+}
+
+.grade-page .field-label {
+    color: var(--grade-muted);
+}
+
+.grade-page .input-field {
+    background: var(--input-bg);
+    border: 1.5px solid var(--input-border);
+    color: var(--input-text);
+}
+
+.grade-page .input-field:focus {
+    border-color: var(--accent-main);
+    box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
+.grade-page .btn-grade {
+    background: var(--btn-primary-bg);
+    color: var(--text-on-accent);
+    border: 1px solid var(--accent-strong);
+}
+
+.grade-page .btn-grade:hover {
+    filter: brightness(1.06);
+    box-shadow: var(--shadow-soft);
+}
+
+.grade-page .empty-state {
+    background: var(--grade-surface-alt);
+    border-color: var(--border-color);
+    color: var(--grade-muted);
+}
+
+.grade-page .empty-state h3 {
+    color: var(--grade-text);
+}
+
+.grade-page .submission-card:hover {
+    border-color: var(--accent-main);
+    box-shadow: var(--shadow-soft);
+}

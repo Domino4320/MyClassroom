@@ -8,24 +8,27 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Проектирование: @Model.CourseTitle</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MyClassroom</title>
+    @await Html.PartialAsync("_HeadCommon")
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
     <link rel="stylesheet" href="~/css/course-learn-features.css" asp-append-version="true" />
     <style>
         :root {
-            --primary: #4fc3f7;
-            --bg-dark: #0f172a;
-            --bg-card: #162031;
-            --sidebar-bg: #111a2e;
-            --border: rgba(79, 195, 247, 0.25);
-            --text: #e3f2fd;
-            --text-muted: #90a4ae;
+            --primary: var(--accent-main);
+            --bg-dark: var(--constructor-bg);
+            --bg-card: var(--constructor-card);
+            --sidebar-bg: var(--constructor-sidebar);
+            --border: var(--constructor-border);
+            --text: var(--constructor-text);
+            --text-muted: var(--constructor-muted);
             --accent-gradient: linear-gradient(135deg, #0288d1, #26c6da);
-            --danger: #ff453a;
-            --success: #4caf50;
+            --danger: var(--error-fg);
+            --success: var(--accent-green);
         }
 
-        body {
+        body.constructor-page {
             font-family: 'Segoe UI', Roboto, sans-serif;
             background: var(--bg-dark);
             color: var(--text);
@@ -33,6 +36,8 @@
             display: flex;
             height: 100vh;
             overflow: hidden;
+            padding-top: var(--app-topbar-height);
+            box-sizing: border-box;
         }
 
         .sidebar {
@@ -323,22 +328,47 @@
         }
 
         .quiz-error-msg,
-        .step-field-error {
-            color: var(--danger);
+        .step-field-error,
+        .interactive-field-error {
+            color: var(--error-fg);
             font-size: 0.85rem;
             margin-top: 8px;
             display: block;
             line-height: 1.4;
+            font-weight: 600;
+        }
+
+        .quiz-error-msg i,
+        .step-field-error i,
+        .interactive-field-error i {
+            color: var(--error-fg);
         }
 
         .lesson-form-error {
-            background: rgba(255, 69, 58, 0.12);
-            border: 1px solid rgba(255, 69, 58, 0.45);
-            color: #ff8a80;
+            background: var(--error-bg);
+            border: 1px solid var(--error-border);
+            color: var(--error-fg);
             padding: 12px 16px;
             border-radius: 12px;
             margin-bottom: 20px;
             font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .lesson-form-error i {
+            color: var(--error-fg);
+        }
+
+        .step-card.step-has-error {
+            border-color: var(--error-fg) !important;
+            box-shadow: 0 0 0 1px var(--error-ring);
+        }
+
+        .interactive-constructor.has-validation-error {
+            border: 1px solid var(--error-border);
+            border-radius: 12px;
+            padding: 12px;
+            background: var(--error-bg);
         }
 
         .lesson-form-success {
@@ -352,9 +382,11 @@
         }
 
         input.input-invalid,
-        textarea.input-invalid {
-            border-color: var(--danger) !important;
-            box-shadow: 0 0 0 2px rgba(255, 69, 58, 0.2);
+        textarea.input-invalid,
+        select.input-invalid {
+            border-color: var(--error-fg) !important;
+            box-shadow: 0 0 0 2px var(--error-ring) !important;
+            background: var(--error-bg) !important;
         }
 
         .settings-grid {
@@ -568,7 +600,7 @@
             flex-wrap: wrap;
         }
         .materials-msg { font-size: 0.85rem; margin-top: 8px; color: #a5d6a7; }
-        .materials-msg.is-error { color: #ff8a80; }
+        .materials-msg.is-error { color: var(--error-fg); font-weight: 600; }
         .interactive-img-hint {
             font-size: 0.8rem;
             color: var(--text-muted);
@@ -626,9 +658,115 @@
             pointer-events: none;
         }
         .interactive-fill-template, .interactive-fill-blanks { width: 100%; }
+
+        /* Светлая тема конструктора — голубые тона, без серого */
+        html[data-theme="light"] body.constructor-page {
+            --text-muted: var(--constructor-muted);
+        }
+
+        html[data-theme="light"] body.constructor-page .editor-area {
+            background: radial-gradient(circle at top right, #bae6fd, var(--constructor-bg));
+        }
+
+        html[data-theme="light"] body.constructor-page .editor-header {
+            background: rgba(255, 255, 255, 0.92);
+            border-bottom-color: var(--constructor-border);
+        }
+
+        html[data-theme="light"] body.constructor-page .module-item {
+            background: var(--constructor-surface);
+            border-color: var(--constructor-border);
+        }
+
+        html[data-theme="light"] body.constructor-page .lesson-item {
+            background: var(--constructor-surface-strong);
+        }
+
+        html[data-theme="light"] body.constructor-page .lesson-item:hover {
+            background: #7dd3fc;
+        }
+
+        html[data-theme="light"] body.constructor-page .sidebar-icon-btn {
+            background: var(--constructor-surface);
+            color: var(--constructor-muted);
+        }
+
+        html[data-theme="light"] body.constructor-page .step-card {
+            background: var(--constructor-surface);
+            border-color: var(--constructor-border);
+        }
+
+        html[data-theme="light"] body.constructor-page .quiz-editor-box,
+        html[data-theme="light"] body.constructor-page .lesson-materials-block,
+        html[data-theme="light"] body.constructor-page .materials-link-form,
+        html[data-theme="light"] body.constructor-page .interactive-img-opt-row {
+            background: var(--constructor-surface);
+            border-color: var(--constructor-border);
+        }
+
+        html[data-theme="light"] body.constructor-page .materials-row--file,
+        html[data-theme="light"] body.constructor-page .materials-link {
+            background: var(--constructor-surface-strong);
+        }
+
+        html[data-theme="light"] body.constructor-page input[type="text"],
+        html[data-theme="light"] body.constructor-page input[type="number"],
+        html[data-theme="light"] body.constructor-page input[type="url"],
+        html[data-theme="light"] body.constructor-page textarea,
+        html[data-theme="light"] body.constructor-page select {
+            background: #ffffff;
+            border-color: var(--constructor-border);
+            color: var(--constructor-text);
+        }
+
+        html[data-theme="light"] body.constructor-page .btn-outline {
+            background: var(--constructor-surface);
+            color: var(--accent-strong);
+            border-color: var(--accent-main);
+        }
+
+        html[data-theme="light"] body.constructor-page .btn-outline:hover {
+            background: var(--constructor-surface-strong);
+            color: var(--accent-strong);
+        }
+
+        html[data-theme="light"] body.constructor-page .btn-step-order {
+            background: var(--constructor-surface);
+            border-color: var(--constructor-border);
+            color: var(--accent-strong);
+        }
+
+        html[data-theme="light"] body.constructor-page .content-card {
+            box-shadow: var(--shadow-soft);
+        }
+
+        html[data-theme="light"] body.constructor-page label {
+            color: var(--accent-strong);
+        }
+
+        html[data-theme="light"] body.constructor-page #editorPlaceholder {
+            color: var(--constructor-muted);
+        }
+
+        html[data-theme="light"] body.constructor-page .editor-header span {
+            color: var(--constructor-muted) !important;
+        }
     </style>
 </head>
-<body>
+<body class="constructor-page">
+    <header class="app-mobile-bar standalone-topbar">
+        <a class="standalone-back" href="/MyCourses/Index">← К курсам</a>
+        <button type="button" class="mobile-nav-btn js-constructor-nav-toggle" aria-label="Модули и уроки">
+            <i class="fa-solid fa-bars" aria-hidden="true"></i>
+            <span>Структура</span>
+        </button>
+        <span class="mobile-bar-spacer"></span>
+        <button type="button" class="theme-toggle" aria-label="Переключить тему">
+            <i class="fa-solid fa-moon icon-moon" aria-hidden="true"></i>
+            <i class="fa-solid fa-sun icon-sun" aria-hidden="true"></i>
+        </button>
+    </header>
+    <div class="constructor-drawer-backdrop drawer-backdrop" aria-hidden="true"></div>
 
     <div class="sidebar">
         <div class="sidebar-header">
@@ -716,6 +854,8 @@
         </div>
     </div>
 
+    <script src="~/js/theme.js" asp-append-version="true"></script>
+    <script src="~/js/mobile-shell.js" asp-append-version="true"></script>
     <script src="~/js/interactive-step-editor.js" asp-append-version="true"></script>
     <script src="~/js/lesson-materials-editor.js" asp-append-version="true"></script>
     <script>
@@ -790,24 +930,30 @@
             if (titleInput) titleInput.classList.remove('input-invalid');
             const textInput = card.querySelector('.step-content');
             if (textInput) textInput.classList.remove('input-invalid');
-            if (!card.querySelector('.step-field-error[style*="block"]')) {
-                card.style.borderColor = 'var(--border)';
+            if (!card.querySelector('.step-field-error[style*="block"], .quiz-error-msg[style*="block"]')) {
+                card.classList.remove('step-has-error');
+                card.style.borderColor = '';
             }
         }
 
         function resetStepCardErrors(stepCard) {
-            stepCard.style.borderColor = 'var(--border)';
-            stepCard.querySelectorAll('.step-field-error').forEach(el => {
+            stepCard.classList.remove('step-has-error');
+            stepCard.style.borderColor = '';
+            stepCard.querySelectorAll('.step-field-error, .quiz-error-msg').forEach(el => {
                 el.style.display = 'none';
                 el.innerHTML = '';
             });
             stepCard.querySelectorAll('.input-invalid').forEach(el => el.classList.remove('input-invalid'));
+            stepCard.querySelector('.interactive-constructor')?.classList.remove('has-validation-error');
         }
 
         function markStepInvalid(stepCard, fieldErrorId, message, inputEl) {
-            stepCard.style.borderColor = 'var(--danger)';
+            stepCard.classList.add('step-has-error');
             showInlineError(fieldErrorId, message);
             if (inputEl) inputEl.classList.add('input-invalid');
+            if (fieldErrorId && fieldErrorId.startsWith('interactive-error-')) {
+                stepCard.querySelector('.interactive-constructor')?.classList.add('has-validation-error');
+            }
             return message;
         }
 
@@ -1175,7 +1321,7 @@
                         <span id="video-error-${step.id}" class="step-field-error" style="display:none;"></span>` : ''}
                     ${step.type === 4 ? `
                         <div id="interactive-editor-${step.id}" class="interactive-editor-mount"></div>
-                        <span id="interactive-error-${step.id}" class="quiz-error-msg" style="display:none;"></span>` : ''}
+                        <span id="interactive-error-${step.id}" class="quiz-error-msg step-field-error" style="display:none;"></span>` : ''}
                     ${step.type === 2 ? `
                         <div class="quiz-editor-box">
                             <div id="auto-quiz-settings-${step.id}" style="display: ${step.isManualCheck ? 'none' : 'block'};">

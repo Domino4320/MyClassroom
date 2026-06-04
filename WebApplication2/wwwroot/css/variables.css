@@ -1,5 +1,13 @@
-﻿:root {
+﻿/* Тема по умолчанию — тёмная */
+:root,
+html[data-theme="dark"] {
     --font-family: "Plus Jakarta Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+    --app-header-height: 64px;
+    --app-topbar-height: 56px;
+    --app-sidebar-width: 280px;
+    --app-sidebar-width-mobile: min(320px, 88vw);
+
     --bg-page: linear-gradient(135deg, #0b1628, #0f172a 50%, #0c1929);
     --bg-page-solid: #0f172a;
     --bg-dark: #0f172a;
@@ -7,18 +15,225 @@
     --surface-glass: rgba(30, 41, 59, 0.88);
     --surface-card: rgba(22, 32, 49, 0.96);
     --surface-dark: #1e293b;
+    --surface-elevated: #1e293b;
+    --surface-hover: rgba(255, 255, 255, 0.06);
+    --surface-tint: rgba(56, 189, 248, 0.08);
+
     --accent-main: #4fc3f7;
     --accent-strong: #29b6f6;
     --accent-soft: #7dd3fc;
+    --accent-blue: #38bdf8;
+    --accent-green: #10b981;
+    --accent-red: #ef4444;
+
+    --error-fg: #f87171;
+    --error-bg: rgba(239, 68, 68, 0.14);
+    --error-border: rgba(248, 113, 113, 0.5);
+    --error-ring: rgba(239, 68, 68, 0.28);
+
+    --status-success-fg: #d1fae5;
+    --status-success-bg: rgba(16, 185, 129, 0.18);
+    --status-success-border: rgba(16, 185, 129, 0.4);
+    --status-info-fg: #7dd3fc;
+    --status-info-bg: rgba(56, 189, 248, 0.12);
+    --status-info-border: #38bdf8;
+    --progress-gradient: linear-gradient(90deg, #10b981, #38bdf8);
+    --timeline-gradient: linear-gradient(180deg, #10b981, #334155);
+
     --text-main: #e2e8f0;
     --text-strong: #f8fafc;
     --text-muted: #94a3b8;
     --text-light: #f8fafc;
-    --header-text: #e2e8f0;
+    --text-on-accent: #0f172a;
+    --header-text: #ffffff;
+    --sidebar-link: #cfe9ff;
+
     --border-soft: rgba(79, 195, 247, 0.28);
     --border-glass: rgba(79, 195, 247, 0.22);
+    --border-color: #334155;
+
     --shadow-soft: 0 12px 30px rgba(0, 0, 0, 0.35);
     --shadow-strong: 0 30px 70px rgba(0, 0, 0, 0.5);
     --glow-accent: 0 0 25px rgba(79, 195, 247, 0.35);
+
     --input-bg: rgba(15, 23, 42, 0.75);
+    --input-border: var(--border-glass);
+    --input-text: var(--text-strong);
+
+    --header-bg: linear-gradient(90deg, #06172d, #0b2f5f);
+    --header-border: rgba(255, 255, 255, 0.1);
+    --sidebar-bg: linear-gradient(180deg, #06172d, #0a2447);
+    --sidebar-border: rgba(255, 255, 255, 0.1);
+    --backdrop: rgba(0, 0, 0, 0.55);
+    --focus-ring: rgba(79, 195, 247, 0.25);
+    --select-chevron: #94a3b8;
+
+    --btn-outline-border: #03a9f4;
+    --btn-outline-text: #ffffff;
+    --btn-outline-hover-bg: #03a9f4;
+    --btn-primary-bg: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+
+    --home-bg: #0f172a;
+    --home-card: #1e293b;
+    --home-text: #f1f5f9;
+    --home-muted: #94a3b8;
+    --home-border: #334155;
+
+    --details-bg: #0f172a;
+    --details-card: #1e293b;
+    --details-hero: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+    --details-text: #f8fafc;
+    --details-dim: #94a3b8;
+
+    --constructor-bg: #0f172a;
+    --constructor-card: #162031;
+    --constructor-sidebar: #111a2e;
+    --constructor-text: #e3f2fd;
+    --constructor-border: rgba(79, 195, 247, 0.25);
+    --constructor-muted: #7dd3fc;
+    --constructor-surface: rgba(56, 189, 248, 0.08);
+    --constructor-surface-strong: rgba(56, 189, 248, 0.14);
+
+    --grade-bg: #0f172a;
+    --grade-card: #1e293b;
+    --grade-card-hover: #243044;
+    --grade-text: #f8fafc;
+    --grade-muted: #94a3b8;
+
+    --course-card-bg: linear-gradient(145deg, #162031, #0f172a);
+    --course-card-border: rgba(79, 195, 247, 0.2);
+    --course-card-border-hover: rgba(79, 195, 247, 0.5);
+    --course-card-text: #e3f2fd;
+    --course-card-title: #ffffff;
+    --course-card-muted: #90a4ae;
+    --course-card-desc: #b0bec5;
+    --course-card-banner-bg: #0a0f1a;
+    --course-card-avatar-border: #162031;
+    --course-card-avatar-bg: #1e293b;
+    --course-card-footer-border: rgba(255, 255, 255, 0.05);
+    --course-card-cat-bg: rgba(79, 195, 247, 0.1);
+    --course-card-cat-text: #4fc3f7;
+    --course-card-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    --course-card-shadow-hover: 0 15px 35px rgba(0, 0, 0, 0.7);
+    --course-card-btn-bg: linear-gradient(135deg, #0288d1, #26c6da);
+    --course-card-btn-shadow: 0 4px 15px rgba(2, 136, 209, 0.3);
+    --course-card-btn-continue-bg: linear-gradient(135deg, #10b981, #059669);
+
+    color-scheme: dark;
+}
+
+html[data-theme="light"] {
+    --bg-page: linear-gradient(165deg, #bfdbfe 0%, #dbeafe 28%, #e0f2fe 55%, #f0f9ff 100%);
+    --bg-page-solid: #e8f4fc;
+    --bg-dark: #eef6fc;
+    --bg-dark-soft: #dbeafe;
+    --surface-glass: rgba(255, 255, 255, 0.96);
+    --surface-card: #ffffff;
+    --surface-dark: #dbeafe;
+    --surface-elevated: #ffffff;
+    --surface-hover: rgba(2, 132, 199, 0.1);
+    --surface-tint: #e0f2fe;
+    --focus-ring: rgba(2, 132, 199, 0.22);
+    --select-chevron: #0369a1;
+
+    --accent-main: #0369a1;
+    --accent-strong: #075985;
+    --accent-soft: #0284c7;
+    --accent-blue: #0369a1;
+    --accent-green: #15803d;
+    --accent-red: #dc2626;
+
+    --error-fg: #dc2626;
+    --error-bg: #fef2f2;
+    --error-border: #fca5a5;
+    --error-ring: rgba(220, 38, 38, 0.22);
+
+    --status-success-fg: #14532d;
+    --status-success-bg: #dcfce7;
+    --status-success-border: #86efac;
+    --status-info-fg: #0c4a6e;
+    --status-info-bg: #e0f2fe;
+    --status-info-border: #38bdf8;
+    --progress-gradient: linear-gradient(90deg, #15803d, #0369a1);
+    --timeline-gradient: linear-gradient(180deg, #15803d, #94a3b8);
+
+    --text-main: #1e3a5f;
+    --text-strong: #0c4a6e;
+    --text-muted: #64748b;
+    --text-light: #0f172a;
+    --text-on-accent: #ffffff;
+    --header-text: #0c4a6e;
+    --sidebar-link: #1e3a5f;
+
+    --border-soft: rgba(2, 132, 199, 0.42);
+    --border-glass: #7dd3fc;
+    --border-color: #38bdf8;
+    --outline-accent: #0ea5e9;
+
+    --shadow-soft: 0 8px 24px rgba(12, 74, 110, 0.1);
+    --shadow-strong: 0 16px 40px rgba(12, 74, 110, 0.14);
+    --glow-accent: 0 0 18px rgba(2, 132, 199, 0.2);
+
+    --input-bg: #ffffff;
+    --input-border: #38bdf8;
+    --input-text: #0f172a;
+
+    --header-bg: linear-gradient(90deg, #bae6fd 0%, #e0f2fe 45%, #f0f9ff 100%);
+    --header-border: #38bdf8;
+    --sidebar-bg: linear-gradient(180deg, #bfdbfe 0%, #e0f2fe 55%, #f0f9ff 100%);
+    --sidebar-border: #38bdf8;
+    --backdrop: rgba(12, 74, 110, 0.4);
+
+    --btn-outline-border: #0284c7;
+    --btn-outline-text: #0369a1;
+    --btn-outline-hover-bg: #0284c7;
+    --btn-primary-bg: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+
+    --home-bg: #f0f9ff;
+    --home-card: #ffffff;
+    --home-text: #0c4a6e;
+    --home-muted: #64748b;
+    --home-border: #7dd3fc;
+
+    --details-bg: #f0f9ff;
+    --details-card: #ffffff;
+    --details-hero: linear-gradient(180deg, #bae6fd 0%, #f0f9ff 100%);
+    --details-text: #0c4a6e;
+    --details-dim: #64748b;
+
+    --constructor-bg: #e0f2fe;
+    --constructor-card: #ffffff;
+    --constructor-sidebar: #f0f9ff;
+    --constructor-text: #0c4a6e;
+    --constructor-border: #38bdf8;
+    --constructor-muted: #0369a1;
+    --constructor-surface: #e0f2fe;
+    --constructor-surface-strong: #bae6fd;
+
+    --grade-bg: #f0f9ff;
+    --grade-card: #ffffff;
+    --grade-card-hover: #e0f2fe;
+    --grade-text: #0c4a6e;
+    --grade-muted: #64748b;
+
+    --course-card-bg: linear-gradient(160deg, #ffffff 0%, #f0f9ff 55%, #e0f2fe 100%);
+    --course-card-border: #7dd3fc;
+    --course-card-border-hover: #0ea5e9;
+    --course-card-text: #1e3a5f;
+    --course-card-title: #0c4a6e;
+    --course-card-muted: #64748b;
+    --course-card-desc: #475569;
+    --course-card-banner-bg: #e0f2fe;
+    --course-card-avatar-border: #ffffff;
+    --course-card-avatar-bg: #f0f9ff;
+    --course-card-footer-border: #e0f2fe;
+    --course-card-cat-bg: #e0f2fe;
+    --course-card-cat-text: #0369a1;
+    --course-card-shadow: 0 8px 24px rgba(12, 74, 110, 0.1);
+    --course-card-shadow-hover: 0 14px 32px rgba(12, 74, 110, 0.16);
+    --course-card-btn-bg: linear-gradient(135deg, #0284c7, #0369a1);
+    --course-card-btn-shadow: 0 4px 14px rgba(2, 132, 199, 0.25);
+    --course-card-btn-continue-bg: linear-gradient(135deg, #15803d, #166534);
+
+    color-scheme: light;
 }

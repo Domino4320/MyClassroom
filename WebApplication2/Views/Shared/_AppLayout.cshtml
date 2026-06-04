@@ -1,13 +1,10 @@
-@{
-    var pageTitle = ViewData["Title"] as string ?? "MyClassroom";
-}
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@pageTitle</title>
-    <link rel="stylesheet" href="~/css/variables.css" asp-append-version="true" />
+    <title>MyClassroom</title>
+    @await Html.PartialAsync("_HeadCommon")
     <link rel="stylesheet" href="~/css/typography.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/app-shell.css" asp-append-version="true" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
@@ -25,6 +22,8 @@
         </div>
     </div>
     <input type="file" id="avatarInput" accept="image/*" style="display:none" />
+    <script src="~/js/theme.js" asp-append-version="true"></script>
+    <script src="~/js/mobile-shell.js" asp-append-version="true"></script>
     <script src="~/js/script_for_main_page.js" asp-append-version="true"></script>
     <script src="~/js/notifications.js" asp-append-version="true"></script>
     <script>

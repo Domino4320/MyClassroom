@@ -45,7 +45,9 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@Model.CurrentStep.Title | Обучение</title>
+    <title>MyClassroom</title>
+    @await Html.PartialAsync("_HeadCommon")
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -53,15 +55,13 @@
 
     <style>
         :root {
-            --bg-dark: #0f172a;
-            --bg-sidebar: #1e293b;
-            --accent-blue: #38bdf8;
-            --accent-green: #10b981;
-            --accent-red: #ef4444;
-            --text-main: #e2e8f0;
-            --text-muted: #94a3b8;
-            --border-color: #334155;
+            --bg-dark: var(--bg-page-solid);
+            --bg-sidebar: var(--surface-dark);
             --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        html[data-theme="light"] .learn-page {
+            --bg-sidebar: #ffffff;
         }
 
         * {
@@ -70,18 +70,20 @@
             box-sizing: border-box;
         }
 
-        body {
+        body.learn-page {
             background-color: var(--bg-dark);
             color: var(--text-main);
             font-family: 'Inter', sans-serif;
             height: 100vh;
             display: flex;
             overflow: hidden;
+            padding-top: var(--app-topbar-height);
+            box-sizing: border-box;
         }
 
 
         /* --- Sidebar --- */
-        .learn-sidebar {
+        body.learn-page .learn-sidebar {
             width: 320px;
             background: var(--bg-sidebar);
             border-right: 1px solid var(--border-color);
@@ -154,15 +156,15 @@
         }
 
         .status-chip.done {
-            color: #d1fae5;
-            background: rgba(16, 185, 129, 0.18);
-            border-color: rgba(16, 185, 129, 0.35);
+            color: var(--status-success-fg);
+            background: var(--status-success-bg);
+            border-color: var(--status-success-border);
         }
 
         .status-chip.todo {
-            color: #cbd5e1;
-            background: rgba(148, 163, 184, 0.12);
-            border-color: rgba(148, 163, 184, 0.35);
+            color: var(--text-muted);
+            background: var(--surface-hover);
+            border-color: var(--border-color);
         }
 
         .lesson-item {
@@ -484,7 +486,7 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+            background: var(--btn-primary-bg);
             color: white;
             border: none;
             padding: 14px 32px;
@@ -748,7 +750,20 @@
         }
     </style>
 </head>
-<body>
+<body class="learn-page">
+    <header class="app-mobile-bar standalone-topbar">
+        <a class="standalone-back" href="/Course/Details/@Model.CourseId">← К курсу</a>
+        <button type="button" class="mobile-nav-btn js-learn-nav-toggle" aria-label="Навигация по курсу">
+            <i class="fa-solid fa-bars" aria-hidden="true"></i>
+            <span>Навигация</span>
+        </button>
+        <span class="mobile-bar-spacer"></span>
+        <button type="button" class="theme-toggle" aria-label="Переключить тему">
+            <i class="fa-solid fa-moon icon-moon" aria-hidden="true"></i>
+            <i class="fa-solid fa-sun icon-sun" aria-hidden="true"></i>
+        </button>
+    </header>
+    <div class="learn-drawer-backdrop drawer-backdrop" aria-hidden="true"></div>
     <input type="hidden" name="__RequestVerificationToken" value="@tokens.RequestToken" />
 
     <aside class="learn-sidebar">
@@ -765,13 +780,13 @@
             </div>
             <div style="margin-top: 10px; color: var(--text-muted); font-size: 0.8rem; display:flex; gap:14px; flex-wrap:wrap;">
                 <span style="display:inline-flex; align-items:center; gap:6px;">
-                    <span style="width:9px; height:9px; border-radius: 50%; background: var(--accent-green); display:inline-block;"></span> Пройдено
+                    <span class="legend-dot legend-dot--done" style="width:9px; height:9px; border-radius:50%; display:inline-block;"></span> Пройдено
                 </span>
                 <span style="display:inline-flex; align-items:center; gap:6px;">
-                    <span style="width:9px; height:9px; border-radius: 50%; background: var(--accent-blue); display:inline-block;"></span> Текущий
+                    <span class="legend-dot legend-dot--current" style="width:9px; height:9px; border-radius:50%; display:inline-block;"></span> Текущий
                 </span>
                 <span style="display:inline-flex; align-items:center; gap:6px;">
-                    <span style="width:9px; height:9px; border-radius: 50%; background: #64748b; display:inline-block;"></span> Доступно
+                    <span class="legend-dot legend-dot--available" style="width:9px; height:9px; border-radius:50%; display:inline-block;"></span> Доступно
                 </span>
             </div>
         </div>
@@ -1119,6 +1134,8 @@
         </div>
     </main>
 
+    <script src="~/js/theme.js" asp-append-version="true"></script>
+    <script src="~/js/mobile-shell.js" asp-append-version="true"></script>
     <script src="~/js/course-learn-features.js" asp-append-version="true"></script>
     <script src="~/js/lesson-feedback-modal.js" asp-append-version="true"></script>
 

@@ -1,7 +1,8 @@
 @model IEnumerable<WebApplication2.Controllers.PendingCourseViewModel>
 
 @{
-    ViewData["Title"] = "Центр проверки";
+    Layout = null;
+    ViewData["Title"] = "MyClassroom";
 }
 
 <!DOCTYPE html>
@@ -9,17 +10,19 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Центр проверки</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <title>MyClassroom</title>
+    @await Html.PartialAsync("_HeadCommon")
+    <link rel="stylesheet" href="~/css/grade-pages.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
     <style>
         :root {
-            --bg: #0f172a;
-            --card: #1e293b;
-            --border: #334155;
-            --text: #f8fafc;
-            --muted: #94a3b8;
-            --accent: #38bdf8;
-            --success: #10b981;
+            --bg: var(--grade-bg);
+            --card: var(--grade-card);
+            --border: var(--border-color);
+            --text: var(--grade-text);
+            --muted: var(--grade-muted);
+            --accent: var(--accent-blue);
+            --success: var(--accent-green);
         }
 
         html, body {
@@ -87,32 +90,6 @@
             font-size: 0.9rem;
         }
 
-        .badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(56, 189, 248, 0.1);
-            border: 1px solid rgba(56, 189, 248, 0.25);
-            color: var(--accent);
-            padding: 8px 12px;
-            border-radius: 999px;
-            font-weight: 800;
-        }
-
-        .btn {
-            display: inline-flex;
-            justify-content: center;
-            align-items: center;
-            gap: 10px;
-            padding: 12px 14px;
-            border-radius: 12px;
-            border: 1px solid rgba(16, 185, 129, 0.35);
-            background: rgba(16, 185, 129, 0.12);
-            color: #d1fae5;
-            text-decoration: none;
-            font-weight: 800;
-        }
-
         .empty {
             margin-top: 40px;
             color: var(--muted);
@@ -120,11 +97,14 @@
             padding: 60px 20px;
             border: 1px dashed var(--border);
             border-radius: 18px;
-            background: rgba(255,255,255,0.02);
         }
     </style>
 </head>
-<body>
+<body class="grade-page">
+    <button type="button" class="theme-toggle theme-toggle--floating" aria-label="Переключить тему">
+        <i class="fa-solid fa-moon icon-moon" aria-hidden="true"></i>
+        <i class="fa-solid fa-sun icon-sun" aria-hidden="true"></i>
+    </button>
     <div class="container">
         <div class="topbar">
             <a class="back" href="/TeacherAccount/Index"><i class="fa-solid fa-chevron-left"></i> В кабинет</a>
@@ -134,7 +114,7 @@
 
         @if (Model == null || !Model.Any())
         {
-            <div class="empty">
+            <div class="empty empty-panel">
                 <div style="font-size: 2.2rem; margin-bottom: 10px;"><i class="fa-solid fa-inbox"></i></div>
                 <div style="font-weight:800; margin-bottom: 6px;">Пока нет работ на ручную проверку</div>
                 <div>Когда студенты отправят ответы в заданиях с ручной проверкой, они появятся здесь.</div>
@@ -151,7 +131,7 @@
                             <span class="badge"><i class="fa-solid fa-clock"></i> @c.PendingCount</span>
                             <span>ожидают проверки</span>
                         </div>
-                        <a class="btn" href="/Teacher/GradeCourse/@c.CourseId">
+                        <a class="btn-go-grade" href="/Teacher/GradeCourse/@c.CourseId">
                             <i class="fa-solid fa-clipboard-check"></i> Перейти к проверке
                         </a>
                     </div>
@@ -159,6 +139,7 @@
             </div>
         }
     </div>
+    <script src="~/js/theme.js" asp-append-version="true"></script>
 </body>
 </html>
 

@@ -1,0 +1,15 @@
+<link rel="stylesheet" href="~/css/variables.css" asp-append-version="true" />
+<script>
+(function () {
+    var k = 'mc-theme', t;
+    try { t = localStorage.getItem(k); } catch (e) {}
+    if (t !== 'light' && t !== 'dark') {
+        t = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+    }
+    document.documentElement.setAttribute('data-theme', t);
+})();
+</script>
+<link rel="stylesheet" href="~/css/theme.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/modal-buttons.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/course-card.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/responsive.css" asp-append-version="true" />

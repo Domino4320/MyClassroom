@@ -167,13 +167,17 @@ body {
     display: flex;
     align-items: center;
     gap: 10px;
-    font-size: 0.88rem;
-    font-weight: 600;
-    color: var(--text-main);
+    font-size: 1.08rem;
+    font-weight: 700;
+    color: var(--accent-strong);
 }
 
 .experience-row .experience-inner i {
     color: var(--accent-main);
+}
+
+.experience-row .experience-inner span {
+    color: var(--accent-strong);
 }
 
 .edit-btn {
@@ -264,8 +268,9 @@ body {
 }
 
 .btn-primary {
-    background: var(--accent-main);
-    color: var(--bg-dark);
+    background: var(--btn-primary-bg);
+    color: var(--text-on-accent);
+    border: 1px solid var(--accent-strong);
 }
 
 .btn-primary:hover {
@@ -397,6 +402,41 @@ body {
         opacity: 1;
         transform: translateY(0);
     }
+}
+
+/* Светлая тема: кабинет преподавателя */
+html[data-theme="light"] .teacher-account-container .btn-accent-outline {
+    background: #ffffff;
+    border: 1.5px solid var(--border-color);
+    color: var(--accent-strong);
+}
+
+html[data-theme="light"] .teacher-account-container .btn-accent-outline:hover {
+    background: var(--surface-hover);
+    border-color: var(--accent-main);
+    color: var(--accent-strong);
+}
+
+html[data-theme="light"] .teacher-account-container .btn-outline {
+    background: #ffffff;
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+}
+
+html[data-theme="light"] .teacher-account-container .btn-primary {
+    background: var(--btn-primary-bg);
+    color: var(--text-on-accent);
+    border: 1px solid var(--accent-strong);
+}
+
+html[data-theme="light"] .teacher-account-container .edit-btn {
+    background: #ffffff;
+    border-color: var(--border-color);
+}
+
+html[data-theme="light"] .teacher-account-container .profile-field {
+    background: var(--surface-tint);
+    border-color: var(--border-color);
 }
 
 @media (max-width: 1024px) {

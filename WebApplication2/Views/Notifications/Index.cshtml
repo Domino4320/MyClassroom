@@ -1,29 +1,32 @@
 @model List<WebApplication2.Models.NotificationModel>
 @{
-    ViewData["Title"] = "Уведомления";
+    ViewData["Title"] = "MyClassroom";
 }
 
 @section Styles {
     <link rel="stylesheet" href="~/css/notifications.css" asp-append-version="true" />
 }
 
-<div class="page-header">
-    <h1>Уведомления</h1>
-</div>
-
-@Html.AntiForgeryToken()
-
-@if (Model == null || !Model.Any())
-{
-    <div class="notif-empty">
-        <i class="fa-solid fa-bell"></i>
-        <h3>Пока нет уведомлений</h3>
-        <p>Здесь появятся ответы на ваши комментарии и ответы преподавателя.</p>
+<div class="notif-page">
+    <div class="page-header">
+        <h1>Уведомления</h1>
     </div>
-}
-else
-{
-    <div class="notif-actions">
+
+    @Html.AntiForgeryToken()
+
+    @if (Model == null || !Model.Any())
+    {
+        <div class="notif-empty" role="status">
+            <div class="notif-empty-icon" aria-hidden="true">
+                <i class="fa-regular fa-bell"></i>
+            </div>
+            <h3>Пока нет уведомлений</h3>
+            <p>Когда кто-то ответит на ваш комментарий или преподаватель ответит вам, сообщение появится здесь.</p>
+        </div>
+    }
+    else
+    {
+        <div class="notif-actions">
         <button type="button" class="notif-btn notif-btn-ghost" id="markAllReadBtn">Отметить всё прочитанным</button>
         <button type="button" class="notif-btn notif-btn-danger" id="deleteAllNotifBtn">Очистить все</button>
     </div>
@@ -68,7 +71,8 @@ else
             </article>
         }
     </div>
-}
+    }
+</div>
 
 @section Scripts {
     <script src="~/js/notifications.js" asp-append-version="true"></script>

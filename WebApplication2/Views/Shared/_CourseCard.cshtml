@@ -1,196 +1,5 @@
 ﻿@model WebApplication2.Models.CourseCardModel
 
-<style>
-    .course-card {
-        max-width: 360px;
-        width: 100%;
-        background: linear-gradient(145deg, #162031, #0f172a);
-        border-radius: 24px;
-        overflow: hidden;
-        position: relative;
-        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        border: 1px solid rgba(79, 195, 247, 0.2);
-        color: #e3f2fd;
-        display: flex;
-        flex-direction: column;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-        height: 100%;
-    }
-
-        .course-card:hover {
-            transform: translateY(-8px);
-            border-color: rgba(79, 195, 247, 0.5);
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.7);
-        }
-
-    .card-banner {
-        width: 100%;
-        height: 200px;
-        position: relative;
-        background-color: #0a0f1a;
-        background-size: cover;
-        background-position: center;
-        background-repeat: no-repeat;
-        transition: background-image 0.3s ease-in-out;
-    }
-
-    .author-avatar-box {
-        position: absolute;
-        bottom: -25px;
-        right: 24px;
-        width: 54px;
-        height: 54px;
-        border-radius: 14px;
-        border: 4px solid #162031;
-        overflow: hidden;
-        background-color: #1e293b;
-        background-size: cover;
-        background-position: center;
-        z-index: 20;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-    }
-
-    .card-admin-overlay {
-        position: absolute;
-        top: 15px;
-        left: 15px;
-        display: flex;
-        gap: 8px;
-        z-index: 15;
-    }
-
-    .btn-admin-tool {
-        width: 36px;
-        height: 36px;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border: none;
-        cursor: pointer;
-        transition: 0.3s;
-        color: white;
-        backdrop-filter: blur(4px);
-    }
-
-        .btn-admin-tool.edit {
-            background: rgba(3, 169, 244, 0.6);
-        }
-
-        .btn-admin-tool.grading {
-            background: rgba(255, 193, 7, 0.6);
-        }
-
-        .btn-admin-tool.analytics {
-            background: rgba(16, 185, 129, 0.6);
-        }
-
-        .btn-admin-tool.feedback-stats {
-            background: rgba(124, 58, 237, 0.88);
-            color: #f5f3ff;
-        }
-
-        .btn-admin-tool.delete {
-            background: rgba(244, 67, 54, 0.6);
-        }
-
-        .btn-admin-tool:hover {
-            transform: scale(1.1);
-            background: rgba(255, 255, 255, 0.3);
-        }
-
-    .status-badge {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        padding: 4px 10px;
-        border-radius: 8px;
-        font-size: 0.7rem;
-        font-weight: bold;
-        text-transform: uppercase;
-        backdrop-filter: blur(4px);
-    }
-
-    .status-published {
-        background: rgba(16, 185, 129, 0.2);
-        color: #10b981;
-        border: 1px solid rgba(16, 185, 129, 0.4);
-    }
-
-    .status-draft {
-        background: rgba(245, 158, 11, 0.2);
-        color: #f59e0b;
-        border: 1px solid rgba(245, 158, 11, 0.4);
-    }
-
-    .card-main-content {
-        padding: 35px 24px 20px 24px;
-        flex-grow: 1;
-        position: relative;
-    }
-
-    .cat-badge {
-        background: rgba(79, 195, 247, 0.1);
-        color: #4fc3f7;
-        padding: 4px 12px;
-        border-radius: 6px;
-        font-size: 0.75rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .card-course-title {
-        font-size: 1.25rem;
-        font-weight: 700;
-        margin: 12px 0 4px 0;
-        line-height: 1.2;
-        color: #ffffff;
-    }
-
-    .card-author-handle {
-        color: #90a4ae;
-        font-size: 0.85rem;
-        margin-bottom: 15px;
-        display: block;
-    }
-
-    .card-action-footer {
-        padding: 20px 24px 24px 24px;
-        border-top: 1px solid rgba(255, 255, 255, 0.05);
-        min-height: 92px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .card-action-footer.editable {
-        justify-content: flex-start;
-        min-height: auto;
-        padding-top: 14px;
-        padding-bottom: 18px;
-    }
-
-    .btn-start-course {
-        background: linear-gradient(135deg, #0288d1, #26c6da);
-        color: white !important;
-        text-decoration: none;
-        display: block;
-        width: 100%;
-        text-align: center;
-        padding: 12px;
-        border-radius: 12px;
-        font-weight: 600;
-        transition: 0.3s;
-        box-shadow: 0 4px 15px rgba(2, 136, 209, 0.3);
-    }
-
-        .btn-start-course:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(2, 136, 209, 0.5);
-        }
-</style>
-
 <div class="course-card" id="course-card-@Model.Id">
     @{
         var isEditable = ViewData["IsEditable"] as bool? ?? false;
@@ -287,9 +96,7 @@
         {
             <span class="card-created-date">Создан @Model.CreatedAt.ToLocalTime().ToString("dd MMMM yyyy", new System.Globalization.CultureInfo("ru-RU"))</span>
         }
-        <p style="color: #b0bec5; font-size: 0.9rem; margin-top: 10px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
-            @Model.Description
-        </p>
+        <p class="card-description">@Model.Description</p>
     </div>
 
     <div class="card-action-footer @(isEditable ? "editable" : "")">
@@ -297,7 +104,7 @@
         {
             if (isEnrolled)
             {
-                <a asp-controller="Course" asp-action="Learn" asp-route-id="@Model.Id" class="btn-start-course" style="background: linear-gradient(135deg, #10b981, #059669);">
+                <a asp-controller="Course" asp-action="Learn" asp-route-id="@Model.Id" class="btn-start-course btn-start-course--continue">
                     Продолжить обучение
                 </a>
             }

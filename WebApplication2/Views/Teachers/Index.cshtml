@@ -1,6 +1,6 @@
 @model List<TeacherCatalogRowViewModel>
 @{
-    ViewData["Title"] = "Каталог преподавателей";
+    ViewData["Title"] = "MyClassroom";
     var specializations = Model?
         .Select(t => t.SpecializationCategory)
         .Where(s => !string.IsNullOrWhiteSpace(s))

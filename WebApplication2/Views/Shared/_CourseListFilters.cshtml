@@ -1,32 +1,64 @@
 @{
     var searchId = ViewData["SearchInputId"] as string ?? "courseSearch";
-    var searchPlaceholder = ViewData["SearchPlaceholder"] as string ?? "Поиск по названию...";
+    var authorSearchId = ViewData["AuthorSearchInputId"] as string ?? "authorSearch";
+    var searchPlaceholder = ViewData["SearchPlaceholder"] as string ?? "Название курса...";
+    var authorPlaceholder = ViewData["AuthorSearchPlaceholder"] as string ?? "Автор...";
     var categories = ViewData["FilterCategories"] as IEnumerable<string> ?? Enumerable.Empty<string>();
 }
 
-<section class="course-filters">
-    <div class="course-filters-bar">
-        <div class="search-input-wrapper course-filters-search">
+<section class="course-filters" aria-label="Фильтры курсов">
+    <div class="course-filters-panel">
+        <div class="course-filters-bar">
             <input type="text"
                    id="@searchId"
-                   class="dynamic-search-input"
+                   class="course-filter-control dynamic-search-input"
                    placeholder="@searchPlaceholder"
+                   aria-label="Поиск по названию"
                    autocomplete="off">
+
+            <input type="text"
+                   id="@authorSearchId"
+                   class="course-filter-control dynamic-search-input"
+                   placeholder="@authorPlaceholder"
+                   aria-label="Поиск по автору"
+                   autocomplete="off">
+
+            <div class="course-filter-select-wrap">
+                <select id="categoryFilter" class="course-filter-control course-filter-select" aria-label="Категория">
+                    <option value="">Все категории</option>
+                    @foreach (var category in categories)
+                    {
+                        <option value="@category">@category</option>
+                    }
+                </select>
+            </div>
+
+            <div class="course-filter-select-wrap">
+                <select id="ratingFilter" class="course-filter-control course-filter-select" aria-label="Минимальный рейтинг">
+                    <option value="">Любой рейтинг</option>
+                    <option value="1">от 1 ★</option>
+                    <option value="2">от 2 ★</option>
+                    <option value="3">от 3 ★</option>
+                    <option value="4">от 4 ★</option>
+                    <option value="5">5 ★</option>
+                </select>
+            </div>
+
+            <div class="course-filter-select-wrap course-filter-select-wrap--sort">
+                <select id="dateSortFilter" class="course-filter-control course-filter-select" aria-label="Сортировка">
+                    <option value="desc" selected>Сначала новые</option>
+                    <option value="asc">Сначала старые</option>
+                </select>
+            </div>
+
+            <input type="number"
+                   id="recPercentFilter"
+                   class="course-filter-control course-filter-number"
+                   min="0"
+                   max="100"
+                   step="1"
+                   placeholder="Рекомендации, от %"
+                   aria-label="Минимальный процент рекомендаций">
         </div>
-        <select id="categoryFilter" class="course-filter-select" aria-label="Категория">
-            <option value="">Все категории</option>
-            @foreach (var category in categories)
-            {
-                <option value="@category">@category</option>
-            }
-        </select>
-        <select id="ratingFilter" class="course-filter-select" aria-label="Рейтинг">
-            <option value="">Любой рейтинг</option>
-            <option value="1">от 1 ★</option>
-            <option value="2">от 2 ★</option>
-            <option value="3">от 3 ★</option>
-            <option value="4">от 4 ★</option>
-            <option value="5">5 ★</option>
-        </select>
     </div>
 </section>

@@ -14,22 +14,31 @@ namespace WebApplication2.Controllers
             _context = context;
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int page = 1)
         {
-            // ВАЖНО: Берем логин именно из Session, как это делает твой Sidebar
             var userLogin = HttpContext.Session.GetString("Login");
 
-            // Если в сессии пусто — значит контроллер тебя "не видит" как авторизованного
             if (string.IsNullOrEmpty(userLogin))
             {
-                // Пока просто возвращаем на главную, чтобы не было 404
                 return RedirectToAction("Index", "Home");
             }
 
-            // Получаем курсы, привязанные к этому логину через прогресс
-            var activeCourses = await _context.Courses
-                .Where(c => _context.UserProgress
-                    .Any(p => p.UserLogin == userLogin && p.Step.Lesson.Module.CourseId == c.Id))
+            const int pageSize = CourseListPageViewModel.DefaultPageSize;
+            page = Math.Max(1, page);
+
+            var activeQuery = _context.Courses.Where(c =>
+                _context.UserProgress.Any(p =>
+                    p.UserLogin == userLogin && p.Step.Lesson.Module.CourseId == c.Id));
+
+            var totalCount = await activeQuery.CountAsync();
+            var totalPages = totalCount > 0 ? (int)Math.Ceiling(totalCount / (double)pageSize) : 0;
+            if (totalPages > 0 && page > totalPages)
+                return RedirectToAction(nameof(Index), new { page = totalPages });
+
+            var items = await activeQuery
+                .OrderByDescending(c => c.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .Select(c => new CourseCardModel
                 {
                     Id = c.Id,
@@ -42,11 +51,35 @@ namespace WebApplication2.Controllers
                     AuthorAvatar = "/images/default_avatar.jpg",
                     AverageRating = c.Reviews.Any()
                         ? Math.Round(c.Reviews.Average(r => r.Rating), 1)
+                        : 0,
+                    RecPercent = c.Reviews.Any()
+                        ? CourseDisplayHelper.GetRecommendationPercent(
+                            c.Reviews.Count,
+                            c.Reviews.Count(r => r.IsRecommended))
                         : 0
                 })
                 .ToListAsync();
 
-            return View(activeCourses);
+            foreach (var card in items)
+                card.CreatedAt = CourseDisplayHelper.NormalizeCreatedAt(card.CreatedAt);
+
+            var categories = await activeQuery
+                .Select(c => c.Category)
+                .Where(c => !string.IsNullOrWhiteSpace(c))
+                .Distinct()
+                .OrderBy(c => c)
+                .ToListAsync();
+
+            var model = new CourseListPageViewModel
+            {
+                Items = items,
+                Page = page,
+                PageSize = pageSize,
+                TotalCount = totalCount,
+                Categories = categories
+            };
+
+            return View(model);
         }
     }
 }

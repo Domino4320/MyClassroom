@@ -1,17 +1,14 @@
-﻿@model IEnumerable<WebApplication2.Models.CourseCardModel>
+﻿@model WebApplication2.Models.CourseListPageViewModel
 @using System.Globalization
+@using WebApplication2.Models
 
 @{
-    ViewData["Title"] = "MyClassroom - Библиотека курсов";
-    var categories = Model?
-        .Select(c => c.Category)
-        .Where(c => !string.IsNullOrWhiteSpace(c))
-        .Distinct()
-        .OrderBy(c => c)
-        .ToList() ?? new List<string>();
+    ViewData["Title"] = "MyClassroom";
     ViewData["SearchInputId"] = "librarySearch";
-    ViewData["SearchPlaceholder"] = "Введите название курса для поиска...";
-    ViewData["FilterCategories"] = categories;
+    ViewData["AuthorSearchInputId"] = "libraryAuthorSearch";
+    ViewData["SearchPlaceholder"] = "Введите название курса...";
+    ViewData["AuthorSearchPlaceholder"] = "Введите имя автора...";
+    ViewData["FilterCategories"] = Model.Categories;
 }
 
 @section Styles {
@@ -26,19 +23,23 @@
 @await Html.PartialAsync("_CourseListFilters")
 
 <section class="courses-grid" id="coursesGrid">
-    @if (Model != null && Model.Any())
+    @if (Model.Items.Any())
     {
-        @foreach (var course in Model)
+        @foreach (var course in Model.Items)
         {
+            var createdAt = CourseDisplayHelper.NormalizeCreatedAt(course.CreatedAt);
             <div class="course-item"
                  data-title="@course.Title.ToLower()"
+                 data-author="@course.AuthorUsername.ToLower()"
                  data-category="@course.Category"
-                 data-rating="@course.AverageRating.ToString(CultureInfo.InvariantCulture)">
+                 data-rating="@course.AverageRating.ToString(CultureInfo.InvariantCulture)"
+                 data-rec="@course.RecPercent"
+                 data-created="@createdAt.Ticks">
                 @await Html.PartialAsync("_CourseCard", course)
             </div>
         }
     }
-    else
+    else if (Model.TotalCount == 0)
     {
         <div class="empty-state">
             <i class="fa-solid fa-box-open"></i>
@@ -52,11 +53,13 @@
     </div>
 </section>
 
+@await Html.PartialAsync("_CoursePagination", Model)
+
 @section Scripts {
     <script src="~/js/course-list-filters.js" asp-append-version="true"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            initCourseListFilters("librarySearch");
+            initCourseListFilters("librarySearch", "libraryAuthorSearch");
         });
     </script>
 }

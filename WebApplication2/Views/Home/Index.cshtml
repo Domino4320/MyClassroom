@@ -1,7 +1,7 @@
 ﻿@using WebApplication2.Models
 @using System.Linq
 @{
-    ViewData["Title"] = "Главная страница";
+    ViewData["Title"] = "MyClassroom";
     bool isGuest = ViewBag.IsGuest ?? true;
 
     var categoryRecs = ViewBag.CategoryRecs as List<CourseCardModel>;
@@ -21,23 +21,9 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
 <style>
-    :root {
-        --home-bg: #0f172a;
-        --home-card: #1e293b;
-        --home-text: #f1f5f9;
-        --home-muted: #94a3b8;
-        --home-border: #334155;
-    }
-
-    body {
-        background-color: var(--home-bg);
-        margin: 0;
-        color: var(--home-text);
-    }
-
     .main-content {
-        padding: 30px;
-        width: 98%;
+        padding: clamp(1rem, 3vw, 30px);
+        width: 100%;
         max-width: 2400px;
         margin: 0 auto;
         box-sizing: border-box;
@@ -85,7 +71,7 @@
     }
 
     .course-section {
-        background: var(--home-card);
+        background: var(--home-card, var(--surface-card));
         border-radius: 24px;
         padding: 40px;
         margin-bottom: 40px;
@@ -125,8 +111,8 @@
 
     .courses-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
-        gap: 30px;
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+        gap: clamp(16px, 3vw, 30px);
     }
 
     .course-card-wrapper {
@@ -145,7 +131,7 @@
         align-items: center;
         justify-content: center;
         padding: 80px;
-        background: rgba(15, 23, 42, 0.6);
+        background: var(--surface-hover);
         border: 2px dashed var(--home-border);
         border-radius: 20px;
         color: var(--home-muted);

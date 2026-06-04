@@ -1,75 +1,104 @@
 /* Страницы библиотеки и активных курсов */
 .course-filters {
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    box-sizing: border-box;
+}
+
+.course-filters-panel {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 18px 20px 16px;
+    background: var(--surface-card);
+    border: 1.5px solid var(--border-color);
+    border-radius: 16px;
+    box-shadow: var(--shadow-soft);
+    box-sizing: border-box;
 }
 
 .course-filters-bar {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    align-items: center;
     gap: 12px;
-    align-items: stretch;
-    justify-content: center;
-    max-width: 1100px;
-    margin: 0 auto;
-}
-
-.course-filters-search {
-    flex: 1 1 280px;
-    min-width: 0;
-    max-width: 100%;
-}
-
-.search-input-wrapper {
     width: 100%;
+    box-sizing: border-box;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 2px;
 }
 
-.course-filter-select {
-    flex: 0 1 220px;
-    min-width: 160px;
-    padding: 14px 16px;
+.course-filter-control {
+    flex: 1 1 0;
+    min-width: 120px;
+    height: 48px;
+    padding: 0 14px;
     background: var(--surface-dark);
-    border: 1px solid var(--border-soft);
-    border-radius: 14px;
-    color: var(--text-light);
-    font-size: 0.95rem;
+    border: 1.5px solid var(--border-color);
+    border-radius: 12px;
+    color: var(--text-main);
+    font-size: 0.9rem;
     font-family: inherit;
     outline: none;
-    cursor: pointer;
     box-sizing: border-box;
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%2394a3b8' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 14px center;
-    padding-right: 36px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.course-filter-select:focus {
+.course-filter-control::placeholder {
+    color: var(--text-muted);
+    opacity: 0.9;
+}
+
+.course-filter-control:focus {
     border-color: var(--accent-main);
-    outline: 2px solid rgba(79, 195, 247, 0.25);
-    outline-offset: 0;
+    box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
+.course-filter-select-wrap {
+    position: relative;
+    flex: 1 1 0;
+    min-width: 130px;
+    height: 48px;
+}
+
+.course-filter-select-wrap--sort {
+    min-width: 150px;
+}
+
+.course-filter-select-wrap .course-filter-select {
+    width: 100%;
+    height: 48px;
+    max-width: none;
+    padding: 0 36px 0 14px;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: none;
+}
+
+.course-filter-number {
+    flex: 1.15 1 0;
+    min-width: 160px;
+}
+
+.course-filter-select-wrap::after {
+    content: "";
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 6px solid var(--select-chevron);
+    pointer-events: none;
 }
 
 .course-filter-select option {
-    background: var(--bg-dark);
+    background: var(--bg-page-solid);
     color: var(--text-main);
-}
-
-.dynamic-search-input {
-    width: 100%;
-    padding: 14px 22px;
-    background: var(--surface-dark);
-    border: 1px solid var(--border-soft);
-    border-radius: 14px;
-    color: var(--text-light);
-    font-size: 1rem;
-    outline: none;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
-    box-sizing: border-box;
-}
-
-.dynamic-search-input:focus {
-    border-color: var(--accent-main);
-    box-shadow: 0 0 0 3px rgba(79, 195, 247, 0.2);
 }
 
 .course-item {
@@ -95,9 +124,9 @@
     text-align: center;
     padding: 3rem 1.25rem;
     color: var(--text-muted);
-    background: rgba(30, 41, 59, 0.5);
+    background: var(--surface-card);
     border-radius: 20px;
-    border: 2px dashed var(--border-glass);
+    border: 2px dashed var(--border-color);
 }
 
 .empty-active-state {
@@ -111,7 +140,8 @@
     font-size: 3.5rem;
     margin-bottom: 1rem;
     display: block;
-    color: var(--border-soft);
+    color: var(--accent-main);
+    opacity: 0.5;
 }
 
 .empty-active-state h3 {
@@ -150,4 +180,78 @@
     opacity: 0.95;
     transform: translateY(-1px);
     color: #fff;
+}
+
+/* Пагинация */
+.course-pagination {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 2rem;
+    padding: 16px 20px;
+    background: var(--surface-card);
+    border: 1.5px solid var(--border-color);
+    border-radius: 14px;
+    box-shadow: var(--shadow-soft);
+}
+
+.course-pagination__btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-decoration: none;
+    color: var(--accent-strong);
+    background: var(--surface-tint);
+    border: 1.5px solid var(--border-color);
+    transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.course-pagination__btn:hover {
+    background: var(--surface-hover);
+    border-color: var(--accent-main);
+    color: var(--accent-main);
+}
+
+.course-pagination__btn--disabled {
+    opacity: 0.45;
+    cursor: default;
+    pointer-events: none;
+}
+
+.course-pagination__info {
+    font-size: 0.95rem;
+    color: var(--text-main);
+    text-align: center;
+}
+
+.course-pagination__info strong {
+    color: var(--text-strong);
+}
+
+.course-pagination__count {
+    display: block;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+/* Сетка курсов */
+.courses-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+    gap: 1.75rem;
+    width: 100%;
+    align-items: start;
+}
+
+@media (max-width: 480px) {
+    .courses-grid {
+        grid-template-columns: 1fr;
+    }
 }

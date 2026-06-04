@@ -1,0 +1,111 @@
+.theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    padding: 0;
+    border-radius: 999px;
+    border: 1px solid var(--btn-outline-border);
+    background: var(--surface-hover);
+    color: var(--accent-main);
+    cursor: pointer;
+    font-family: inherit;
+    flex-shrink: 0;
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.theme-toggle:hover {
+    background: rgba(79, 195, 247, 0.12);
+    border-color: var(--accent-main);
+    transform: scale(1.04);
+}
+
+html[data-theme="light"] .theme-toggle:hover {
+    background: rgba(2, 132, 199, 0.1);
+}
+
+.theme-toggle i {
+    font-size: 1.05rem;
+    line-height: 1;
+}
+
+.theme-toggle .icon-sun,
+html[data-theme="light"] .theme-toggle .icon-moon {
+    display: none;
+}
+
+html[data-theme="light"] .theme-toggle .icon-sun,
+.theme-toggle .icon-moon {
+    display: inline;
+}
+
+/* Плавающий переключатель на страницах без общего хедера */
+.theme-toggle--floating {
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    z-index: 2000;
+    box-shadow: var(--shadow-soft);
+    background: var(--surface-card);
+    color: var(--text-strong);
+    border-color: var(--border-glass);
+}
+
+.theme-toggle--floating {
+    top: max(12px, env(safe-area-inset-top));
+    right: max(12px, env(safe-area-inset-right));
+}
+
+@media (max-width: 1023px) {
+    body.learn-page .theme-toggle--floating,
+    body.constructor-page .theme-toggle--floating {
+        display: none;
+    }
+}
+
+/* Светлая тема: голубые контуры и разделение блоков */
+html[data-theme="light"] .page-header {
+    border-bottom-color: var(--border-color);
+}
+
+html[data-theme="light"] .main-content .page-header h1,
+html[data-theme="light"] .main-content .page-header h2 {
+    color: var(--text-strong);
+}
+
+html[data-theme="light"] .glass-card,
+html[data-theme="light"] .side-panel,
+html[data-theme="light"] .course-card,
+html[data-theme="light"] .notif-card,
+html[data-theme="light"] .notif-empty,
+html[data-theme="light"] .content-card,
+html[data-theme="light"] .empty-state,
+html[data-theme="light"] .no-search-results,
+html[data-theme="light"] .tc-card,
+html[data-theme="light"] .course-filters-panel .course-filter-control,
+html[data-theme="light"] .course-filter-select,
+html[data-theme="light"] .notif-bell-btn,
+html[data-theme="light"] .theme-toggle {
+    border-color: var(--border-color);
+}
+
+html[data-theme="light"] input:not([type="checkbox"]):not([type="radio"]),
+html[data-theme="light"] textarea,
+html[data-theme="light"] select {
+    border: 1.5px solid var(--input-border) !important;
+    box-shadow: 0 1px 0 rgba(14, 165, 233, 0.06);
+}
+
+html[data-theme="light"] input:focus,
+html[data-theme="light"] textarea:focus,
+html[data-theme="light"] select:focus {
+    border-color: var(--outline-accent) !important;
+    box-shadow: 0 0 0 3px var(--focus-ring);
+    outline: none;
+}
+
+html[data-theme="light"] .notif-dropdown {
+    border: 1.5px solid var(--border-color);
+}
