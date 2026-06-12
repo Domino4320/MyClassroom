@@ -2,8 +2,9 @@
     var specializations = ViewData["FilterSpecializations"] as IEnumerable<string> ?? Enumerable.Empty<string>();
 }
 
-<section class="teacher-filters">
-    <div class="teacher-filters-bar">
+<section class="teacher-filters" aria-label="Фильтры преподавателей">
+    <div class="teacher-filters-panel">
+        <div class="teacher-filters-bar">
         <div class="search-input-wrapper teacher-filters-field">
             <input type="text"
                    id="teacherNameSearch"
@@ -27,6 +28,7 @@
                    autocomplete="off"
                    aria-label="Теги">
         </div>
+        </div>
+        <p class="teacher-filters-hint">Подстрока без учёта регистра. Несколько тегов через запятую — должны совпасть все.</p>
     </div>
-    <p class="teacher-filters-hint">Подстрока без учёта регистра. Несколько тегов через запятую — должны совпасть все.</p>
 </section>

@@ -58,6 +58,13 @@ namespace WebApplication2.Controllers
 
             if (course == null) return NotFound();
 
+            var login = HttpContext.Session.GetString("Login");
+            if (!course.IsPublished)
+            {
+                if (string.IsNullOrEmpty(login) || course.AuthorLogin != login)
+                    return NotFound();
+            }
+
             // --- РАСЧЕТ АНАЛИТИКИ ---
             double recPercent = 0;
             if (course.Reviews != null && course.Reviews.Any())
@@ -89,7 +96,6 @@ namespace WebApplication2.Controllers
             ViewData["TotalInCat"] = allInCat.Count(c => c.IsPublished);
 
             // --- ПРОВЕРКА ЗАПИСИ И ПРОГРЕССА ---
-            var login = HttpContext.Session.GetString("Login");
             bool isEnrolled = false;
             bool hasCompletedCourse = false;
 
@@ -163,6 +169,10 @@ namespace WebApplication2.Controllers
             var login = HttpContext.Session.GetString("Login");
             if (string.IsNullOrEmpty(login)) return RedirectToAction("Index", "Authorization");
 
+            var course = await _db.Courses.FirstOrDefaultAsync(c => c.Id == courseId);
+            if (course == null) return NotFound();
+            if (!course.IsPublished) return Forbid();
+
             var alreadyEnrolled = await _db.Enrollments
                 .AnyAsync(e => e.CourseId == courseId && e.UserLogin == login);
 
@@ -234,6 +244,11 @@ namespace WebApplication2.Controllers
             // Проверка, записан ли пользователь
             var isEnrolled = await _db.Enrollments.AnyAsync(e => e.CourseId == courseId && e.UserLogin == login);
             if (!isEnrolled) return RedirectToAction("Details", new { id = courseId });
+
+            var courseMeta = await _db.Courses.AsNoTracking().FirstOrDefaultAsync(c => c.Id == courseId);
+            if (courseMeta == null) return NotFound();
+            if (!courseMeta.IsPublished && courseMeta.AuthorLogin != login)
+                return Forbid();
 
             var modules = await _db.Modules
                 .Where(m => m.CourseId == courseId)
@@ -510,6 +525,11 @@ namespace WebApplication2.Controllers
 
             if (currentStep == null) return Json(new { success = false, message = "Шаг не найден" });
 
+            var courseId = currentStep.Lesson.Module.CourseId;
+            var isEnrolled = await _db.Enrollments.AnyAsync(e => e.CourseId == courseId && e.UserLogin == login);
+            if (!isEnrolled)
+                return Json(new { success = false, message = "Вы не записаны на этот курс" });
+
             // Логика проверки теста
             if (currentStep.Type == StepType.Quiz)
             {
@@ -694,6 +714,9 @@ namespace WebApplication2.Controllers
             if (string.IsNullOrEmpty(login))
                 return Json(new { success = false, message = "Нужно войти в систему" });
 
+            if (!await _db.Enrollments.AnyAsync(e => e.CourseId == courseId && e.UserLogin == login))
+                return Json(new { success = false, message = "Вы не записаны на этот курс" });
+
             // Проверка: пройден ли курс полностью
             var allStepIds = await _db.Steps
                 .Where(s => s.Lesson.Module.CourseId == courseId)
@@ -751,6 +774,10 @@ namespace WebApplication2.Controllers
             var course = await _db.Courses.AsNoTracking().FirstOrDefaultAsync(c => c.Id == courseId);
             var isTeacherReply = course != null && course.AuthorLogin == login;
 
+            var isEnrolled = await _db.Enrollments.AnyAsync(e => e.CourseId == courseId && e.UserLogin == login);
+            if (!isEnrolled && !isTeacherReply)
+                return Json(new { success = false, message = "Нет доступа к курсу" });
+
             if (parentCommentId.HasValue)
             {
                 var parent = await _db.Comments
@@ -792,6 +819,8 @@ namespace WebApplication2.Controllers
         {
             var login = HttpContext.Session.GetString("Login");
             if (string.IsNullOrEmpty(login)) return RedirectToAction("Index", "Authorization");
+            if (HttpContext.Session.GetString("Role") != "Teacher")
+                return View("AccessDenied");
 
             var course = await _db.Courses.FirstOrDefaultAsync(c => c.Id == id);
             if (course == null) return NotFound();
@@ -807,6 +836,8 @@ namespace WebApplication2.Controllers
         {
             var login = HttpContext.Session.GetString("Login");
             if (string.IsNullOrEmpty(login)) return RedirectToAction("Index", "Authorization");
+            if (HttpContext.Session.GetString("Role") != "Teacher")
+                return Forbid();
 
             var courseInDb = await _db.Courses.FirstOrDefaultAsync(c => c.Id == id);
             if (courseInDb == null) return NotFound();

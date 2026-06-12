@@ -10,7 +10,8 @@ body {
 
 body.drawer-open,
 body.learn-drawer-open,
-body.constructor-drawer-open {
+body.constructor-drawer-open,
+body.sidebar-open {
     overflow: hidden;
 }
 
@@ -147,17 +148,23 @@ table {
 .drawer-backdrop,
 .learn-drawer-backdrop,
 .constructor-drawer-backdrop {
-    display: none;
     position: fixed;
     inset: var(--app-topbar-height) 0 0 0;
     background: var(--backdrop);
     z-index: 1100;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+    transform: translateZ(0);
 }
 
 .drawer-backdrop.is-open,
 .learn-drawer-backdrop.is-open,
 .constructor-drawer-backdrop.is-open {
-    display: block;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
 }
 
 /* --- Плеер обучения --- */
@@ -184,8 +191,8 @@ body.learn-page {
         height: auto;
         max-height: min(70vh, calc(100dvh - var(--app-topbar-height) - 12px));
         z-index: 1150;
-        transform: translateY(calc(-100% - 8px));
-        transition: transform 0.35s ease;
+        transform: translate3d(0, calc(-100% - 8px), 0);
+        transition: transform 0.2s ease;
         box-shadow: var(--shadow-strong);
         border-right: none;
         border-bottom: 1px solid var(--border-color);
@@ -194,7 +201,7 @@ body.learn-page {
     }
 
     body.learn-page .learn-sidebar.is-open {
-        transform: translateY(0);
+        transform: translate3d(0, 0, 0);
     }
 
     body.learn-page .learn-sidebar .back-area {
@@ -321,8 +328,8 @@ body.constructor-page {
         height: auto !important;
         max-height: min(70vh, calc(100dvh - var(--app-topbar-height) - 12px)) !important;
         z-index: 1150;
-        transform: translateY(calc(-100% - 8px));
-        transition: transform 0.35s ease;
+        transform: translate3d(0, calc(-100% - 8px), 0);
+        transition: transform 0.2s ease;
         box-shadow: var(--shadow-strong);
         border-right: none;
         border-bottom: 1px solid var(--border-color);
@@ -331,7 +338,7 @@ body.constructor-page {
     }
 
     body.constructor-page .sidebar.is-open {
-        transform: translateY(0);
+        transform: translate3d(0, 0, 0);
     }
 
     body.constructor-page .editor-area {

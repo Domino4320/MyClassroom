@@ -70,8 +70,6 @@
                 }
             });
 
-            sortByDate();
-
             if (noResults) {
                 noResults.style.display = foundCount === 0 ? "block" : "none";
             }
@@ -81,12 +79,18 @@
         if (authorSearchInput) authorSearchInput.addEventListener("input", applyFilters);
         if (categoryFilter) categoryFilter.addEventListener("change", applyFilters);
         if (ratingFilter) ratingFilter.addEventListener("change", applyFilters);
-        if (dateSortFilter) dateSortFilter.addEventListener("change", applyFilters);
+        if (dateSortFilter) {
+            dateSortFilter.addEventListener("change", () => {
+                sortByDate();
+                applyFilters();
+            });
+        }
         if (recPercentFilter) {
             recPercentFilter.addEventListener("input", applyFilters);
             recPercentFilter.addEventListener("change", applyFilters);
         }
 
+        sortByDate();
         applyFilters();
     }
 

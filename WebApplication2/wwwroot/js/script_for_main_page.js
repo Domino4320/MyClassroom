@@ -1,10 +1,19 @@
-﻿function toggleSidebar() {
+﻿function toggleSidebar(forceOpen) {
     const sidebar = document.getElementById("sidebar");
-    const content = document.querySelector(".content-area");
     const backdrop = document.getElementById("sidebarBackdrop");
-    if (sidebar) sidebar.classList.toggle("open");
-    if (content) content.classList.toggle("shift");
-    if (backdrop) backdrop.classList.toggle("visible");
+    if (!sidebar) return;
+
+    const shouldOpen =
+        typeof forceOpen === "boolean"
+            ? forceOpen
+            : !sidebar.classList.contains("open");
+
+    sidebar.classList.toggle("open", shouldOpen);
+    backdrop?.classList.toggle("visible", shouldOpen);
+    document.body.classList.toggle("sidebar-open", shouldOpen);
+
+    const burger = document.querySelector(".header .burger");
+    if (burger) burger.setAttribute("aria-expanded", shouldOpen ? "true" : "false");
 }
 
 function chooseAvatar() {
@@ -43,3 +52,7 @@ if (avatarInput) {
             });
     });
 }
+
+document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") toggleSidebar(false);
+});

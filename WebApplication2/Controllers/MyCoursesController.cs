@@ -1,10 +1,12 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebApplication2.Data;
+using WebApplication2.Infrastructure;
 using WebApplication2.Models;
 
 namespace WebApplication2.Controllers
 {
+    [RequireTeacher]
     public class MyCoursesController : Controller
     {
         private readonly ApplicationDBContext _context;
@@ -109,6 +111,10 @@ namespace WebApplication2.Controllers
         [HttpGet]
         public async Task<IActionResult> Details(int id)
         {
+            var currentUserLogin = HttpContext.Session.GetString("Login");
+            if (string.IsNullOrEmpty(currentUserLogin))
+                return RedirectToAction("Index", "Authorization");
+
             var course = await _context.Courses
                 .Include(c => c.Reviews)
                 .Include(c => c.Modules)
@@ -116,6 +122,7 @@ namespace WebApplication2.Controllers
                 .FirstOrDefaultAsync(c => c.Id == id);
 
             if (course == null) return NotFound();
+            if (course.AuthorLogin != currentUserLogin) return Forbid();
 
             double recPercent = 0;
             if (course.Reviews != null && course.Reviews.Any())

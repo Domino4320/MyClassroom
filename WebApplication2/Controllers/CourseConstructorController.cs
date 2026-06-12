@@ -1,10 +1,12 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebApplication2.Data;
+using WebApplication2.Infrastructure;
 using WebApplication2.Models;
 
 namespace WebApplication2.Controllers
 {
+    [RequireTeacher]
     public class CourseConstructorController : Controller
     {
         private readonly ApplicationDBContext _db;
@@ -18,7 +20,7 @@ namespace WebApplication2.Controllers
 
         private async Task<(LessonModel? lesson, CourseModel? course, string? error)> GetValidLesson(int lessonId)
         {
-            var lesson = await _db.Lessons.Include(l => l.Module).FirstOrDefaultAsync(l => l.Id == lessonId);
+            var lesson = await _db.Lessons.Include(l => l.Module).Include(l => l.Steps).FirstOrDefaultAsync(l => l.Id == lessonId);
             if (lesson == null) return (null, null, "Урок не найден.");
 
             var (course, error) = await GetValidCourse(lesson.Module.CourseId);
@@ -33,6 +35,9 @@ namespace WebApplication2.Controllers
             var userLogin = HttpContext.Session.GetString("Login");
             if (string.IsNullOrEmpty(userLogin))
                 return (null, "Сессия истекла. Пожалуйста, войдите в аккаунт заново.");
+
+            if (HttpContext.Session.GetString("Role") != "Teacher")
+                return (null, "У вас нет прав преподавателя.");
 
             var course = await _db.Courses.FirstOrDefaultAsync(c => c.Id == courseId);
             if (course == null) return (null, "Курс не найден.");
@@ -173,7 +178,8 @@ namespace WebApplication2.Controllers
         [HttpGet]
         public async Task<IActionResult> GetLessonData(int id)
         {
-            var lesson = await _db.Lessons.Include(l => l.Steps).FirstOrDefaultAsync(l => l.Id == id);
+            var (lesson, _, error) = await GetValidLesson(id);
+            if (error != null) return Forbid();
             if (lesson == null) return NotFound();
 
             return Json(new
@@ -448,6 +454,15 @@ namespace WebApplication2.Controllers
         [HttpGet]
         public async Task<IActionResult> GetQuizOptions(int stepId)
         {
+            var step = await _db.Steps
+                .Include(s => s.Lesson)
+                .ThenInclude(l => l.Module)
+                .FirstOrDefaultAsync(s => s.Id == stepId);
+            if (step == null) return NotFound();
+
+            var (_, error) = await GetValidCourse(step.Lesson.Module.CourseId);
+            if (error != null) return Forbid();
+
             return Json(await _db.QuizOptions.Where(o => o.StepId == stepId).ToListAsync());
         }
 
@@ -469,8 +484,15 @@ namespace WebApplication2.Controllers
         [HttpPost]
         public async Task<IActionResult> UpdateQuizOption([FromQuery] int id, [FromQuery] string text, [FromQuery] bool isCorrect)
         {
-            var option = await _db.QuizOptions.Include(o => o.Step).FirstOrDefaultAsync(o => o.Id == id);
+            var option = await _db.QuizOptions
+                .Include(o => o.Step)
+                .ThenInclude(s => s.Lesson)
+                .ThenInclude(l => l.Module)
+                .FirstOrDefaultAsync(o => o.Id == id);
             if (option == null) return NotFound();
+
+            var (_, error) = await GetValidCourse(option.Step.Lesson.Module.CourseId);
+            if (error != null) return Forbid();
 
             // Если это единственный выбор, снимаем галочки с остальных
             if (isCorrect && !option.Step.IsMultipleChoice)
@@ -489,8 +511,18 @@ namespace WebApplication2.Controllers
         [Route("CourseConstructor/DeleteQuizOption/{id}")]
         public async Task<IActionResult> DeleteQuizOption(int id)
         {
-            var option = await _db.QuizOptions.FindAsync(id);
-            if (option != null) { _db.QuizOptions.Remove(option); await _db.SaveChangesAsync(); }
+            var option = await _db.QuizOptions
+                .Include(o => o.Step)
+                .ThenInclude(s => s.Lesson)
+                .ThenInclude(l => l.Module)
+                .FirstOrDefaultAsync(o => o.Id == id);
+            if (option == null) return NotFound();
+
+            var (_, error) = await GetValidCourse(option.Step.Lesson.Module.CourseId);
+            if (error != null) return Forbid();
+
+            _db.QuizOptions.Remove(option);
+            await _db.SaveChangesAsync();
             return Ok();
         }
 

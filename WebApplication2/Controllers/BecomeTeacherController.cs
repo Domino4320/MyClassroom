@@ -18,6 +18,9 @@ namespace WebApplication2.Controllers
         [HttpGet]
         public IActionResult Index()
         {
+            if (HttpContext.Session.GetString("Role") == "Teacher")
+                return RedirectToAction("Index", "Home");
+
             return View();
         }
 
@@ -26,6 +29,11 @@ namespace WebApplication2.Controllers
         public async Task<IActionResult> SubmitApplication(TeacherProfile profile)
         {
             var loginFromSession = HttpContext.Session.GetString("Login");
+            if (string.IsNullOrEmpty(loginFromSession))
+                return RedirectToAction("Index", "Authorization");
+
+            if (HttpContext.Session.GetString("Role") == "Teacher")
+                return Forbid();
 
             // Присваиваем логин
             profile.UserLogin = loginFromSession;

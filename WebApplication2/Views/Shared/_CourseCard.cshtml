@@ -4,23 +4,31 @@
     @{
         var isEditable = ViewData["IsEditable"] as bool? ?? false;
         var isEnrolled = ViewData["IsEnrolled"] as bool? ?? false;
-        var bannerImg = string.IsNullOrWhiteSpace(Model.CoverImagePath) ? "/images/default-course.jpg" : Model.CoverImagePath;
+        var hasBanner = !string.IsNullOrWhiteSpace(Model.CoverImagePath)
+            && !Model.CoverImagePath.Contains("default-course", StringComparison.OrdinalIgnoreCase);
         var avatarImg = string.IsNullOrWhiteSpace(Model.AuthorAvatar) || Model.AuthorAvatar == "/images/default_avatar.jpg"
         ? "/images/default_avatar.jpg" : Model.AuthorAvatar;
     }
 
-    <div class="card-banner"
-         style="background-image: url('@bannerImg'); @(!isEditable ? "cursor:pointer;" : "cursor:default;")"
-    @if (!isEditable)
-    {
-        <text>onclick="location.href='@Url.Action("Details", "Course", new { id = Model.Id })'"</text>
-    }>
-
-        <div class="author-avatar-box" style="background-image: url('@avatarImg');"></div>
-
-        @if (isEditable)
+    <div class="card-banner-wrapper">
+        <div class="card-banner @(isEditable ? "" : "card-banner--clickable")"
+        @if (!isEditable)
         {
-                <div class="card-admin-overlay">
+            <text>onclick="location.href='@Url.Action("Details", "Course", new { id = Model.Id })'"</text>
+        }>
+            @if (hasBanner)
+            {
+                <img class="card-banner-img"
+                     src="@Model.CoverImagePath"
+                     alt=""
+                     loading="lazy"
+                     decoding="async"
+                     onerror="this.remove();" />
+            }
+
+            @if (isEditable)
+            {
+                    <div class="card-admin-overlay">
                     <a asp-controller="Teacher" asp-action="GradeCourse" asp-route-id="@Model.Id"
                        class="btn-admin-tool grading" title="Проверить ответы студентов"
                        onclick="event.stopPropagation();">
@@ -86,6 +94,15 @@
                     </button>
                 </div>
         }
+        </div>
+
+        <div class="author-avatar-box">
+            <img class="author-avatar-img"
+                 src="@avatarImg"
+                 alt=""
+                 loading="lazy"
+                 decoding="async" />
+        </div>
     </div>
 
     <div class="card-main-content">

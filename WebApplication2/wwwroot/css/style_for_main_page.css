@@ -19,16 +19,22 @@
     text-align: center;
     padding: 3rem 1.5rem;
     color: var(--text-muted);
+    background: var(--surface-card);
+    border-radius: 20px;
+    border: 1.5px solid var(--border-glass);
+    box-shadow: var(--shadow-soft);
 }
 
 .empty-state i {
     font-size: 3.5rem;
     margin-bottom: 1rem;
     display: block;
-    color: rgba(79, 195, 247, 0.35);
+    color: var(--accent-main);
+    opacity: 0.75;
 }
 
 .empty-state p {
-    font-size: 1.1rem;
+    font-size: 1rem;
     margin: 0;
+    color: var(--text-main);
 }

@@ -36,6 +36,17 @@
     margin-bottom: 24px;
 }
 
+.teacher-filters-panel {
+    width: 100%;
+    max-width: 1100px;
+    padding: 18px 20px 16px;
+    background: var(--surface-card);
+    border: 1.5px solid var(--border-glass);
+    border-radius: 16px;
+    box-shadow: var(--shadow-soft);
+    box-sizing: border-box;
+}
+
 .teacher-filters-bar {
     display: flex;
     flex-wrap: wrap;
@@ -56,31 +67,35 @@
 .teacher-filter-select {
     flex: 0 1 260px;
     min-width: 180px;
-    padding: 14px 16px;
-    background: var(--surface-dark);
-    border: 1px solid var(--border-soft);
+    padding: 14px 36px 14px 16px;
+    background-color: var(--input-bg);
+    border: 1.5px solid var(--input-border);
     border-radius: 14px;
-    color: var(--text-light);
+    color: var(--input-text);
     font-size: 0.95rem;
     font-family: inherit;
     outline: none;
     cursor: pointer;
     box-sizing: border-box;
     appearance: none;
+    -webkit-appearance: none;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%2394a3b8' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 14px center;
-    padding-right: 36px;
+}
+
+html[data-theme="light"] .teacher-filter-select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%230369a1' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
 }
 
 .teacher-filter-select:focus {
     border-color: var(--accent-main);
-    outline: 2px solid rgba(79, 195, 247, 0.25);
-    outline-offset: 0;
+    box-shadow: 0 0 0 3px var(--focus-ring);
+    outline: none;
 }
 
 .teacher-filter-select option {
-    background: var(--bg-dark);
+    background: var(--surface-card);
     color: var(--text-main);
 }
 
@@ -94,20 +109,25 @@
 .teacher-filters .dynamic-search-input {
     width: 100%;
     padding: 14px 18px;
-    background: var(--surface-dark);
-    border: 1px solid var(--border-soft);
+    background: var(--input-bg);
+    border: 1.5px solid var(--input-border);
     border-radius: 14px;
-    color: var(--text-light);
+    color: var(--input-text);
     font-size: 0.95rem;
     font-family: inherit;
     outline: none;
     box-sizing: border-box;
 }
 
+.teacher-filters .dynamic-search-input::placeholder {
+    color: var(--text-muted);
+    opacity: 0.9;
+}
+
 .teacher-filters .dynamic-search-input:focus {
     border-color: var(--accent-main);
-    outline: 2px solid rgba(79, 195, 247, 0.25);
-    outline-offset: 0;
+    box-shadow: 0 0 0 3px var(--focus-ring);
+    outline: none;
 }
 
 .teacher-catalog-item.hidden {
@@ -118,11 +138,19 @@
     display: none;
     grid-column: 1 / -1;
     text-align: center;
-    padding: 2.5rem 1.25rem;
+    padding: 3rem 1.5rem;
     color: var(--text-muted);
-    background: rgba(30, 41, 59, 0.5);
-    border-radius: 18px;
+    background: var(--surface-card);
+    border-radius: 20px;
     border: 2px dashed var(--border-glass);
+    box-shadow: var(--shadow-soft);
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+.tc-no-results i {
+    color: var(--accent-main);
+    opacity: 0.85;
 }
 
 .tc-grid {

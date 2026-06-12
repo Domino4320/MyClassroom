@@ -1,11 +1,12 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebApplication2.Models;
-using Microsoft.AspNetCore.Authorization;
 using WebApplication2.Data;
+using WebApplication2.Infrastructure;
 
 namespace WebApplication2.Controllers
 {
+    [RequireTeacher]
     public class TeacherController : Controller
     {
         private readonly ApplicationDBContext _context;

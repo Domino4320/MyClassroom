@@ -7,21 +7,26 @@
     border-radius: 24px;
     overflow: hidden;
     position: relative;
-    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275),
-        border-color 0.3s ease,
-        box-shadow 0.3s ease;
+    transition: transform 0.15s ease, border-color 0.15s ease;
     border: 1px solid var(--course-card-border);
     color: var(--course-card-text);
     display: flex;
     flex-direction: column;
     box-shadow: var(--course-card-shadow);
     height: 100%;
+    contain: layout style;
 }
 
-.course-card:hover {
-    transform: translateY(-8px);
-    border-color: var(--course-card-border-hover);
-    box-shadow: var(--course-card-shadow-hover);
+@media (hover: hover) {
+    .course-card:hover {
+        transform: translateY(-4px);
+        border-color: var(--course-card-border-hover);
+    }
+}
+
+.course-card .card-banner-wrapper {
+    position: relative;
+    flex-shrink: 0;
 }
 
 .course-card .card-banner {
@@ -29,15 +34,24 @@
     height: 200px;
     position: relative;
     background-color: var(--course-card-banner-bg);
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    transition: background-image 0.3s ease-in-out;
+    overflow: hidden;
+}
+
+.course-card .card-banner-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    pointer-events: none;
+}
+
+.course-card .card-banner--clickable {
+    cursor: pointer;
 }
 
 .course-card .author-avatar-box {
     position: absolute;
-    bottom: -25px;
+    bottom: -27px;
     right: 24px;
     width: 54px;
     height: 54px;
@@ -45,10 +59,16 @@
     border: 4px solid var(--course-card-avatar-border);
     overflow: hidden;
     background-color: var(--course-card-avatar-bg);
-    background-size: cover;
-    background-position: center;
-    z-index: 20;
+    z-index: 5;
     box-shadow: var(--shadow-soft);
+    box-sizing: border-box;
+}
+
+.course-card .author-avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
 }
 
 .course-card .card-admin-overlay {
@@ -69,35 +89,35 @@
     justify-content: center;
     border: none;
     cursor: pointer;
-    transition: 0.3s;
+    transition: background-color 0.15s ease, opacity 0.15s ease;
     color: white;
-    backdrop-filter: blur(4px);
 }
 
 .course-card .btn-admin-tool.edit {
-    background: rgba(3, 169, 244, 0.6);
+    background: rgba(3, 169, 244, 0.88);
 }
 
 .course-card .btn-admin-tool.grading {
-    background: rgba(255, 193, 7, 0.6);
+    background: rgba(255, 193, 7, 0.88);
 }
 
 .course-card .btn-admin-tool.analytics {
-    background: rgba(16, 185, 129, 0.6);
+    background: rgba(16, 185, 129, 0.88);
 }
 
 .course-card .btn-admin-tool.feedback-stats {
-    background: rgba(124, 58, 237, 0.88);
+    background: rgba(124, 58, 237, 0.92);
     color: #f5f3ff;
 }
 
 .course-card .btn-admin-tool.delete {
-    background: rgba(244, 67, 54, 0.6);
+    background: rgba(244, 67, 54, 0.88);
 }
 
-.course-card .btn-admin-tool:hover {
-    transform: scale(1.1);
-    background: rgba(255, 255, 255, 0.3);
+@media (hover: hover) {
+    .course-card .btn-admin-tool:hover {
+        opacity: 0.85;
+    }
 }
 
 .course-card .status-badge {
@@ -109,7 +129,6 @@
     font-size: 0.7rem;
     font-weight: bold;
     text-transform: uppercase;
-    backdrop-filter: blur(4px);
 }
 
 .course-card .status-published {
@@ -131,9 +150,10 @@ html[data-theme="light"] .course-card .status-draft {
 }
 
 .course-card .card-main-content {
-    padding: 35px 24px 20px 24px;
+    padding: 38px 24px 20px 24px;
     flex-grow: 1;
     position: relative;
+    z-index: 1;
 }
 
 .course-card .cat-badge {
@@ -205,16 +225,30 @@ html[data-theme="light"] .course-card .status-draft {
     padding: 12px;
     border-radius: 12px;
     font-weight: 600;
-    transition: 0.3s;
+    transition: opacity 0.15s ease;
     box-shadow: var(--course-card-btn-shadow);
 }
 
-.course-card .btn-start-course:hover {
-    transform: translateY(-2px);
-    color: #fff !important;
-    filter: brightness(1.05);
+@media (hover: hover) {
+    .course-card .btn-start-course:hover {
+        opacity: 0.9;
+        color: #fff !important;
+    }
 }
 
 .course-card .btn-start-course--continue {
     background: var(--course-card-btn-continue-bg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .course-card,
+    .course-card .btn-admin-tool,
+    .course-card .btn-start-course {
+        transition: none;
+    }
+}
+
+.courses-grid .course-card {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 440px;
 }

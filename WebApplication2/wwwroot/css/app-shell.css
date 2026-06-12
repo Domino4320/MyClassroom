@@ -6,7 +6,6 @@ body {
     min-height: 100%;
     background-color: var(--bg-page-solid, #0f172a);
     background-image: var(--bg-page, linear-gradient(135deg, #0b1628, #0f172a 50%, #0c1929));
-    background-attachment: fixed;
     color: var(--text-main, #e2e8f0);
 }
 
@@ -29,7 +28,6 @@ body {
     background: var(--header-bg);
     border-bottom: 1px solid var(--header-border);
     box-shadow: var(--shadow-soft);
-    backdrop-filter: blur(14px);
     color: var(--header-text);
 }
 
@@ -73,7 +71,6 @@ body {
 
 .header .burger:hover {
     color: var(--accent-soft);
-    transform: scale(1.08);
 }
 
 .header .user-section,
@@ -114,8 +111,7 @@ body {
 }
 
 .header .user-avatar:hover {
-    transform: scale(1.06);
-    box-shadow: 0 0 15px rgba(3, 169, 244, 0.45);
+    opacity: 0.92;
 }
 
 /* --- Notifications bell --- */
@@ -321,19 +317,21 @@ body {
 .sidebar {
     position: fixed;
     top: var(--app-header-height);
-    left: calc(-1 * var(--app-sidebar-width));
+    left: 0;
     width: var(--app-sidebar-width);
     height: calc(100vh - var(--app-header-height));
     z-index: 1050;
     background: var(--sidebar-bg);
-    transition: left 0.4s ease;
     border-right: 1px solid var(--sidebar-border);
     overflow-y: auto;
+    overscroll-behavior: contain;
     box-sizing: border-box;
+    transform: translate3d(-100%, 0, 0);
+    transition: transform 0.2s ease;
 }
 
 .sidebar.open {
-    left: 0;
+    transform: translate3d(0, 0, 0);
 }
 
 .sidebar .avatar {
@@ -370,41 +368,33 @@ body {
     color: var(--sidebar-link);
     font-weight: 500;
     text-decoration: none;
-    position: relative;
-    transition: color 0.2s ease, background 0.2s ease;
+    transition: color 0.15s ease, background-color 0.15s ease;
 }
 
-.sidebar nav ul li a:hover {
-    color: var(--accent-soft);
-    background: var(--surface-hover);
+@media (hover: hover) {
+    .sidebar nav ul li a:hover {
+        color: var(--accent-soft);
+        background: var(--surface-hover);
+    }
 }
 
-.sidebar nav ul li a::after {
-    content: "";
-    position: absolute;
-    left: 1.2rem;
-    bottom: 0.55rem;
-    width: 0;
-    height: 2px;
-    background: var(--accent-main);
-    transition: width 0.25s ease;
-}
-
-.sidebar nav ul li a:hover::after {
-    width: 36%;
-}
-
-/* Затемнение при открытом меню (мобильные) */
+/* Затемнение при открытом меню */
 .sidebar-backdrop {
-    display: none;
     position: fixed;
     inset: var(--app-header-height) 0 0 0;
     background: var(--backdrop);
     z-index: 1040;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+    transform: translateZ(0);
 }
 
 .sidebar-backdrop.visible {
-    display: block;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
 }
 
 /* --- Main layout --- */
@@ -423,11 +413,6 @@ body {
     min-height: 100vh;
     padding-top: var(--app-header-height);
     box-sizing: border-box;
-    transition: margin-left 0.4s ease;
-}
-
-.content-area.shift {
-    margin-left: var(--app-sidebar-width);
 }
 
 .main-content {
@@ -459,10 +444,6 @@ body {
 }
 
 @media (max-width: 1023px) {
-    .content-area.shift {
-        margin-left: 0 !important;
-    }
-
     .sidebar {
         left: 0;
         right: 0;
@@ -470,8 +451,8 @@ body {
         max-width: 100%;
         height: auto;
         max-height: min(75vh, calc(100dvh - var(--app-header-height)));
-        transform: translateY(calc(-100% - 8px));
-        transition: transform 0.35s ease;
+        transform: translate3d(0, calc(-100% - 8px), 0);
+        transition: transform 0.2s ease;
         border-right: none;
         border-bottom: 1px solid var(--sidebar-border);
         box-shadow: var(--shadow-strong);
@@ -479,8 +460,14 @@ body {
     }
 
     .sidebar.open {
-        left: 0;
-        transform: translateY(0);
+        transform: translate3d(0, 0, 0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sidebar,
+    .sidebar-backdrop {
+        transition: none;
     }
 }
 

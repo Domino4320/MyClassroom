@@ -1,11 +1,12 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
 using WebApplication2.Data;
+using WebApplication2.Infrastructure;
 using WebApplication2.Models;
 
 namespace WebApplication2.Controllers
 {
+    [RequireTeacher]
     public class TeacherAccountController : Controller
     {
 
@@ -23,7 +24,7 @@ namespace WebApplication2.Controllers
         public IActionResult GetProfileInfo()
         {
             var login = HttpContext.Session.GetString("Login");
-            if (string.IsNullOrEmpty(login)) return RedirectToAction("Login", "Account");
+            if (string.IsNullOrEmpty(login)) return RedirectToAction("Index", "Authorization");
 
             var user = _db.Users.FirstOrDefault(u => u.Login == login);
             var teacherData = _db.TeacherProfiles.FirstOrDefault(tp => tp.UserLogin == login);
