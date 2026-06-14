@@ -1,0 +1,118 @@
+@startuml MyClassroom_UseCase
+!theme plain
+skinparam backgroundColor #F8FAFC
+skinparam actorStyle awesome
+skinparam usecase {
+  BackgroundColor #E0F2FE
+  BorderColor #0284C7
+  FontSize 13
+}
+skinparam package {
+  BackgroundColor #FFFFFF
+  BorderColor #0369A1
+  FontStyle bold
+  FontSize 16
+}
+
+title MyClassroom — диаграмма вариантов использования
+
+left to right direction
+
+actor "Гость" as Guest
+actor "Студент" as Student
+actor "Преподаватель" as Teacher
+
+rectangle "MyClassroom" {
+
+  package "Авторизация" #F1F5F9 {
+    usecase "Регистрация" as UC_Reg
+    usecase "Вход / Выход" as UC_Login
+    usecase "Загрузка аватара" as UC_Avatar
+  }
+
+  package "Просмотр контента" #F1F5F9 {
+    usecase "Главная страница" as UC_Home
+    usecase "Библиотека курсов" as UC_Library
+    usecase "Каталог преподавателей" as UC_Teachers
+    usecase "Профиль преподавателя" as UC_TProfile
+  }
+
+  package "Обучение" #F1F5F9 {
+    usecase "Запись на курс" as UC_Enroll
+    usecase "Прохождение уроков" as UC_Learn
+    usecase "Активные курсы" as UC_Active
+    usecase "Закладки" as UC_Bookmarks
+    usecase "Отзыв на курс" as UC_CReview
+    usecase "Сертификат" as UC_Cert
+  }
+
+  package "Сообщество" #F1F5F9 {
+    usecase "Форум" as UC_Forum
+    usecase "Уведомления" as UC_Notify
+    usecase "Отзыв на преподавателя" as UC_TReview
+  }
+
+  package "Преподавание" #ECFDF5 {
+    usecase "Стать преподавателем" as UC_Become
+    usecase "Создание курса" as UC_Create
+    usecase "Конструктор уроков" as UC_Builder
+    usecase "Управление курсами" as UC_Manage
+    usecase "Проверка работ" as UC_Grade
+    usecase "Аналитика курса" as UC_Analytics
+    usecase "Личный кабинет" as UC_TAccount
+  }
+}
+
+' Гость
+Guest --> UC_Login
+Guest --> UC_Reg
+Guest --> UC_Home
+Guest --> UC_Library
+Guest --> UC_Teachers
+
+' Студент (наследует гостя + обучение)
+Student --> UC_Login
+Student --> UC_Reg
+Student --> UC_Avatar
+Student --> UC_Home
+Student --> UC_Library
+Student --> UC_Teachers
+Student --> UC_TProfile
+Student --> UC_Enroll
+Student --> UC_Learn
+Student --> UC_Active
+Student --> UC_Bookmarks
+Student --> UC_CReview
+Student --> UC_Cert
+Student --> UC_Forum
+Student --> UC_Notify
+Student --> UC_TReview
+Student --> UC_Become
+
+' Преподаватель (всё студента + преподавание)
+Teacher --> UC_Avatar
+Teacher --> UC_Library
+Teacher --> UC_Teachers
+Teacher --> UC_Enroll
+Teacher --> UC_Learn
+Teacher --> UC_Active
+Teacher --> UC_Bookmarks
+Teacher --> UC_Forum
+Teacher --> UC_Notify
+Teacher --> UC_Create
+Teacher --> UC_Builder
+Teacher --> UC_Manage
+Teacher --> UC_Grade
+Teacher --> UC_Analytics
+Teacher --> UC_TAccount
+
+' Связи между вариантами
+UC_Enroll ..> UC_Learn : <<include>>
+UC_Learn ..> UC_Cert : <<include>>
+UC_Learn ..> UC_CReview : <<extend>>
+UC_TProfile ..> UC_TReview : <<extend>>
+UC_Create ..> UC_Builder : <<include>>
+UC_Manage ..> UC_Grade : <<extend>>
+UC_Manage ..> UC_Analytics : <<extend>>
+
+@enduml

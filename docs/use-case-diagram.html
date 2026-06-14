@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MyClassroom — диаграмма вариантов использования</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: #f0f9ff;
+      color: #0c4a6e;
+      padding: 24px;
+    }
+    h1 {
+      text-align: center;
+      font-size: 1.6rem;
+      margin-bottom: 8px;
+    }
+    .subtitle {
+      text-align: center;
+      color: #64748b;
+      margin-bottom: 24px;
+      font-size: 0.95rem;
+    }
+    .diagram-wrap {
+      background: #fff;
+      border: 1px solid #7dd3fc;
+      border-radius: 16px;
+      padding: 24px;
+      overflow-x: auto;
+      box-shadow: 0 8px 24px rgba(12,74,110,.08);
+    }
+    .mermaid { min-width: 1100px; }
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px 32px;
+      justify-content: center;
+      margin-top: 20px;
+      font-size: 0.9rem;
+    }
+    .legend span { display: inline-flex; align-items: center; gap: 8px; }
+    .dot { width: 14px; height: 14px; border-radius: 4px; border: 1px solid; }
+    .dot-student { background: #e0f2fe; border-color: #0284c7; }
+    .dot-teacher { background: #dcfce7; border-color: #15803d; }
+    .dot-social { background: #fef3c7; border-color: #d97706; }
+  </style>
+</head>
+<body>
+  <h1>MyClassroom</h1>
+  <p class="subtitle">Диаграмма вариантов использования — основной функционал</p>
+
+  <div class="diagram-wrap">
+    <pre class="mermaid">
+flowchart TB
+    Guest(("Гость"))
+    Student(("Студент"))
+    Teacher(("Преподаватель"))
+
+    subgraph SYS["Система MyClassroom"]
+        direction TB
+
+        subgraph AUTH["Авторизация"]
+            UC_Login(["Вход / Выход"])
+            UC_Reg(["Регистрация"])
+            UC_Avatar(["Загрузка аватара"])
+        end
+
+        subgraph VIEW["Просмотр"]
+            UC_Home(["Главная"])
+            UC_Library(["Библиотека курсов"])
+            UC_Teachers(["Каталог преподавателей"])
+            UC_TProfile(["Профиль преподавателя"])
+        end
+
+        subgraph LEARN["Обучение"]
+            UC_Enroll(["Запись на курс"])
+            UC_Learn(["Прохождение уроков"])
+            UC_Active(["Активные курсы"])
+            UC_Bookmarks(["Закладки"])
+            UC_CReview(["Отзыв на курс"])
+            UC_Cert(["Сертификат"])
+        end
+
+        subgraph COMM["Сообщество"]
+            UC_Forum(["Форум"])
+            UC_Notify(["Уведомления"])
+            UC_TReview(["Отзыв на преподавателя"])
+        end
+
+        subgraph TEACH["Преподавание"]
+            UC_Become(["Стать преподавателем"])
+            UC_Create(["Создание курса"])
+            UC_Builder(["Конструктор уроков"])
+            UC_Manage(["Управление курсами"])
+            UC_Grade(["Проверка работ"])
+            UC_Analytics(["Аналитика курса"])
+            UC_TAccount(["Личный кабинет"])
+        end
+    end
+
+    Guest --> UC_Login
+    Guest --> UC_Reg
+    Guest --> UC_Home
+    Guest --> UC_Library
+    Guest --> UC_Teachers
+
+    Student --> UC_Login
+    Student --> UC_Reg
+    Student --> UC_Avatar
+    Student --> UC_Home
+    Student --> UC_Library
+    Student --> UC_Teachers
+    Student --> UC_TProfile
+    Student --> UC_Enroll
+    Student --> UC_Learn
+    Student --> UC_Active
+    Student --> UC_Bookmarks
+    Student --> UC_CReview
+    Student --> UC_Cert
+    Student --> UC_Forum
+    Student --> UC_Notify
+    Student --> UC_TReview
+    Student --> UC_Become
+
+    Teacher --> UC_Avatar
+    Teacher --> UC_Library
+    Teacher --> UC_Teachers
+    Teacher --> UC_Enroll
+    Teacher --> UC_Learn
+    Teacher --> UC_Active
+    Teacher --> UC_Bookmarks
+    Teacher --> UC_Forum
+    Teacher --> UC_Notify
+    Teacher --> UC_Create
+    Teacher --> UC_Builder
+    Teacher --> UC_Manage
+    Teacher --> UC_Grade
+    Teacher --> UC_Analytics
+    Teacher --> UC_TAccount
+
+    classDef actor fill:#f1f5f9,stroke:#334155,stroke-width:2px,color:#0f172a
+    classDef auth fill:#e0f2fe,stroke:#0284c7,stroke-width:1.5px,color:#0c4a6e
+    classDef view fill:#e0f2fe,stroke:#0284c7,stroke-width:1.5px,color:#0c4a6e
+    classDef learn fill:#e0f2fe,stroke:#0284c7,stroke-width:1.5px,color:#0c4a6e
+    classDef comm fill:#fef3c7,stroke:#d97706,stroke-width:1.5px,color:#78350f
+    classDef teach fill:#dcfce7,stroke:#15803d,stroke-width:1.5px,color:#14532d
+
+    class Guest,Student,Teacher actor
+    class UC_Login,UC_Reg,UC_Avatar auth
+    class UC_Home,UC_Library,UC_Teachers,UC_TProfile view
+    class UC_Enroll,UC_Learn,UC_Active,UC_Bookmarks,UC_CReview,UC_Cert learn
+    class UC_Forum,UC_Notify,UC_TReview comm
+    class UC_Become,UC_Create,UC_Builder,UC_Manage,UC_Grade,UC_Analytics,UC_TAccount teach
+    </pre>
+  </div>
+
+  <div class="legend">
+    <span><i class="dot dot-student"></i> Студент / общие функции</span>
+    <span><i class="dot dot-social"></i> Сообщество</span>
+    <span><i class="dot dot-teacher"></i> Только преподаватель</span>
+  </div>
+
+  <script type="module">
+    import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: "base",
+      themeVariables: {
+        fontFamily: "Segoe UI, system-ui, sans-serif",
+        fontSize: "14px",
+        primaryColor: "#e0f2fe",
+        primaryBorderColor: "#0284c7",
+        lineColor: "#64748b",
+        clusterBkg: "#ffffff",
+        clusterBorder: "#0369a1"
+      },
+      flowchart: { curve: "basis", padding: 16, nodeSpacing: 30, rankSpacing: 50 }
+    });
+  </script>
+</body>
+</html>

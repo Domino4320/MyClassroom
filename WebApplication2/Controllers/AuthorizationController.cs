@@ -2,8 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using WebApplication2.Data;
 using WebApplication2.Models;
-
-
+using WebApplication2.Services;
 namespace WebApplication2.Controllers
 {
     public class AuthorizationController : Controller
@@ -26,14 +25,20 @@ namespace WebApplication2.Controllers
         {
             // Ищем пользователя в БД
             var user = _db.Users
-                .FirstOrDefault(u => u.Login == model.Login && u.Password == model.Password);
+                .FirstOrDefault(u => u.Login == model.Login);
 
-            if (user == null)
+            if (user == null || !PasswordHelper.Verify(model.Password, user.Password))
             {
                 ModelState.AddModelError("Login", "Неверный логин или пароль");
                 ModelState.AddModelError("Password", "Неверный логин или пароль");
 
                 return View("Index",model);
+            }
+
+            if (PasswordHelper.NeedsRehash(user.Password))
+            {
+                user.Password = PasswordHelper.Hash(model.Password);
+                _db.SaveChanges();
             }
             HttpContext.Session.SetString("Login", user.Login);
             HttpContext.Session.SetString("Username", user.Username);

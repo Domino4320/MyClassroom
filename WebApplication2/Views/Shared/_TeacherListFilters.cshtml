@@ -13,13 +13,15 @@
                    autocomplete="off"
                    aria-label="ФИО">
         </div>
-        <select id="teacherSpecFilter" class="teacher-filter-select" aria-label="Специализация">
-            <option value="">Все специализации</option>
-            @foreach (var spec in specializations)
-            {
-                <option value="@spec">@spec</option>
-            }
-        </select>
+        <div class="teacher-filter-select-wrap">
+            <select id="teacherSpecFilter" class="teacher-filter-select" aria-label="Специализация">
+                <option value="">Все специализации</option>
+                @foreach (var spec in specializations)
+                {
+                    <option value="@spec">@spec</option>
+                }
+            </select>
+        </div>
         <div class="search-input-wrapper teacher-filters-field teacher-filters-tags">
             <input type="text"
                    id="teacherTagsSearch"

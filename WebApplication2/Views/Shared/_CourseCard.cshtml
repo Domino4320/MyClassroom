@@ -6,8 +6,11 @@
         var isEnrolled = ViewData["IsEnrolled"] as bool? ?? false;
         var hasBanner = !string.IsNullOrWhiteSpace(Model.CoverImagePath)
             && !Model.CoverImagePath.Contains("default-course", StringComparison.OrdinalIgnoreCase);
-        var avatarImg = string.IsNullOrWhiteSpace(Model.AuthorAvatar) || Model.AuthorAvatar == "/images/default_avatar.jpg"
-        ? "/images/default_avatar.jpg" : Model.AuthorAvatar;
+        var defaultAvatar = Url.Content("~/images/default_avatar.svg");
+        var avatarImg = string.IsNullOrWhiteSpace(Model.AuthorAvatar)
+            || Model.AuthorAvatar.Contains("default_avatar", StringComparison.OrdinalIgnoreCase)
+            ? defaultAvatar
+            : Model.AuthorAvatar;
     }
 
     <div class="card-banner-wrapper">
@@ -101,7 +104,8 @@
                  src="@avatarImg"
                  alt=""
                  loading="lazy"
-                 decoding="async" />
+                 decoding="async"
+                 onerror="this.onerror=null;this.src='@defaultAvatar';" />
         </div>
     </div>
 

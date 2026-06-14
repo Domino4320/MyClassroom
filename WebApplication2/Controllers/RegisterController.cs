@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using WebApplication2.Data;
 using WebApplication2.Models;
+using WebApplication2.Services;
 
 namespace WebApplication2.Controllers
 {
@@ -29,6 +30,7 @@ namespace WebApplication2.Controllers
                 return View("Index",user); 
             }
             user.Role = "Student";
+            user.Password = PasswordHelper.Hash(user.Password);
             _db.Users.Add(user);
             _db.SaveChanges();
 

@@ -43,7 +43,7 @@ namespace WebApplication2.Controllers
                     AuthorUsername = author != null ? author.Username : (course.AuthorLogin ?? "Аноним"),
                     AuthorAvatar = (author != null && !string.IsNullOrEmpty(author.Avatar))
                         ? author.Avatar
-                        : "/images/default_avatar.jpg",
+                        : "/images/default_avatar.svg",
                     AverageRating = course.Reviews.Any()
                         ? Math.Round(course.Reviews.Average(r => r.Rating), 1)
                         : 0,

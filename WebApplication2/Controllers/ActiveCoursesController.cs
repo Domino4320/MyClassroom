@@ -35,29 +35,34 @@ namespace WebApplication2.Controllers
             if (totalPages > 0 && page > totalPages)
                 return RedirectToAction(nameof(Index), new { page = totalPages });
 
-            var items = await activeQuery
-                .OrderByDescending(c => c.CreatedAt)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .Select(c => new CourseCardModel
+            var items = await (
+                from course in activeQuery
+                orderby course.CreatedAt descending
+                join user in _context.Users on course.AuthorLogin equals user.Login into userJoin
+                from author in userJoin.DefaultIfEmpty()
+                select new CourseCardModel
                 {
-                    Id = c.Id,
-                    Title = c.Title,
-                    Description = c.Description,
-                    Category = c.Category,
-                    CoverImagePath = c.CoverImagePath,
-                    CreatedAt = c.CreatedAt,
-                    AuthorUsername = c.AuthorLogin ?? "Автор",
-                    AuthorAvatar = "/images/default_avatar.jpg",
-                    AverageRating = c.Reviews.Any()
-                        ? Math.Round(c.Reviews.Average(r => r.Rating), 1)
+                    Id = course.Id,
+                    Title = course.Title,
+                    Description = course.Description,
+                    Category = course.Category,
+                    CoverImagePath = course.CoverImagePath,
+                    CreatedAt = course.CreatedAt,
+                    AuthorUsername = author != null ? author.Username : (course.AuthorLogin ?? "Автор"),
+                    AuthorAvatar = (author != null && !string.IsNullOrEmpty(author.Avatar))
+                        ? author.Avatar
+                        : "/images/default_avatar.svg",
+                    AverageRating = course.Reviews.Any()
+                        ? Math.Round(course.Reviews.Average(r => r.Rating), 1)
                         : 0,
-                    RecPercent = c.Reviews.Any()
+                    RecPercent = course.Reviews.Any()
                         ? CourseDisplayHelper.GetRecommendationPercent(
-                            c.Reviews.Count,
-                            c.Reviews.Count(r => r.IsRecommended))
+                            course.Reviews.Count,
+                            course.Reviews.Count(r => r.IsRecommended))
                         : 0
                 })
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
 
             foreach (var card in items)
